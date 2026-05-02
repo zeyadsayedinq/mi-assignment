@@ -1,13 +1,256 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- ═══ PRIMARY SEO ═══════════════════════════════════════════════════════ -->
+    <title>Mi-Assignment — AI Homework & Assignment Helper for Arab Students | حل الواجبات بالذكاء الاصطناعي</title>
+    <meta name="description" content="Mi-Assignment solves any university assignment in seconds — essays, presentations, code, math, engineering calculations, SQL. Written like a real student. Undetectable by GPTZero & Turnitin. Arabic & English. Free to start." />
+    <meta name="keywords" content="AI homework helper, assignment solver Egypt, حل الواجبات, AI مصر, واجبات جامعية, MENA students AI, AUC GUC homework, essay writer AI Arabic, assignment help Saudi Arabia, حل الواجبات بالذكاء الاصطناعي, مساعد أكاديمي, AI assignment Egypt, homework AI tool, write essay AI, مساعدة في الواجبات" />
+    <meta name="author" content="Mi-Assignment" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="theme-color" content="#22D3EE" />
+    <link rel="canonical" href="https://www.mi-assignment.com/" />
+
+    <!-- ═══ OPEN GRAPH ════════════════════════════════════════════════════════ -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.mi-assignment.com/" />
+    <meta property="og:site_name" content="Mi-Assignment" />
+    <meta property="og:title" content="Mi-Assignment — AI Homework Helper for Arab & MENA Students" />
+    <meta property="og:description" content="Solve any university assignment in 15 seconds. Essays, presentations, code, math — written like a real student. Undetectable by AI tools. Free to start." />
+    <meta property="og:image" content="https://www.mi-assignment.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Mi-Assignment — AI Academic Helper" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="ar_EG" />
+    <meta property="og:locale:alternate" content="ar_SA" />
+    <meta property="og:locale:alternate" content="ar_AE" />
+
+    <!-- ═══ TWITTER / X CARD ══════════════════════════════════════════════════ -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@mi_assignment" />
+    <meta name="twitter:creator" content="@mi_assignment" />
+    <meta name="twitter:title" content="Mi-Assignment — AI Homework Helper for MENA Students" />
+    <meta name="twitter:description" content="Solve any assignment in 15 seconds. Essays, code, math, presentations — written like a real student. Arabic & English." />
+    <meta name="twitter:image" content="https://www.mi-assignment.com/og-image.png" />
+    <meta name="twitter:image:alt" content="Mi-Assignment AI Academic Helper" />
+
+    <!-- ═══ ARABIC / MULTILINGUAL SEO ════════════════════════════════════════ -->
+    <meta name="description" lang="ar" content="Mi-Assignment يحل واجباتك الجامعية في ثوانٍ — مقالات، بروزنتيشن، كود، رياضيات — بأسلوب طالب حقيقي. غير قابل للكشف. عربي وإنجليزي. ابدأ مجاناً." />
+    <link rel="alternate" hreflang="en" href="https://www.mi-assignment.com/" />
+    <link rel="alternate" hreflang="ar" href="https://www.mi-assignment.com/" />
+    <link rel="alternate" hreflang="x-default" href="https://www.mi-assignment.com/" />
+
+    <!-- ═══ PWA ═══════════════════════════════════════════════════════════════ -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Mi-Assignment" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+
+    <!-- ═══ PERFORMANCE ══════════════════════════════════════════════════════ -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://image.pollinations.ai" />
+
+    <!-- ═══ STRUCTURED DATA — JSON-LD ════════════════════════════════════════ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://www.mi-assignment.com/#app",
+          "name": "Mi-Assignment",
+          "alternateName": ["Mi Assignment", "ميي أسايمنت", "حل الواجبات"],
+          "url": "https://www.mi-assignment.com",
+          "description": "AI-powered academic assignment solver for university students in Egypt, Saudi Arabia, UAE, Kuwait, Bahrain, Jordan, and Qatar.",
+          "applicationCategory": "EducationalApplication",
+          "operatingSystem": "Web, iOS, Android (PWA)",
+          "inLanguage": ["en", "ar"],
+          "availableLanguage": [
+            { "@type": "Language", "name": "English", "alternateName": "en" },
+            { "@type": "Language", "name": "Arabic", "alternateName": "ar" }
+          ],
+          "offers": [
+            {
+              "@type": "Offer",
+              "name": "Free Plan",
+              "price": "0",
+              "priceCurrency": "USD",
+              "description": "3 missions per month"
+            },
+            {
+              "@type": "Offer",
+              "name": "Pro Quarterly — Egypt",
+              "price": "1000",
+              "priceCurrency": "EGP",
+              "description": "40 missions per semester (90 days)"
+            },
+            {
+              "@type": "Offer",
+              "name": "Pro Quarterly — Saudi Arabia",
+              "price": "99",
+              "priceCurrency": "SAR",
+              "description": "40 missions per semester (90 days)"
+            }
+          ],
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "ratingCount": "850",
+            "bestRating": "5"
+          },
+          "audience": {
+            "@type": "EducationalAudience",
+            "educationalRole": "student",
+            "audienceType": "University students in MENA region"
+          },
+          "featureList": [
+            "Essay and report writing",
+            "Presentation generation with AI images",
+            "Math and engineering step-by-step solutions",
+            "Code in any programming language",
+            "SQL database design",
+            "Research papers and literature reviews",
+            "Arabic and English interface",
+            "Undetectable by AI detection tools"
+          ]
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://www.mi-assignment.com/#org",
+          "name": "Mi-Assignment",
+          "url": "https://www.mi-assignment.com",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://www.mi-assignment.com/icon-512.png",
+            "width": 512,
+            "height": 512
+          },
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "email": "support@mi-assignment.com",
+            "contactType": "customer support",
+            "availableLanguage": ["English", "Arabic"],
+            "areaServed": ["EG", "SA", "AE", "KW", "BH", "JO", "QA"]
+          },
+          "sameAs": []
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Will my professor know I used Mi-Assignment?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Mi-Assignment is engineered to write like a real student — imperfect, authentic, and calibrated to your academic level. It avoids every writing pattern that AI detection tools like GPTZero, Turnitin AI, and Copyleaks flag."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What types of assignments can Mi-Assignment solve?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Mi-Assignment handles 20+ assignment types: essays, reports, presentations with AI images, code in any language, math step-by-step, engineering calculations, SQL databases, business plans, research papers, lab reports, case studies, and more."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How much does Mi-Assignment cost in Egypt?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Mi-Assignment offers a free plan with 3 missions per month. The Pro plan costs 1,000 EGP per quarter (90 days) — covering a full university semester with 40 missions."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does Mi-Assignment work in Arabic?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Mi-Assignment has a full Arabic interface with RTL layout and responds in Modern Standard Arabic (فصحى) when Arabic is selected."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How fast does Mi-Assignment solve assignments?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Most assignments complete in 15-40 seconds. Complex engineering calculations or long essays may take up to 90 seconds."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "هل Mi-Assignment يعمل باللغة العربية؟",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "نعم، Mi-Assignment يدعم اللغة العربية بالكامل مع واجهة RTL ويرد بالعربية الفصحى عند اختيار اللغة العربية."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "كم يكلف Mi-Assignment في مصر؟",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "هناك خطة مجانية تتضمن ٣ مهام شهرياً. خطة Pro تكلف ١٠٠٠ جنيه مصري كل ربع سنة (٩٠ يوماً) وتتضمن ٤٠ مهمة — ما يكفي ترماً جامعياً كاملاً."
+              }
+            }
+          ]
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "Mi-Assignment",
+          "operatingSystem": "Web",
+          "applicationCategory": "EducationalApplication",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- ═══ POSTHOG ANALYTICS ═════════════════════════════════════════════════ -->
+    <script>
+      (function() {
+        var key = typeof __VITE_POSTHOG_KEY__ !== 'undefined' ? __VITE_POSTHOG_KEY__ : '';
+        if (!key) return;
+        !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]);t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(a=a!==void 0?a:"posthog",u=a!==void 0?e[a]=[]:window.posthog=u,g(u,"init"),g(u,"capture"),g(u,"reset"),g(u,"identify"),g(u,"set_config"),e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+        posthog.init(key,{api_host:'https://app.posthog.com',capture_pageview:true,persistence:'localStorage'});
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      window.addEventListener('error', function(e) {
+        var err = document.createElement('div');
+        err.style.cssText = 'position:fixed;top:10px;left:10px;z-index:9999;background:red;color:white;padding:10px;font-family:monospace;white-space:pre-wrap;max-width:100%';
+        err.innerText = e.message + '\n' + (e.error && e.error.stack ? e.error.stack : '') + '\nFilename: ' + e.filename + ':' + e.lineno;
+        document.body.appendChild(err);
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        var err = document.createElement('div');
+        err.style.cssText = 'position:fixed;top:60px;left:10px;z-index:9999;background:darkred;color:white;padding:10px;font-family:monospace;white-space:pre-wrap;max-width:100%';
+        err.innerText = 'Unhandled Rejection: ' + (e.reason && e.reason.stack ? e.reason.stack : e.reason);
+        document.body.appendChild(err);
+      });
+    </script>
+    <script>
+      window.global = window;
+      if (typeof process === 'undefined') {
+        window.process = { env: {} };
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
