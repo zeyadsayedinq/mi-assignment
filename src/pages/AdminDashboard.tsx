@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 
-const OWNER_EMAIL = 'zeyadsayedinq@gmail.com';
+const OWNER_EMAILS = ['zeyadsayedinq@gmail.com', 'ranafaraj30@gmail.com'];
 
 const PLAN_LIMITS: Record<string, number> = {
   free: 3, pro_monthly: 15, pro_quarterly: 40, pro_yearly: 999999,
@@ -75,7 +75,7 @@ export function AdminDashboard() {
   };
 
   useEffect(() => {
-    if (user?.email === OWNER_EMAIL) fetchAll();
+    if (OWNER_EMAILS.includes(user?.email || '')) fetchAll();
     else setLoading(false);
   }, [user]);
 

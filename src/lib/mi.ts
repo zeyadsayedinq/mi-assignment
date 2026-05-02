@@ -22,7 +22,7 @@ JSON SCHEMA (use only fields relevant to assignment type):
 
 // ── Gemini ──────────────────────────────────────────────────────────────────
 async function callGemini(prompt: string): Promise<string> {
-  const models = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash'];
+  const models = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-pro-latest'];
   let lastError = '';
   for (const model of models) {
     try {

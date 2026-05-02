@@ -9,7 +9,7 @@ import { cn } from '../lib/utils';
 import { ReferralWidget } from '../components/ReferralWidget';
 import { getSubscriptionStatus, type SubscriptionStatus } from '../lib/subscription';
 
-const OWNER_EMAIL = 'zeyadsayedinq@gmail.com';
+const OWNER_EMAILS = ['zeyadsayedinq@gmail.com', 'ranafaraj30@gmail.com'];
 const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY || '';
 
 export function SettingsPage() {
@@ -84,7 +84,7 @@ export function SettingsPage() {
     setAdminLoading(false);
   };
 
-  const isOwner = user?.email?.toLowerCase() === OWNER_EMAIL.toLowerCase();
+  const isOwner = user?.OWNER_EMAILS.includes(email?.toLowerCase() || '');
 
   const planLabel = () => {
     if (sub?.role === 'owner') return isAr ? 'خطة المؤسس (غير محدودة)' : 'Founder Plan (Unlimited)';

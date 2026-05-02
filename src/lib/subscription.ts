@@ -20,11 +20,11 @@ export const PLAN_LIMITS: Record<Plan, number> = {
   pro_yearly: 999999,
 };
 
-const OWNER_EMAIL = 'zeyadsayedinq@gmail.com';
+const OWNER_EMAILS = ['zeyadsayedinq@gmail.com', 'ranafaraj30@gmail.com'];
 
 export async function getSubscriptionStatus(userId: string, email?: string): Promise<SubscriptionStatus> {
   // Owner always unlimited
-  if (email?.toLowerCase() === OWNER_EMAIL.toLowerCase()) {
+  if (OWNER_EMAILS.map(e=>e.toLowerCase()).includes(email?.toLowerCase() || '')) {
     return {
       plan: 'pro_yearly', role: 'owner',
       missionsUsed: 0, missionsLimit: 999999, missionsLeft: 999999,
