@@ -16,18 +16,10 @@ import { supabase } from '../lib/supabase';
 function useMissionCount() {
   const [count, setCount] = useState<number | null>(null);
   useEffect(() => {
-    // Try backend API first
-    fetch('/api/stats/missions')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.total != null) setCount(d.total); })
+    // Query Supabase directly - no backend needed
+    supabase.from('missions').select('id', { count: 'exact', head: true })
+      .then(({ count: c }) => { if (c != null) setCount(c); })
       .catch(() => {});
-    // Supabase fallback — only if real URL is configured
-    const url = import.meta.env.VITE_SUPABASE_URL || '';
-    if (url && !url.includes('placeholder')) {
-      supabase.from('missions').select('id', { count: 'exact', head: true })
-        .then(({ count: c }) => { if (c != null) setCount(prev => prev ?? c); })
-        .catch(() => {});
-    }
   }, []);
   return count;
 }

@@ -31,18 +31,11 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   );
 }
 
-// Welcome email (fire-and-forget)
-async function maybeSendWelcome(userId: string, email: string, language: string) {
+// Welcome email disabled (no backend) - tracked locally
+function maybeSendWelcome(userId: string, email: string, language: string) {
   const key = `mi_welcome_${userId}`;
   if (localStorage.getItem(key)) return;
-  try {
-    await fetch('/api/auth/welcome', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, email, language }),
-    });
-    localStorage.setItem(key, '1');
-  } catch {}
+  localStorage.setItem(key, '1');
 }
 
 // Loading spinner

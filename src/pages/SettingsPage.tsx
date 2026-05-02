@@ -58,7 +58,6 @@ export function SettingsPage() {
     try {
       // Look up user ID by email via Supabase (admin client on server)
       // We call the admin grant/revoke endpoint
-      const backendUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
     const res = await fetch(`${backendUrl}/api/admin/users-by-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },

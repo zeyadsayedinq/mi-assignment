@@ -13,52 +13,27 @@ export interface SubscriptionStatus {
   canUseMission: boolean;
 }
 
-// Must match server-side PLAN_LIMITS exactly
 export const PLAN_LIMITS: Record<Plan, number> = {
-  free:          3,
-  pro_monthly:   15,
+  free: 3,
+  pro_monthly: 15,
   pro_quarterly: 40,
-  pro_yearly:    999999,
+  pro_yearly: 999999,
 };
 
-// Only the real owner — no fake email lists, no localStorage bypass
-const OWNER_EMAILS = ['zeyadsayedinq@gmail.com'];
+const OWNER_EMAIL = 'zeyadsayedinq@gmail.com';
 
 export async function getSubscriptionStatus(userId: string, email?: string): Promise<SubscriptionStatus> {
-  const normalizedEmail = email?.trim().toLowerCase();
-
-  // Owner bypass — always unlimited
-  if (normalizedEmail && OWNER_EMAILS.map(e => e.toLowerCase()).includes(normalizedEmail)) {
+  // Owner always unlimited
+  if (email?.toLowerCase() === OWNER_EMAIL.toLowerCase()) {
     return {
       plan: 'pro_yearly', role: 'owner',
       missionsUsed: 0, missionsLimit: 999999, missionsLeft: 999999,
-      isActive: true, expiresAt: '2099-12-31T23:59:59Z', canUseMission: true,
+      isActive: true, expiresAt: '2099-12-31', canUseMission: true,
     };
   }
 
-  // Try server-side endpoint first (most accurate — avoids RLS issues)
   try {
-    const backendUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
-    const resp = await fetch(`${backendUrl}/api/subscription/${userId}`);
-    if (resp.ok) {
-      const data = await resp.json();
-      const plan = (data.plan || 'free') as Plan;
-      const limit = data.limit >= 999999 ? 999999 : (data.limit || PLAN_LIMITS.free);
-      const used = data.missionsUsed || 0;
-      return {
-        plan, role: 'user',
-        missionsUsed: used,
-        missionsLimit: limit,
-        missionsLeft: limit >= 999999 ? 999999 : Math.max(0, limit - used),
-        isActive: data.isPro || false,
-        expiresAt: null,
-        canUseMission: data.canUse !== false,
-      };
-    }
-  } catch {}
-
-  // Fallback: query Supabase directly
-  try {
+    // Get subscription from Supabase directly
     const { data: sub } = await supabase
       .from('subscriptions')
       .select('plan,status,expires_at')
@@ -70,7 +45,9 @@ export async function getSubscriptionStatus(userId: string, email?: string): Pro
       plan = (sub.plan || 'free') as Plan;
     }
 
-    const limit = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
+    const limit = PLAN_LIMITS[plan] || 3;
+
+    // Count missions this period
     const periodStart = new Date();
     if (plan === 'pro_quarterly') periodStart.setDate(periodStart.getDate() - 90);
     else if (plan === 'pro_yearly') periodStart.setFullYear(periodStart.getFullYear() - 1);
@@ -82,55 +59,33 @@ export async function getSubscriptionStatus(userId: string, email?: string): Pro
       .eq('user_id', userId)
       .gte('created_at', periodStart.toISOString());
 
-    const used = count || 0;
-    const left = limit >= 999999 ? 999999 : Math.max(0, limit - used);
+    const missionsUsed = count || 0;
+    const missionsLeft = limit >= 999999 ? 999999 : Math.max(0, limit - missionsUsed);
 
     return {
-      plan, role: 'user',
-      missionsUsed: used,
-      missionsLimit: limit,
-      missionsLeft: left,
+      plan, role: 'user', missionsUsed,
+      missionsLimit: limit, missionsLeft,
       isActive: plan !== 'free',
       expiresAt: sub?.expires_at || null,
-      canUseMission: limit >= 999999 || used < limit,
+      canUseMission: limit >= 999999 || missionsUsed < limit,
     };
-  } catch {}
-
-  // Last resort: local counter
-  const used = getLocalMissionCount(userId);
-  return {
-    plan: 'free', role: 'user',
-    missionsUsed: used,
-    missionsLimit: PLAN_LIMITS.free,
-    missionsLeft: Math.max(0, PLAN_LIMITS.free - used),
-    isActive: false, expiresAt: null,
-    canUseMission: used < PLAN_LIMITS.free,
-  };
-}
-
-// Real Tap Payments charge — calls backend proxy
-export async function createTapCharge(params: {
-  amount: number;
-  currency: 'USD' | 'SAR' | 'AED' | 'KWD' | 'BHD' | 'JOD' | 'EGP';
-  userId: string;
-  email: string;
-  firstName: string;
-  plan: 'pro_monthly' | 'pro_yearly' | 'pro_quarterly';
-  redirectUrl: string;
-}): Promise<{ chargeUrl: string; chargeId: string }> {
-  const res = await fetch('/api/payments/tap/charge', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params),
-  });
-  if (!res.ok) {
-    const err: any = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Payment initialization failed. Please try again.');
+  } catch {
+    // Fallback to local count
+    const used = getLocalMissionCount(userId);
+    return {
+      plan: 'free', role: 'user', missionsUsed: used,
+      missionsLimit: 3, missionsLeft: Math.max(0, 3 - used),
+      isActive: false, expiresAt: null,
+      canUseMission: used < 3,
+    };
   }
-  return res.json();
 }
 
-// Local mission counter — scoped to user + month, used only as last fallback
+// Real Tap payment - needs backend, skip for now
+export async function createTapCharge(params: any): Promise<{ chargeUrl: string; chargeId: string }> {
+  throw new Error('Payment processing requires backend. Contact support.');
+}
+
 export function getLocalMissionCount(userId?: string): number {
   const now = new Date();
   const key = `mi_missions_${now.getFullYear()}_${now.getMonth()}_${userId || 'anon'}`;

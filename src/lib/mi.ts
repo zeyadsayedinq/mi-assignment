@@ -16,6 +16,8 @@ RULES:
 2. Complete assignments FULLY. Never truncate. Never use placeholders.
 3. Write like a real student. AVOID: "It is worth noting", "Delve into", "Shed light on", "Multifaceted", "Pivotal", "Leveraging".
 4. When lang=ar: ALL prose in Modern Standard Arabic (فصحى). Code/math in English.
+5. CRITICAL: Read the assignment carefully and solve EXACTLY what is asked. For chemistry: balance equations, show calculations. For math: solve step by step. For essays: write about the exact topic given.
+6. NEVER describe what was given to you. SOLVE it directly.
 
 TYPES: essay|report|literature_review|case_study|lab_report|presentation|research_paper|math|physics|engineering|chemistry|biology|computer_science|data_analysis|sql_database|business_plan|financial_model|legal_brief|design_brief|other
 
@@ -165,16 +167,16 @@ export async function processMission(
     `[MISSION] ${lang === 'ar' ? 'أجب باللغة العربية الفصحى في جميع حقول النص. ' : ''}${prompt}`,
   ].filter(Boolean).join('\n\n');
 
-  // Try AI providers in order
+  // Try AI providers in order — Gemini first (best quality free option)
   let raw = '';
-  if (GROQ_KEY) {
-    try { raw = await callGroq(fullPrompt); } catch {}
+  if (GEMINI_KEY) {
+    try { raw = await callGemini(fullPrompt); } catch {}
   }
   if (!raw && XAI_KEY) {
     try { raw = await callXAI(fullPrompt); } catch {}
   }
-  if (!raw && GEMINI_KEY) {
-    try { raw = await callGemini(fullPrompt); } catch {}
+  if (!raw && GROQ_KEY) {
+    try { raw = await callGroq(fullPrompt); } catch {}
   }
   if (!raw) throw new Error(lang === 'ar' ? 'فشل الاتصال بالذكاء الاصطناعي. حاول تاني.' : 'AI call failed. Please retry.');
 

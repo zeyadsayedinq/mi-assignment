@@ -20,13 +20,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Skip if Supabase is not configured (placeholder)
-    const url = import.meta.env.VITE_SUPABASE_URL || '';
-    if (!url || url.includes('placeholder')) {
-      setLoading(false);
-      return;
-    }
-
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
         setSession(session);
