@@ -17,25 +17,16 @@ function generateCode(userId: string): string {
 
 // Get or create a referral code for the current user
 export async function getOrCreateReferralCode(userId: string): Promise<string> {
-  // Check existing
-  const { data } = await supabase
-    .from('referrals')
-    .select('ref_code')
-    .eq('referrer_id', userId)
-    .is('referred_id', null) // their own "source" row
-    .limit(1)
-    .single();
-
-  if (data?.ref_code) return data.ref_code;
-
-  // Create one
   const code = generateCode(userId);
+
+  // Try to insert — if already exists, ignore the error
   await supabase.from('referrals').insert({
     referrer_id: userId,
     ref_code: code,
     status: 'pending',
-  }).catch(() => {}); // ignore duplicate
+  }).catch(() => {});
 
+  // Always return the deterministic code based on userId
   return code;
 }
 

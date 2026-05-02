@@ -50,7 +50,7 @@ async function callGroq(prompt: string): Promise<string> {
 }
 
 async function callGemini(prompt: string): Promise<string> {
-  const models = ['gemini-2.0-flash', 'gemini-2.0-flash-lite'];
+  const models = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
   for (const model of models) {
     try {
       const resp = await fetch(
