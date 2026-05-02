@@ -6,7 +6,7 @@ export { generateCustomImage, generatePresentationImage } from './pollinations';
 import { generatePresentationImage } from './pollinations';
 
 const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || '';
-const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyB3G6AZhRi1uE34qLcljO6KUlhlR1F_H20';
 const XAI_KEY = import.meta.env.VITE_XAI_API_KEY || '';
 
 const SYSTEM_PROMPT = `You are Mi-Assignment — an academic AI that solves any university assignment with output that reads like a real student wrote it, not an AI.
