@@ -18,10 +18,8 @@ function useMissionCount() {
   useEffect(() => {
     // Query Supabase directly - no backend needed
     supabase.from('missions').select('id', { count: 'exact', head: true })
-      .then(
-        ({ count: c }) => { if (c != null) setCount(c); },
-        () => {}
-      );
+      .then(({ count: c }) => { if (c != null) setCount(c); })
+      .catch(() => {});
   }, []);
   return count;
 }

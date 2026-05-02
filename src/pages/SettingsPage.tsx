@@ -58,7 +58,7 @@ export function SettingsPage() {
     try {
       // Look up user ID by email via Supabase (admin client on server)
       // We call the admin grant/revoke endpoint
-    const res = await fetch(`/api/admin/users-by-email`, {
+    const res = await fetch(`${backendUrl}/api/admin/users-by-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },
         body: JSON.stringify({ email: adminEmail.trim() }),
@@ -66,7 +66,7 @@ export function SettingsPage() {
       if (!res.ok) throw new Error('User not found');
       const { userId } = await res.json();
 
-      const res2 = await fetch(`/api/admin/users/${userId}/subscription`, {
+      const res2 = await fetch(`${backendUrl}/api/admin/users/${userId}/subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },
         body: JSON.stringify({ action: adminAction, plan: 'pro_quarterly', durationDays: 90 }),
@@ -84,7 +84,7 @@ export function SettingsPage() {
     setAdminLoading(false);
   };
 
-  const isOwner = OWNER_EMAILS.includes(user?.email?.toLowerCase() || '');
+  const isOwner = user?.OWNER_EMAILS.includes(email?.toLowerCase() || '');
 
   const planLabel = () => {
     if (sub?.role === 'owner') return isAr ? 'خطة المؤسس (غير محدودة)' : 'Founder Plan (Unlimited)';

@@ -1,7 +1,7 @@
 export { generateCustomImage, generatePresentationImage } from './pollinations';
 import { generatePresentationImage } from './pollinations';
 
-const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyB3G6AZhRi1uE34qLcljO6KUlhlR1F_H20';
+const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyCXFxpsekW22y91wULEZAc9geSdKdQY_JI';
 const GROQ_KEY   = import.meta.env.VITE_GROQ_API_KEY   || '';
 const XAI_KEY    = import.meta.env.VITE_XAI_API_KEY    || '';
 
@@ -22,7 +22,7 @@ JSON SCHEMA (use only fields relevant to assignment type):
 
 // ── Gemini ──────────────────────────────────────────────────────────────────
 async function callGemini(prompt: string): Promise<string> {
-  const models = ['gemini-1.5-flash', 'gemini-1.5-pro'];
+  const models = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-pro'];
   let lastError = '';
   for (const model of models) {
     try {
@@ -200,7 +200,7 @@ export async function processMission(
         summary: result.solution_text?.substring(0, 300) || '',
         solution_data: result,
         lang,
-      });
+      }).catch(() => {});
     }
   } catch {}
 

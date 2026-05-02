@@ -335,7 +335,7 @@ async function startServer() {
   // ── Health ─────────────────────────────────────────────────────────────────
   app.get("/api/health", (_, res) => res.json({
     status: "ready",
-    gemini: !!process.env.GEMINI_API_KEY,
+    claude: !!process.env.ANTHROPIC_API_KEY,
     tap: !!process.env.TAP_SECRET_KEY,
     supabase: !!(process.env.VITE_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY),
     email: !!process.env.RESEND_API_KEY,
@@ -364,11 +364,11 @@ async function startServer() {
   app.post("/api/process-mission", async (req, res) => {
     try {
       const { files, prompt, university, course, system, reference, missionType, userId, lang } = req.body;
-      const apiKey = process.env.GEMINI_API_KEY;
+      const apiKey = process.env.ANTHROPIC_API_KEY;
 
       if (!apiKey) {
         return res.status(400).json({
-          error: "GEMINI_API_KEY not configured. Mi cannot process missions.",
+          error: "ANTHROPIC_API_KEY not configured. Mi cannot process missions.",
         });
       }
 
@@ -408,7 +408,8 @@ async function startServer() {
         if (c && Date.now() - c.t < CACHE_TTL) return res.json({ ...c.r, _cached: true });
       }
 
-      // ── Build Gemini message content ─────────────────────────────────────
+      // ── Build Claude message content ─────────────────────────────────────
+      const content: any[] = [];
       const ctx = [
         university && `University: ${university}`,
         course && `Course: ${course}`,
@@ -418,43 +419,50 @@ async function startServer() {
         lang === "ar" && "Language: Arabic — ALL prose in Modern Standard Arabic (فصحى). Code/math in English.",
       ].filter(Boolean).join(" | ");
 
-      const fullPrompt = `${ctx ? `[CONTEXT] ${ctx}\n\n` : ""}[MISSION] ${lang === "ar" ? "أجب باللغة العربية الفصحى في جميع حقول النص. " : ""}${prompt}`;
-
-      const contentsTextAndFiles: any[] = [fullPrompt];
+      content.push({
+        type: "text",
+        text: `${ctx ? `[CONTEXT] ${ctx}\n\n` : ""}[MISSION] ${lang === "ar" ? "أجب باللغة العربية الفصحى في جميع حقول النص. " : ""}${prompt}`,
+      });
 
       if (files?.length) {
         for (const f of files) {
           if (!f.data) continue;
           if (f.isText) {
-            try { contentsTextAndFiles.push(`[FILE CONTENT: ${f.name}]\n${atob(f.data)}`); } catch {}
-          } else if (f.type === "application/pdf" || ["image/jpeg","image/jpg","image/png","image/gif","image/webp"].includes(f.type)) {
-            contentsTextAndFiles.push({
-              inlineData: {
-                data: f.data,
-                mimeType: f.type,
-              }
-            });
+            try { content.push({ type: "text", text: `[FILE CONTENT: ${f.name}]\n${atob(f.data)}` }); } catch {}
+          } else if (f.type === "application/pdf") {
+            content.push({ type: "document", source: { type: "base64", media_type: "application/pdf", data: f.data } });
+          } else if (["image/jpeg","image/jpg","image/png","image/gif","image/webp"].includes(f.type)) {
+            content.push({ type: "image", source: { type: "base64", media_type: f.type, data: f.data } });
           } else {
-            contentsTextAndFiles.push(`[FILE: ${f.name} (${f.type})] — incorporate this content in your solution.`);
+            content.push({ type: "text", text: `[FILE: ${f.name} (${f.type})] — incorporate this content in your solution.` });
           }
         }
       }
 
-      const { GoogleGenAI } = await import("@google/genai");
-      const ai = new GoogleGenAI({ apiKey });
-
-      const resp = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: contentsTextAndFiles,
-        config: {
-          systemInstruction: SYSTEM_PROMPT,
-          maxOutputTokens: isPro ? 8192 : 6000,
-          temperature: 0.7,
-        }
+      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-beta": "pdfs-2024-09-25",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: isPro ? 16000 : 6000,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: "user", content }],
+        }),
       });
 
-      const raw = resp.text || "";
-      if (!raw) throw new Error("Empty response from Gemini.");
+      if (!resp.ok) {
+        const err: any = await resp.json().catch(() => ({}));
+        if (resp.status === 429) return res.status(429).json({ error: lang === "ar" ? "الخادم مشغول. حاول بعد ٣٠ ثانية." : "Busy. Retry in 30s." });
+        return res.status(resp.status).json({ error: err?.error?.message || `Claude API error ${resp.status}` });
+      }
+
+      const raw = (await resp.json() as any)?.content?.[0]?.text || "";
+      if (!raw) throw new Error("Empty response from Claude.");
 
       let parsed: any;
       try {
@@ -722,7 +730,7 @@ async function startServer() {
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`\n  [Mi-Assignment] http://localhost:${PORT}`);
-    console.log(`  Gemini:   ${process.env.GEMINI_API_KEY ? "✓" : "✗ MISSING — set GEMINI_API_KEY"}`);
+    console.log(`  Claude:   ${process.env.ANTHROPIC_API_KEY ? "✓" : "✗ MISSING — set ANTHROPIC_API_KEY"}`);
     console.log(`  Supabase: ${process.env.VITE_SUPABASE_URL ? "✓" : "✗ not set"}`);
     console.log(`  Tap:      ${process.env.TAP_SECRET_KEY ? "✓" : "○ not set"}`);
     console.log(`  Webhook:  ${process.env.TAP_WEBHOOK_SECRET ? "✓ secured" : "⚠  TAP_WEBHOOK_SECRET not set (unsafe)"}`);

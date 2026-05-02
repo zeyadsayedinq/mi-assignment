@@ -27,7 +27,7 @@ export function UsageBanner() {
     }
   }, [user]);
 
-  if (!sub || sub.role === 'owner' || sub.plan.startsWith('pro_') || dismissed) return null;
+  if (!sub || sub.role === 'owner' || sub.role === 'admin' || sub.plan.startsWith('pro_') || dismissed) return null;
   if (sub.missionsLeft > 2) return null; // Only show when 2 or fewer missions left
 
   const isExhausted = sub.missionsLeft === 0;

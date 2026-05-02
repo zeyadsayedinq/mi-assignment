@@ -15,7 +15,6 @@
     "dev:client": "vite"
   },
   "dependencies": {
-    "@google/genai": "^1.51.0",
     "@netlify/functions": "^2.8.2",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.104.0",
@@ -59,7 +58,6 @@
     "@types/node": "^22.14.0",
     "adm-zip": "^0.5.17",
     "autoprefixer": "^10.4.21",
-    "puppeteer": "^24.42.0",
     "tsx": "^4.21.0"
   }
 }

@@ -5,13 +5,8 @@ import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import './index.css';
 
-if (typeof window !== 'undefined') {
-  if (!(window as any).process) {
-    (window as any).process = { env: {} };
-  }
-  if (!(window as any).global) {
-    (window as any).global = window;
-  }
+if (typeof window !== 'undefined' && !(window as any).process) {
+  (window as any).process = { env: {} };
 }
 
 const root = document.getElementById('root');
