@@ -1,7 +1,7 @@
 export { generateCustomImage, generatePresentationImage } from './pollinations';
 import { generatePresentationImage } from './pollinations';
 
-const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyCXFxpsekW22y91wULEZAc9geSdKdQY_JI';
+const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyB3G6AZhRi1uE34qLcljO6KUlhlR1F_H20';
 const GROQ_KEY   = import.meta.env.VITE_GROQ_API_KEY   || '';
 const XAI_KEY    = import.meta.env.VITE_XAI_API_KEY    || '';
 
