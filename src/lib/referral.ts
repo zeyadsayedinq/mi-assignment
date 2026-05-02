@@ -23,7 +23,7 @@ export function getOrCreateReferralCode(userId: string): Promise<string> {
     referrer_id: userId,
     ref_code: code,
     status: 'pending',
-  }).then().catch(() => {}); // duplicate key = already exists, ignore
+  }).then(undefined, () => {}); // duplicate key = already exists, ignore
   return Promise.resolve(code);
 }
 

@@ -200,7 +200,7 @@ export async function processMission(
         summary: result.solution_text?.substring(0, 300) || '',
         solution_data: result,
         lang,
-      }).catch(() => {});
+      });
     }
   } catch {}
 

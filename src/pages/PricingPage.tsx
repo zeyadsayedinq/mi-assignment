@@ -182,7 +182,7 @@ export function PricingPage() {
     } finally { setIsLoading(false); }
   };
 
-  const isPro = sub?.role === 'owner' || sub?.role === 'admin' || (sub?.plan && sub.plan.startsWith('pro_'));
+  const isPro = sub?.role === 'owner' || (sub?.plan && sub.plan.startsWith('pro_'));
   const freeFeatures = isAr ? FREE_FEATURES_AR : FREE_FEATURES_EN;
   const proFeatures = isAr ? PRO_FEATURES_AR : PRO_FEATURES_EN;
 

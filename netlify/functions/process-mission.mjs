@@ -99,7 +99,19 @@ export const handler = async (event) => {
 
     // 3. Try Gemini
     if (!raw && geminiKey) {
-      for (const model of ['gemini-2.0-flash', 'gemini-2.0-flash-lite']) {
+      const parts = [{ text: fullPrompt }];
+      for (const f of files) {
+        if (!f.data) continue;
+        if (f.isText) {
+           try { parts.push({ text: `[FILE: ${f.name}]\n${Buffer.from(f.data, 'base64').toString('utf-8')}` }); } catch {}
+        } else if (f.type === 'application/pdf' || f.type?.startsWith('image/')) {
+           parts.push({ inlineData: { mimeType: f.type, data: f.data } });
+        } else {
+           parts.push({ text: `[FILE: ${f.name} (${f.type})] — incorporate this content in your solution.` });
+        }
+      }
+
+      for (const model of ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite']) {
         try {
           const resp = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
@@ -107,7 +119,7 @@ export const handler = async (event) => {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
+                contents: [{ role: 'user', parts }],
                 systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
                 generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
               }),
@@ -117,8 +129,10 @@ export const handler = async (event) => {
             const data = await resp.json();
             raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
             if (raw) break;
+          } else {
+            console.warn("Gemini Error:", await resp.text());
           }
-        } catch { continue; }
+        } catch (e) { console.warn("Gemini fetch failed:", e); continue; }
       }
     }
 
@@ -126,7 +140,7 @@ export const handler = async (event) => {
       return {
         statusCode: 503,
         headers: CORS,
-        body: JSON.stringify({ error: 'No AI service available. Add GROQ_API_KEY to Netlify environment variables.' })
+        body: JSON.stringify({ error: 'No AI service available. Add GEMINI_API_KEY to Netlify environment variables.' })
       };
     }
 

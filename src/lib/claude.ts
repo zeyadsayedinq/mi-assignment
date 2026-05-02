@@ -88,7 +88,7 @@ export async function processMission(
     let msg = err.error || `Server error ${response.status}`;
     if (response.status === 429) msg = lang === 'ar' ? 'الخادم مشغول. حاول بعد ٣٠ ثانية.' : 'Server busy. Retry in 30 seconds.';
     if (response.status === 402) msg = err.message || (lang === 'ar' ? 'وصلت للحد المجاني. اشترك في برو.' : 'Free limit reached. Upgrade to Pro.');
-    if (response.status === 400 && msg.includes('API_KEY')) msg = lang === 'ar' ? 'MI-CORE غير متصل. ANTHROPIC_API_KEY مش متضاف.' : 'MI-CORE offline: ANTHROPIC_API_KEY not configured.';
+    if (response.status === 400 && msg.includes('API_KEY')) msg = lang === 'ar' ? 'MI-CORE غير متصل. GEMINI_API_KEY مش متضاف.' : 'MI-CORE offline: GEMINI_API_KEY not configured.';
     throw new Error(msg);
   }
 
