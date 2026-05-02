@@ -1,0 +1,6 @@
+# API routes should NOT be redirected to index.html
+# If no backend, these will 404 naturally → app falls back to Gemini
+/api/*  /api/:splat  404
+
+# SPA catch-all for all non-API routes
+/*      /index.html  200
