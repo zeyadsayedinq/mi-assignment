@@ -1,56 +1,29 @@
-// mi.ts — Mi-Assignment AI Library
-// Calls Groq API directly from browser (CORS enabled, free)
-// Falls back to Gemini if Groq key not set
-
 export { generateCustomImage, generatePresentationImage } from './pollinations';
 import { generatePresentationImage } from './pollinations';
 
-const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || '';
 const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyB3G6AZhRi1uE34qLcljO6KUlhlR1F_H20';
-const XAI_KEY = import.meta.env.VITE_XAI_API_KEY || '';
+const GROQ_KEY   = import.meta.env.VITE_GROQ_API_KEY   || '';
+const XAI_KEY    = import.meta.env.VITE_XAI_API_KEY    || '';
 
-const SYSTEM_PROMPT = `You are Mi-Assignment — an academic AI that solves any university assignment with output that reads like a real student wrote it, not an AI.
+const SYSTEM_PROMPT = `You are Mi-Assignment — an academic AI that produces complete, submission-ready solutions for ANY university assignment. Output reads like a real student wrote it.
 
-RULES:
-1. Return ONE valid JSON object only. Zero markdown. Zero preamble. Nothing before {.
-2. Complete assignments FULLY. Never truncate. Never use placeholders.
-3. Write like a real student. AVOID: "It is worth noting", "Delve into", "Shed light on", "Multifaceted", "Pivotal", "Leveraging".
-4. When lang=ar: ALL prose in Modern Standard Arabic (فصحى). Code/math in English.
-5. CRITICAL: Read the assignment carefully and solve EXACTLY what is asked. For chemistry: balance equations, show calculations. For math: solve step by step. For essays: write about the exact topic given.
-6. NEVER describe what was given to you. SOLVE it directly.
+ABSOLUTE RULES:
+1. Return ONE valid JSON object ONLY. No markdown fences. Nothing before {. Nothing after }.
+2. NEVER truncate. NEVER use placeholders like "[add content here]". Write everything fully.
+3. Write like a real student. BANNED: "It is worth noting", "Delve into", "Shed light on", "Multifaceted", "Pivotal", "Leveraging", "In conclusion it can be said".
+4. When lang=ar: ALL prose fields in Modern Standard Arabic (فصحى). Code, math, SQL stay in English.
+5. SOLVE the assignment directly. Never describe or summarize what was given.
+6. For chemistry: balance equations step by step. For math: show every calculation. For code: write complete runnable files.
 
-TYPES: essay|report|literature_review|case_study|lab_report|presentation|research_paper|math|physics|engineering|chemistry|biology|computer_science|data_analysis|sql_database|business_plan|financial_model|legal_brief|design_brief|other
+ASSIGNMENT TYPES: essay|report|literature_review|case_study|lab_report|presentation|research_paper|math|physics|engineering|chemistry|biology|computer_science|data_analysis|sql_database|business_plan|financial_model|legal_brief|design_brief|other
 
-JSON SCHEMA:
-{"solution_text":"2-3 summary sentences","assignment_type":"type","reconstructed_doc":{"title":"","word_count":0,"blocks":[{"type":"heading|paragraph|list|math|code|table","content":"","level":1,"solution_steps":[]}]},"presentation_slides":[{"power_heading":"","content_bullets":[],"narrative":"","speaker_notes":"","image_prompt":"","image_layout":"left"}],"data_sheet":{"sheet_name":"","headers":[],"rows":[]},"code_snippets":[{"language":"","filename":"","code":"","explanation":""}],"steps":[{"title":"","content":""}]}`;
+JSON SCHEMA (use only fields relevant to assignment type):
+{"solution_text":"2-3 sentence summary","assignment_type":"type from list above","reconstructed_doc":{"title":"","word_count":0,"blocks":[{"type":"heading|paragraph|list|math|code|table","content":"full text — never truncated","level":1,"solution_steps":["Step 1: ...","Step 2: ..."]}]},"presentation_slides":[{"power_heading":"punchy title","content_bullets":["real substantive point"],"narrative":"student speaker voice","speaker_notes":"verbatim script","image_prompt":"detailed visual description","image_layout":"left|right|background|full"}],"data_sheet":{"sheet_name":"","headers":[],"rows":[]},"code_snippets":[{"language":"","filename":"","code":"complete runnable code","explanation":""}],"steps":[{"title":"","content":""}]}`;
 
-async function callGroq(prompt: string): Promise<string> {
-  const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${GROQ_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 8000,
-    }),
-  });
-  if (!resp.ok) {
-    const err: any = await resp.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `Groq error ${resp.status}`);
-  }
-  const data: any = await resp.json();
-  return data?.choices?.[0]?.message?.content || '';
-}
-
+// ── Gemini ──────────────────────────────────────────────────────────────────
 async function callGemini(prompt: string): Promise<string> {
-  const models = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  const models = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash'];
+  let lastError = '';
   for (const model of models) {
     try {
       const resp = await fetch(
@@ -65,54 +38,66 @@ async function callGemini(prompt: string): Promise<string> {
           }),
         }
       );
-      if (resp.ok) {
-        const data: any = await resp.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        if (text) return text;
+      if (resp.status === 429) {
+        // Wait 5 seconds then try next model
+        await new Promise(r => setTimeout(r, 5000));
+        continue;
       }
-    } catch { continue; }
+      if (!resp.ok) { lastError = `Gemini ${resp.status}`; continue; }
+      const data: any = await resp.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (text) return text;
+    } catch (e: any) { lastError = e.message; continue; }
   }
-  throw new Error('Gemini unavailable');
+  throw new Error(lastError || 'Gemini unavailable');
 }
 
+// ── xAI ─────────────────────────────────────────────────────────────────────
 async function callXAI(prompt: string): Promise<string> {
   const resp = await fetch('https://api.x.ai/v1/chat/completions', {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${XAI_KEY}`,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Authorization': `Bearer ${XAI_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'grok-3-mini',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 8000,
+      messages: [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: prompt }],
+      temperature: 0.7, max_tokens: 8000,
     }),
   });
-  if (!resp.ok) {
-    const err: any = await resp.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `xAI error ${resp.status}`);
-  }
+  if (!resp.ok) throw new Error(`xAI ${resp.status}`);
   const data: any = await resp.json();
   return data?.choices?.[0]?.message?.content || '';
 }
 
-function parseJSON(raw: string): any {
-  try {
-    const cleaned = raw.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim();
-    return JSON.parse(cleaned);
-  } catch {
-    const first = raw.indexOf('{'), last = raw.lastIndexOf('}');
-    if (first !== -1 && last > first) {
-      try { return JSON.parse(raw.substring(first, last + 1)); } catch {}
-    }
-    throw new Error('Could not parse AI response. Please retry.');
-  }
+// ── Groq ─────────────────────────────────────────────────────────────────────
+async function callGroq(prompt: string): Promise<string> {
+  const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: prompt }],
+      temperature: 0.7, max_tokens: 8000,
+    }),
+  });
+  if (!resp.ok) throw new Error(`Groq ${resp.status}`);
+  const data: any = await resp.json();
+  return data?.choices?.[0]?.message?.content || '';
 }
 
+// ── JSON parser ──────────────────────────────────────────────────────────────
+function parseJSON(raw: string): any {
+  // Strip markdown fences
+  let cleaned = raw.replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '').trim();
+  // Find first { and last }
+  const first = cleaned.indexOf('{');
+  const last  = cleaned.lastIndexOf('}');
+  if (first === -1 || last === -1) throw new Error('No JSON in response. Please retry.');
+  cleaned = cleaned.substring(first, last + 1);
+  try { return JSON.parse(cleaned); }
+  catch { throw new Error('Could not parse AI response. Please retry.'); }
+}
+
+// ── Main export ──────────────────────────────────────────────────────────────
 export async function processMission(
   files: File[],
   prompt: string,
@@ -125,64 +110,69 @@ export async function processMission(
 ) {
   const lang = langContext || localStorage.getItem('mi_lang') || 'en';
 
-  if (!GROQ_KEY && !GEMINI_KEY && !XAI_KEY) {
-    throw new Error(lang === 'ar'
-      ? 'لم يتم إعداد خدمة الذكاء الاصطناعي. أضف VITE_GROQ_API_KEY في Netlify.'
-      : 'AI service not configured. Add VITE_GROQ_API_KEY to Netlify environment variables.');
-  }
-
-  // Build context
+  // ── Build context string ──
   const ctx = [
     universityContext && `University: ${universityContext}`,
-    courseContext && `Course: ${courseContext}`,
-    systemContext && `Academic System: ${systemContext}`,
-    referenceContext && `Reference Style: ${referenceContext}`,
-    missionType && `Assignment Type: ${missionType}`,
-    lang === 'ar' && 'Language: Arabic — respond in Modern Standard Arabic (فصحى). Code/math in English.',
+    courseContext     && `Course: ${courseContext}`,
+    systemContext     && `Academic System: ${systemContext}`,
+    referenceContext  && `Reference Style: ${referenceContext}`,
+    missionType       && `Assignment Type: ${missionType}`,
+    lang === 'ar'     && 'Language: Arabic — ALL prose must be in Modern Standard Arabic (فصحى). Code/math stay in English.',
   ].filter(Boolean).join(' | ');
 
-  // Convert files to text (Groq/Gemini browser calls don't support binary uploads easily)
+  // ── Extract file content ──
   let fileContent = '';
   for (const file of files) {
     try {
-      if (file.name.endsWith('.docx')) {
-        const mammoth = (await import('mammoth')).default;
-        const arrayBuffer = await file.arrayBuffer();
-        const { value } = await mammoth.extractRawText({ arrayBuffer });
+      if (file.name.match(/\.docx$/i)) {
+        const { default: mammoth } = await import('mammoth');
+        const { value } = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         fileContent += `\n[FILE: ${file.name}]\n${value}\n`;
-      } else if (file.type.startsWith('text/') || file.name.match(/\.(txt|md|csv|sql|py|js|ts|html|css|java|cpp|c|r)$/i)) {
-        const text = await file.text();
-        fileContent += `\n[FILE: ${file.name}]\n${text}\n`;
-      } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-        fileContent += `\n[FILE: ${file.name} — PDF attached, extract and use all content]\n`;
-      } else {
-        fileContent += `\n[FILE: ${file.name} — incorporate this file's content in your solution]\n`;
+      } else if (file.type.startsWith('text/') || file.name.match(/\.(txt|md|csv|sql|py|js|ts|html|css|java|cpp|c|r|json|xml)$/i)) {
+        fileContent += `\n[FILE: ${file.name}]\n${await file.text()}\n`;
+      } else if (file.name.match(/\.pdf$/i)) {
+        fileContent += `\n[FILE: ${file.name} — PDF. Extract all text, equations, tables and solve based on the content.]\n`;
+      } else if (file.type.startsWith('image/')) {
+        fileContent += `\n[IMAGE: ${file.name} — Analyze the image content and solve the assignment shown in it.]\n`;
       }
     } catch {}
   }
 
   const fullPrompt = [
-    ctx && `[CONTEXT] ${ctx}`,
-    fileContent && `[FILES]${fileContent}`,
-    `[MISSION] ${lang === 'ar' ? 'أجب باللغة العربية الفصحى في جميع حقول النص. ' : ''}${prompt}`,
+    ctx          && `[CONTEXT] ${ctx}`,
+    fileContent  && `[UPLOADED FILES]${fileContent}`,
+    `[ASSIGNMENT TO SOLVE] ${lang === 'ar' ? 'أجب باللغة العربية الفصحى. ' : ''}${prompt}`,
   ].filter(Boolean).join('\n\n');
 
-  // Try AI providers in order — Gemini first (best quality free option)
+  // ── Call AI — Gemini first, then xAI, then Groq ──
   let raw = '';
+  const errors: string[] = [];
+
   if (GEMINI_KEY) {
-    try { raw = await callGemini(fullPrompt); } catch {}
+    try { raw = await callGemini(fullPrompt); }
+    catch (e: any) { errors.push(`Gemini: ${e.message}`); }
   }
   if (!raw && XAI_KEY) {
-    try { raw = await callXAI(fullPrompt); } catch {}
+    try { raw = await callXAI(fullPrompt); }
+    catch (e: any) { errors.push(`xAI: ${e.message}`); }
   }
   if (!raw && GROQ_KEY) {
-    try { raw = await callGroq(fullPrompt); } catch {}
+    try { raw = await callGroq(fullPrompt); }
+    catch (e: any) { errors.push(`Groq: ${e.message}`); }
   }
-  if (!raw) throw new Error(lang === 'ar' ? 'فشل الاتصال بالذكاء الاصطناعي. حاول تاني.' : 'AI call failed. Please retry.');
+
+  if (!raw) {
+    const isRateLimit = errors.some(e => e.includes('429'));
+    throw new Error(
+      isRateLimit
+        ? (lang === 'ar' ? 'الخادم مشغول. انتظر ٣٠ ثانية وحاول تاني.' : 'AI is busy (rate limit). Wait 30 seconds and retry.')
+        : (lang === 'ar' ? 'فشل الاتصال بالذكاء الاصطناعي. حاول تاني.' : `AI call failed. Please retry. (${errors.join(' | ')})`)
+    );
+  }
 
   const result = parseJSON(raw);
 
-  // Generate slide images
+  // ── Generate slide images via Pollinations ──
   if (result.presentation_slides?.length) {
     await Promise.allSettled(
       result.presentation_slides.map(async (slide: any) => {
@@ -194,25 +184,24 @@ export async function processMission(
     );
   }
 
-  // Save to vault
+  // ── Save to Supabase missions table ──
   try {
-    const sbKey = Object.keys(localStorage).find(k => k.endsWith('-auth-token') && k.startsWith('sb-'));
-    const userId = sbKey ? JSON.parse(localStorage.getItem(sbKey) || '{}')?.user?.id : null;
-    const vaultKey = `mi_vault_${userId || 'anon'}`;
-    const existing = JSON.parse(localStorage.getItem(vaultKey) || '[]');
-    const entry = {
-      id: Date.now().toString(),
-      created_at: new Date().toISOString(),
-      payload_name: files.length > 0 ? files[0].name : prompt.substring(0, 60),
-      university: universityContext || '',
-      course: courseContext || '',
-      assignment_type: result.assignment_type || 'other',
-      status: 'SUCCESS',
-      summary: result.solution_text?.substring(0, 300) || '',
-      solution_data: result,
-      lang,
-    };
-    localStorage.setItem(vaultKey, JSON.stringify([entry, ...existing].slice(0, 100)));
+    const { supabase } = await import('./supabase');
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    if (userId) {
+      await supabase.from('missions').insert({
+        user_id: userId,
+        payload_name: files.length > 0 ? files[0].name : prompt.substring(0, 80),
+        university: universityContext || null,
+        course: courseContext || null,
+        assignment_type: result.assignment_type || 'other',
+        status: 'SUCCESS',
+        summary: result.solution_text?.substring(0, 300) || '',
+        solution_data: result,
+        lang,
+      }).catch(() => {});
+    }
   } catch {}
 
   return result;

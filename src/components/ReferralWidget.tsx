@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Share2, Copy, Check, Users, Zap } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getOrCreateReferralCode, getReferralLink, shareReferralLink, getReferralStats } from '../lib/referral';
+import { generateReferralCode, getReferralLink, shareReferralLink, getReferralStats } from '../lib/referral';
 import { cn } from '../lib/utils';
 
 export function ReferralWidget({ isAr = false, compact = false }: { isAr?: boolean; compact?: boolean }) {
@@ -13,12 +13,10 @@ export function ReferralWidget({ isAr = false, compact = false }: { isAr?: boole
 
   useEffect(() => {
     if (!user?.id) return;
-    getOrCreateReferralCode(user.id)
-      .then(setCode)
-      .catch(() => {});
-    getReferralStats(user.id)
-      .then(setStats)
-      .catch(() => {});
+    // Code is deterministic — instant, no loading
+    setCode(generateReferralCode(user.id));
+    // Stats from DB in background
+    getReferralStats(user.id).then(setStats).catch(() => {});
   }, [user?.id]);
 
   if (!user) {

@@ -1,95 +1,58 @@
-// referral.ts — Referral system
-// Each user gets a unique ref code. If someone signs up via /ref/CODE,
-// both users get +2 bonus missions applied to their count.
-
 import { supabase } from './supabase';
 
-// Generate a short alphanumeric code from user ID
-function generateCode(userId: string): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no confusable chars
+// Deterministic code from userId — always the same, no DB read needed
+export function generateReferralCode(userId: string): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const hex = userId.replace(/-/g, '');
   let code = '';
   for (let i = 0; i < 6; i++) {
-    const idx = parseInt(userId.replace(/-/g, '').slice(i * 2, i * 2 + 2), 16) % chars.length;
-    code += chars[idx];
+    code += chars[parseInt(hex.slice(i * 2, i * 2 + 2), 16) % chars.length];
   }
   return code;
 }
 
-// Get or create a referral code for the current user
-export async function getOrCreateReferralCode(userId: string): Promise<string> {
-  const code = generateCode(userId);
+export function getReferralLink(code: string): string {
+  return `https://www.mi-assignment.com/ref/${code}`;
+}
 
-  // Try to insert — if already exists, ignore the error
-  await supabase.from('referrals').insert({
+// Gets code instantly (no async needed) and tries to save to DB in background
+export function getOrCreateReferralCode(userId: string): Promise<string> {
+  const code = generateReferralCode(userId);
+  // Fire-and-forget insert — don't await, don't block UI
+  supabase.from('referrals').insert({
     referrer_id: userId,
     ref_code: code,
     status: 'pending',
-  }).catch(() => {});
-
-  // Always return the deterministic code based on userId
-  return code;
+  }).then().catch(() => {}); // duplicate key = already exists, ignore
+  return Promise.resolve(code);
 }
 
-// Get referral link for sharing
-export function getReferralLink(code: string): string {
-  const base = import.meta.env.VITE_APP_URL || 'https://www.mi-assignment.com';
-  return `${base}/ref/${code}`;
-}
-
-// Get referral stats for a user
-export async function getReferralStats(userId: string): Promise<{ total: number; converted: number; bonusMissions: number }> {
-  const { data } = await supabase
-    .from('referrals')
-    .select('status, bonus_granted')
-    .eq('referrer_id', userId)
-    .not('referred_id', 'is', null); // only rows where someone actually used the code
-
-  const total = data?.length || 0;
-  const converted = data?.filter(r => r.status === 'converted').length || 0;
-  const bonusMissions = converted * 2; // 2 bonus missions per successful referral
-  return { total, converted, bonusMissions };
-}
-
-// Store referral code from URL into localStorage for post-signup processing
-export function storeReferralCode(code: string) {
-  if (code && code.length === 6) {
-    localStorage.setItem('mi_ref_code', code.toUpperCase());
+export async function getReferralStats(userId: string) {
+  try {
+    const { data } = await supabase
+      .from('referrals')
+      .select('status')
+      .eq('referrer_id', userId)
+      .not('referred_id', 'is', null);
+    const converted = data?.filter(r => r.status === 'converted').length || 0;
+    return { total: data?.length || 0, converted, bonusMissions: converted * 2 };
+  } catch {
+    return { total: 0, converted: 0, bonusMissions: 0 };
   }
 }
 
-// Get stored referral code
-export function getStoredReferralCode(): string | null {
-  return localStorage.getItem('mi_ref_code');
+export function storeReferralCode(code: string) {
+  if (code?.length >= 5) localStorage.setItem('mi_ref_code', code.toUpperCase());
 }
 
-// Process referral after signup — call this server-side via API
-export async function processReferralSignup(newUserId: string, refCode: string): Promise<boolean> {
-  try {
-    const res = await fetch('/api/referral/process', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newUserId, refCode }),
-    });
-    return res.ok;
-  } catch { return false; }
-}
-
-// Share referral link via Web Share API or fallback to copy
 export async function shareReferralLink(code: string, isAr: boolean): Promise<'shared' | 'copied' | 'error'> {
   const link = getReferralLink(code);
   const text = isAr
     ? `جرّب Mi-Assignment — بيحل أي واجب في ثوانٍ! سجّل من هنا وهنفضل ٢ مهام مجانية زيادة 🎓`
-    : `Try Mi-Assignment — solves any assignment in seconds! Sign up with my link and we both get 2 bonus missions 🎓`;
-
+    : `Try Mi-Assignment — solves any assignment in seconds! Sign up with my link, we both get 2 bonus missions 🎓`;
   if (navigator.share) {
-    try {
-      await navigator.share({ title: 'Mi-Assignment', text, url: link });
-      return 'shared';
-    } catch {}
+    try { await navigator.share({ title: 'Mi-Assignment', text, url: link }); return 'shared'; } catch {}
   }
-
-  try {
-    await navigator.clipboard.writeText(link);
-    return 'copied';
-  } catch { return 'error'; }
+  try { await navigator.clipboard.writeText(link); return 'copied'; } catch {}
+  return 'error';
 }
