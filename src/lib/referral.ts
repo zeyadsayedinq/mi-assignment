@@ -12,7 +12,8 @@ export function generateReferralCode(userId: string): string {
 }
 
 export function getReferralLink(code: string): string {
-  return `https://www.mi-assignment.com/ref/${code}`;
+  const host = typeof window !== 'undefined' ? window.location.origin : 'https://mi-assignment.com';
+  return `${host}/ref/${code}`;
 }
 
 // Gets code instantly (no async needed) and tries to save to DB in background
@@ -23,7 +24,7 @@ export function getOrCreateReferralCode(userId: string): Promise<string> {
     referrer_id: userId,
     ref_code: code,
     status: 'pending',
-  }).then().catch(() => {}); // duplicate key = already exists, ignore
+  }).then(undefined, () => {}); // duplicate key = already exists, ignore
   return Promise.resolve(code);
 }
 

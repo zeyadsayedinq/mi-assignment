@@ -220,14 +220,6 @@
     </script>
 
     <!-- ═══ POSTHOG ANALYTICS ═════════════════════════════════════════════════ -->
-    <script>
-      (function() {
-        var key = typeof __VITE_POSTHOG_KEY__ !== 'undefined' ? __VITE_POSTHOG_KEY__ : '';
-        if (!key) return;
-        !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]);t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(a=a!==void 0?a:"posthog",u=a!==void 0?e[a]=[]:window.posthog=u,g(u,"init"),g(u,"capture"),g(u,"reset"),g(u,"identify"),g(u,"set_config"),e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
-        posthog.init(key,{api_host:'https://app.posthog.com',capture_pageview:true,persistence:'localStorage'});
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>

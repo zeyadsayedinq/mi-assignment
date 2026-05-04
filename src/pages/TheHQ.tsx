@@ -49,8 +49,11 @@ function MissionTimeline() {
       
       let dbMissions: any[] = [];
       try {
-        const { data } = await isSupabaseOk() ? supabase.from(placeholder_fix) : null; // todo
-        if (data) dbMissions = data;
+        let dbData: any = null;
+        if (isSupabaseOk() && user) {
+           dbData = await supabase.from('missions').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10);
+        }
+        if (dbData?.data) dbMissions = dbData.data;
       } catch {}
 
       const combined = [...vault, ...localAnon, ...dbMissions];
@@ -126,8 +129,11 @@ function WeeklyActivity() {
       
       let dbMissions: any[] = [];
       try {
-        const { data } = await isSupabaseOk() ? supabase.from(placeholder_fix) : null; // todo
-        if (data) dbMissions = data;
+        let dbData: any = null;
+        if (isSupabaseOk() && user) {
+           dbData = await supabase.from('missions').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50);
+        }
+        if (dbData?.data) dbMissions = dbData.data;
       } catch {}
 
       const combined = [...vault, ...localAnon, ...dbMissions];
@@ -195,8 +201,11 @@ export function TheHQ() {
       
       let dbMissions: any[] = [];
       try {
-        const { count } = await isSupabaseOk() ? supabase.from(placeholder_fix) : null; // todo
-        if (count !== null) setMissionCount(count); // If DB fails, fallback to local below or keep prev
+        let dbCount: any = null;
+        if (isSupabaseOk() && user) {
+           dbCount = await supabase.from('missions').select('*', { count: 'exact', head: true }).eq('user_id', user.id);
+        }
+        if (dbCount?.count !== null && dbCount?.count !== undefined) setMissionCount(dbCount.count);
       } catch {}
 
       const combined = [...vault, ...localAnon];

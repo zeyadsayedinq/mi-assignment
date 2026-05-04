@@ -100,7 +100,7 @@ export function TheTerminal() {
         const vaultKey = `mi_vault_${user?.id || 'anon'}`;
         const existing = JSON.parse(localStorage.getItem(vaultKey) || '[]');
         localStorage.setItem(vaultKey, JSON.stringify([saved, ...existing].slice(0, 200)));
-        await supabase.from('missions').insert(saved).catch(() => {});
+        try { await supabase.from('missions').insert(saved); } catch {}
       } catch {}
 
     } catch (err: any) {

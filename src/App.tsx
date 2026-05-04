@@ -1,45 +1,36 @@
-import './lib/i18n';
-import React, { useState, useEffect, Suspense } from 'react';
-import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { TheTerminal } from './pages/TheTerminal';
-import { TheHQ } from './pages/TheHQ';
-import { TheVault } from './pages/TheVault';
-import { TheAcademy } from './pages/TheAcademy';
-import { AssignmentTypeGuide } from './pages/AssignmentTypeGuide';
-import { SOPs } from './pages/SOPs';
-import { AdminDashboard } from './pages/AdminDashboard';
-import { SettingsPage } from './pages/SettingsPage';
-import { PricingPage } from './pages/PricingPage';
-import { AuthPage } from './pages/AuthPage';
-import { LandingPage } from './pages/LandingPage';
-import { TermsPage } from './pages/TermsPage';
-import { PrivacyPage } from './pages/PrivacyPage';
-import { Sidebar } from './components/Sidebar';
-import { UsageBanner } from './components/UsageBanner';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { AnimatePresence } from 'motion/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ExplosionProvider } from './contexts/ExplosionContext';
+import { Sidebar } from './components/Sidebar';
 import { IntroSequence } from './components/IntroSequence';
 import { SEO } from './components/SEO';
-import { OnboardingFlow } from './components/OnboardingFlow';
-import { cn } from './lib/utils';
+import { Menu } from 'lucide-react';
 
-// PWA service worker
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () =>
-    navigator.serviceWorker.register('/sw.js').catch(() => {})
-  );
+// Lazy load pages for performance
+const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
+const TheHQ = lazy(() => import('./pages/TheHQ').then(m => ({ default: m.TheHQ })));
+const AuthPage = lazy(() => import('./pages/AuthPage').then(m => ({ default: m.AuthPage })));
+const TheTerminal = lazy(() => import('./pages/TheTerminal').then(m => ({ default: m.TheTerminal })));
+const TheVault = lazy(() => import('./pages/TheVault').then(m => ({ default: m.TheVault })));
+const TheAcademy = lazy(() => import('./pages/TheAcademy').then(m => ({ default: m.TheAcademy })));
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const PricingPage = lazy(() => import('./pages/PricingPage').then(m => ({ default: m.PricingPage })));
+const TermsPage = lazy(() => import('./pages/TermsPage').then(m => ({ default: m.TermsPage })));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const SOPs = lazy(() => import('./pages/SOPs').then(m => ({ default: m.SOPs })));
+const AssignmentTypeGuide = lazy(() => import('./pages/AssignmentTypeGuide').then(m => ({ default: m.AssignmentTypeGuide })));
+
+// Scroll to top on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
 }
 
-// Welcome email disabled (no backend) - tracked locally
-function maybeSendWelcome(userId: string, email: string, language: string) {
-  const key = `mi_welcome_${userId}`;
-  if (localStorage.getItem(key)) return;
-  localStorage.setItem(key, '1');
-}
-
-// Loading spinner
-function Spinner() {
+function LoadingFallback() {
   return (
     <div className="h-screen w-screen bg-[#020617] flex items-center justify-center">
       <div className="w-12 h-12 border-4 border-[#22D3EE]/20 border-t-[#22D3EE] rounded-full animate-spin" />
@@ -47,162 +38,71 @@ function Spinner() {
   );
 }
 
-// Route guard
-function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
-  const { session, user, loading } = useAuth();
-  if (loading) return <Spinner />;
-  if (!session) return <Navigate to="/auth" replace />;
-  if (adminOnly && user?.email !== 'zeyadsayedinq@gmail.com') return <Navigate to="/app" replace />;
-  return <>{children}</>;
-}
-
-// Stores referral code from URL then redirects to auth
-function RefHandler() {
-  const { code } = useParams();
-  React.useEffect(() => {
-    if (code) localStorage.setItem('mi_ref_code', code.toUpperCase());
-  }, [code]);
-  return <Navigate to="/auth" replace />;
-}
-
-// Public pages — no sidebar, no auth required
-function PublicRoutes() {
-  return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/auth" element={<AuthPage />} />
-      <Route path="/terms" element={<TermsPage />} />
-      <Route path="/privacy" element={<PrivacyPage />} />
-      {/* Public app pages accessible without auth */}
-      <Route path="/pricing" element={<PricingPage />} />
-      <Route path="/intelligence-bureau" element={<AssignmentTypeGuide />} />
-      <Route path="/sops" element={<SOPs />} />
-      {/* Redirect everything else into the main app */}
-      <Route path="/ref/:code" element={<RefHandler />} />
-      <Route path="*" element={<Navigate to="/app" replace />} />
-    </Routes>
-  );
-}
-
-// App shell — sidebar + authenticated routes
-function AppShell() {
-  const { session, user } = useAuth();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    if (localStorage.getItem('mi_onboarded')) return false;
-    if (!session) return false;
-    // Only show for genuinely new accounts (created within last 2 minutes)
-    const createdAt = session.user?.created_at;
-    if (!createdAt) return false;
-    const ageSeconds = (Date.now() - new Date(createdAt).getTime()) / 1000;
-    return ageSeconds < 120; // new account = created less than 2 minutes ago
-  });
-
-  useEffect(() => {
-    if (session && user?.email) {
-      const lang = localStorage.getItem('mi_lang') || 'en';
-      maybeSendWelcome(user.id, user.email, lang);
-    }
-  }, [session, user]);
-
-  return (
-    <div className="bg-[#020617] h-screen text-white font-sans selection:bg-[#22D3EE] selection:text-black flex flex-col lg:flex-row overflow-hidden relative">
-      {showOnboarding && session && <OnboardingFlow onComplete={() => setShowOnboarding(false)} />}
-      <SEO />
-
-      {/* Mobile top bar */}
-      <header className="lg:hidden fixed top-0 w-full z-50 bg-[#020617]/90 backdrop-blur border-b border-[#22D3EE]/20 h-16 flex items-center justify-between px-4 shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#22D3EE] to-[#A855F7] flex items-center justify-center">
-            <span className="font-black text-black text-[10px]">Mi</span>
-          </div>
-          <span className="font-black text-white text-sm">Mi-Assignment</span>
-        </div>
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="text-[#22D3EE] p-2"
-          aria-label="Toggle menu"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-      </header>
-
-      <Sidebar isMobileOpen={isSidebarOpen} closeMobile={() => setIsSidebarOpen(false)} />
-
-      <main className="flex-1 overflow-y-auto relative w-full bg-[#050608] pt-16 lg:pt-0 min-w-0">
-        <Routes>
-          <Route path="/app" element={<TheHQ />} />
-          <Route path="/terminal" element={<ProtectedRoute><TheTerminal /></ProtectedRoute>} />
-          <Route path="/vault" element={<ProtectedRoute><TheVault /></ProtectedRoute>} />
-          <Route path="/academy" element={<ProtectedRoute><TheAcademy /></ProtectedRoute>} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/intelligence-bureau" element={<AssignmentTypeGuide />} />
-          <Route path="/sops" element={<SOPs />} />
-          <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="/payment-success" element={<PaymentSuccessPage />} />
-          {/* Fallback — send to HQ */}
-          <Route path="*" element={<Navigate to="/app" replace />} />
-        </Routes>
-      </main>
-
-      <UsageBanner />
-    </div>
-  );
-}
-
-// Root — decides which shell to use based on path
-function RootRouter() {
+function AppContent() {
+  const { session, loading } = useAuth();
+  const [showIntro, setShowIntro] = useState(() => !sessionStorage.getItem('mi_intro_done'));
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
 
-  // Show intro once on first /app visit
-  const [showIntro, setShowIntro] = useState(() =>
-    !localStorage.getItem('mi_intro_seen') && location.pathname === '/app'
-  );
-  useEffect(() => {
-    if (!showIntro) localStorage.setItem('mi_intro_seen', '1');
-  }, [showIntro]);
+  if (loading) return <LoadingFallback />;
 
-  if (showIntro) return <IntroSequence onComplete={() => setShowIntro(false)} />;
+  // Don't show intro for sub-pages if already seen or requested
+  const isLanding = location.pathname === '/';
 
-  // Public-only paths — no sidebar shell
-  const PUBLIC_PATHS = ['/', '/auth', '/terms', '/privacy', '/pricing', '/intelligence-bureau', '/sops'];
-  const isPublicPath = PUBLIC_PATHS.includes(location.pathname);
+  const handleIntroComplete = () => {
+    setShowIntro(false);
+    sessionStorage.setItem('mi_intro_done', 'true');
+  };
 
-  if (isPublicPath) return <PublicRoutes />;
-
-  // Everything else uses the app shell
-  return <AppShell />;
-}
-
-
-function PaymentSuccessPage() {
-  const { i18n } = useTranslation();
-  const isAr = i18n.language === 'ar';
-  React.useEffect(() => {
-    // Clear subscription cache so next check fetches fresh data
-    Object.keys(localStorage)
-      .filter(k => k.startsWith('mi_sub_') || k === 'mi_plan')
-      .forEach(k => localStorage.removeItem(k));
-  }, []);
   return (
-    <div className="min-h-screen bg-[#020617] flex items-center justify-center text-center p-6">
-      <div className="max-w-md">
-        <div className="text-7xl mb-6">🎉</div>
-        <h1 className="text-4xl font-black text-white mb-3">
-          {isAr ? 'أهلاً بك في Pro!' : 'Welcome to Pro!'}
-        </h1>
-        <p className="text-gray-400 mb-8 text-lg">
-          {isAr ? 'اشتراكك فعّال. ابدأ مهمتك الأولى.' : 'Your subscription is now active. Check your email for a receipt.'}
-        </p>
-        <a href="/terminal"
-          className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-[#22D3EE] to-[#A855F7] text-black font-black rounded-xl hover:opacity-90 transition-all">
-          {isAr ? 'ابدأ الآن ←' : 'Launch Terminal →'}
-        </a>
+    <>
+      <ScrollToTop />
+      <SEO />
+      
+      <AnimatePresence>
+        {showIntro && isLanding && (
+          <IntroSequence onComplete={handleIntroComplete} />
+        )}
+      </AnimatePresence>
+
+      <div className="bg-[#020617] min-h-screen text-white font-sans flex flex-col lg:flex-row overflow-hidden relative">
+        {session && <Sidebar isMobileOpen={mobileMenuOpen} closeMobile={() => setMobileMenuOpen(false)} />}
+        
+        {session && (
+          <button 
+            onClick={() => setMobileMenuOpen(true)}
+            className="lg:hidden fixed top-4 right-4 z-40 p-2 bg-[#22D3EE]/10 border border-[#22D3EE]/20 rounded-xl text-[#22D3EE]"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+
+        <main className="flex-1 min-h-screen relative overflow-y-auto">
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/auth" element={session ? <Navigate to="/app" replace /> : <AuthPage />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/sops" element={<SOPs />} />
+              <Route path="/intelligence-bureau" element={<AssignmentTypeGuide />} />
+              
+              {/* Protected Routes */}
+              <Route path="/app" element={session ? <TheHQ /> : <Navigate to="/auth" replace />} />
+              <Route path="/terminal" element={session ? <TheTerminal /> : <Navigate to="/auth" replace />} />
+              <Route path="/vault" element={session ? <TheVault /> : <Navigate to="/auth" replace />} />
+              <Route path="/academy" element={session ? <TheAcademy /> : <Navigate to="/auth" replace />} />
+              <Route path="/settings" element={session ? <SettingsPage /> : <Navigate to="/auth" replace />} />
+              <Route path="/admin" element={session ? <AdminDashboard /> : <Navigate to="/auth" replace />} />
+              
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </main>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -210,7 +110,7 @@ export default function App() {
   return (
     <AuthProvider>
       <ExplosionProvider>
-        <RootRouter />
+        <AppContent />
       </ExplosionProvider>
     </AuthProvider>
   );

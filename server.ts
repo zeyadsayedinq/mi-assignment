@@ -335,7 +335,7 @@ async function startServer() {
   // ── Health ─────────────────────────────────────────────────────────────────
   app.get("/api/health", (_, res) => res.json({
     status: "ready",
-    claude: !!process.env.ANTHROPIC_API_KEY,
+    gemini: !!process.env.GEMINI_API_KEY,
     tap: !!process.env.TAP_SECRET_KEY,
     supabase: !!(process.env.VITE_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY),
     email: !!process.env.RESEND_API_KEY,
@@ -360,131 +360,66 @@ async function startServer() {
     } catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
-  // ── MAIN AI ENDPOINT ───────────────────────────────────────────────────────
-  app.post("/api/process-mission", async (req, res) => {
+  // ── MAIN QUOTA ENDPOINT ────────────────────────────────────────────────────
+  app.post("/api/check-quota", async (req, res) => {
     try {
-      const { files, prompt, university, course, system, reference, missionType, userId, lang } = req.body;
-      const apiKey = process.env.ANTHROPIC_API_KEY;
+      const { userId, lang } = req.body;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-      if (!apiKey) {
-        return res.status(400).json({
-          error: "ANTHROPIC_API_KEY not configured. Mi cannot process missions.",
+      const sub = await getSubStatus(userId);
+      if (!sub.canUse) {
+        return res.status(402).json({
+          error: "LIMIT_REACHED",
+          plan: sub.plan,
+          missionsUsed: sub.missionsUsed,
+          limit: sub.limit,
+          message: lang === "ar"
+            ? `وصلت للحد (${sub.limit} مهمة لهذه الفترة). اشترك في Pro للمزيد.`
+            : `Limit reached (${sub.limit} missions this period). Upgrade to Pro.`,
         });
       }
 
-      // ── Subscription gate ────────────────────────────────────────────────
-      let isPro = false;
-      if (userId && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        try {
-          const sub = await getSubStatus(userId);
-          isPro = sub.isPro;
-
-          if (!sub.canUse) {
-            return res.status(402).json({
-              error: "LIMIT_REACHED",
-              plan: sub.plan,
-              missionsUsed: sub.missionsUsed,
-              limit: sub.limit,
-              message: lang === "ar"
-                ? `وصلت للحد (${sub.limit} مهمة لهذه الفترة). اشترك في Pro للمزيد.`
-                : `Limit reached (${sub.limit} missions this period). Upgrade to Pro.`,
-            });
-          }
-
-          if (!checkRate(userId, isPro ? 30 : 5)) {
-            return res.status(429).json({
-              error: lang === "ar" ? "كتير أوي في وقت قصير. انتظر قليلاً." : "Too many requests. Wait a moment.",
-            });
-          }
-        } catch (e: any) { console.warn("[SUB]", e.message); }
+      if (!checkRate(userId, sub.isPro ? 30 : 5)) {
+        return res.status(429).json({
+          error: lang === "ar" ? "كتير أوي في وقت قصير. انتظر قليلاً." : "Too many requests. Wait a moment.",
+        });
       }
 
-      // ── Prompt cache ─────────────────────────────────────────────────────
-      const ckey = (!files?.length && prompt?.length < 200)
-        ? `${missionType}:${lang}:${prompt.trim().toLowerCase().slice(0, 100)}`
-        : "";
-      if (ckey) {
-        const c = pCache.get(ckey);
-        if (c && Date.now() - c.t < CACHE_TTL) return res.json({ ...c.r, _cached: true });
-      }
-
-      // ── Build Claude message content ─────────────────────────────────────
-      const content: any[] = [];
-      const ctx = [
-        university && `University: ${university}`,
-        course && `Course: ${course}`,
-        system && `Academic System: ${system}`,
-        reference && `Reference Style: ${reference}`,
-        missionType && `Assignment Type: ${missionType}`,
-        lang === "ar" && "Language: Arabic — ALL prose in Modern Standard Arabic (فصحى). Code/math in English.",
-      ].filter(Boolean).join(" | ");
-
-      content.push({
-        type: "text",
-        text: `${ctx ? `[CONTEXT] ${ctx}\n\n` : ""}[MISSION] ${lang === "ar" ? "أجب باللغة العربية الفصحى في جميع حقول النص. " : ""}${prompt}`,
-      });
-
-      if (files?.length) {
-        for (const f of files) {
-          if (!f.data) continue;
-          if (f.isText) {
-            try { content.push({ type: "text", text: `[FILE CONTENT: ${f.name}]\n${atob(f.data)}` }); } catch {}
-          } else if (f.type === "application/pdf") {
-            content.push({ type: "document", source: { type: "base64", media_type: "application/pdf", data: f.data } });
-          } else if (["image/jpeg","image/jpg","image/png","image/gif","image/webp"].includes(f.type)) {
-            content.push({ type: "image", source: { type: "base64", media_type: f.type, data: f.data } });
-          } else {
-            content.push({ type: "text", text: `[FILE: ${f.name} (${f.type})] — incorporate this content in your solution.` });
-          }
-        }
-      }
-
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-beta": "pdfs-2024-09-25",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: isPro ? 16000 : 6000,
-          system: SYSTEM_PROMPT,
-          messages: [{ role: "user", content }],
-        }),
-      });
-
-      if (!resp.ok) {
-        const err: any = await resp.json().catch(() => ({}));
-        if (resp.status === 429) return res.status(429).json({ error: lang === "ar" ? "الخادم مشغول. حاول بعد ٣٠ ثانية." : "Busy. Retry in 30s." });
-        return res.status(resp.status).json({ error: err?.error?.message || `Claude API error ${resp.status}` });
-      }
-
-      const raw = (await resp.json() as any)?.content?.[0]?.text || "";
-      if (!raw) throw new Error("Empty response from Claude.");
-
-      let parsed: any;
-      try {
-        parsed = JSON.parse(raw.replace(/^```(?:json)?\n?/m, "").replace(/\n?```$/m, "").trim());
-      } catch {
-        const first = raw.indexOf("{"), last = raw.lastIndexOf("}");
-        if (first !== -1 && last > first) {
-          try { parsed = JSON.parse(raw.substring(first, last + 1)); } catch {}
-        }
-        if (!parsed) throw new Error(lang === "ar" ? "في مشكلة في قراءة الرد. حاول تاني." : "Response parse failed. Retry.");
-      }
-
-      if (ckey) pCache.set(ckey, { r: parsed, t: Date.now() });
-      res.json(parsed);
+      res.json({ allowed: true });
     } catch (e: any) {
-      console.error("[Mi-Assignment]", e.message);
-      res.status(500).json({ error: e.message || "Internal error" });
+      res.status(500).json({ error: e.message });
     }
   });
 
+  // ── RECORD MISSION ENDPOINT ──────────────────────────────────────────────────
+  app.post("/api/record-mission", async (req, res) => {
+    try {
+      const { userId, result, files, prompt, university, course, missionType, lang } = req.body;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-  // Look up user ID by email (used by SettingsPage owner panel)
+      const missionData = {
+        user_id: userId,
+        payload_name: files?.length > 0 ? files[0].name : (prompt?.substring(0, 80) || "Mission"),
+        university: university || null,
+        course: course || null,
+        assignment_type: result?.assignment_type || missionType || "other",
+        status: "SUCCESS",
+        summary: result?.solution_text?.substring(0, 300) || "",
+        solution_data: result,
+        lang: lang || "en",
+      };
+
+      const { data, error } = await sa().from("missions").insert(missionData).select().single();
+      if (error) throw error;
+
+      res.json({ success: true, missionId: data.id });
+    } catch (e: any) {
+      console.error("[RECORD]", e.message);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // Public mission counter (no auth)
   app.post("/api/admin/users-by-email", requireAdmin, async (req, res) => {
     try {
       const { email } = req.body;
@@ -730,7 +665,7 @@ async function startServer() {
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`\n  [Mi-Assignment] http://localhost:${PORT}`);
-    console.log(`  Claude:   ${process.env.ANTHROPIC_API_KEY ? "✓" : "✗ MISSING — set ANTHROPIC_API_KEY"}`);
+    console.log(`  Gemini:   ${process.env.GEMINI_API_KEY ? "✓" : "✗ MISSING — set GEMINI_API_KEY"}`);
     console.log(`  Supabase: ${process.env.VITE_SUPABASE_URL ? "✓" : "✗ not set"}`);
     console.log(`  Tap:      ${process.env.TAP_SECRET_KEY ? "✓" : "○ not set"}`);
     console.log(`  Webhook:  ${process.env.TAP_WEBHOOK_SECRET ? "✓ secured" : "⚠  TAP_WEBHOOK_SECRET not set (unsafe)"}`);

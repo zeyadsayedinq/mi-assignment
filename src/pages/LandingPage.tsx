@@ -18,8 +18,10 @@ function useMissionCount() {
   useEffect(() => {
     // Query Supabase directly - no backend needed
     supabase.from('missions').select('id', { count: 'exact', head: true })
-      .then(({ count: c }) => { if (c != null) setCount(c); })
-      .catch(() => {});
+      .then(
+        ({ count: c }) => { if (c != null) setCount(c); },
+        () => {}
+      );
   }, []);
   return count;
 }
@@ -113,7 +115,8 @@ export function LandingPage() {
   const go = () => navigate(session ? '/app' : '/auth');
 
   const copyLink = () => {
-    navigator.clipboard.writeText('https://www.mi-assignment.com/ref/XXXXXX').catch(() => {});
+    const host = window.location.origin;
+    navigator.clipboard.writeText(`${host}/ref/ABCDEF`).catch(() => {});
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
 
@@ -358,6 +361,41 @@ export function LandingPage() {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* REFERRAL / REWARDS */}
+      <section className="py-20 px-5 bg-gradient-to-b from-[#020617] to-[#050608]">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-gradient-to-br from-[#22D3EE]/10 via-transparent to-[#A855F7]/10 border border-white/10 rounded-3xl p-8 sm:p-12 text-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#22D3EE]/10 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#A855F7]/10 blur-3xl rounded-full -translate-x-1/2 translate-y-1/2" />
+            
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#A855F7]/20 border border-[#A855F7]/30 text-[#A855F7] text-[10px] font-bold uppercase tracking-widest mb-6">
+              <Zap className="w-3 h-3" />
+              {isAr ? 'برنامج المكافآت' : 'Rewards Program'}
+            </div>
+            
+            <h2 className="text-3xl sm:text-5xl font-black text-white mb-6">
+              {isAr ? 'عاوز حل مجاني؟' : 'Want free credits?'}
+            </h2>
+            <p className="text-gray-400 text-lg max-w-xl mx-auto mb-10 leading-relaxed">
+              {isAr ? 'شارك رابط الإحالة بتاعك مع صحابك. لما أي حد يسجّل، هتاخدوا أنتوا الاتنين ٢ مهام مجانية زيادة!' 
+                : 'Share your referral link with your classmates. When they sign up, you BOTH get 2 free missions immediately.'}
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="flex items-center gap-3 bg-black/40 border border-white/10 rounded-2xl px-5 py-4 w-full sm:w-auto">
+                <code className="text-[#22D3EE] font-mono text-sm tracking-widest">ABCDEF</code>
+                <button onClick={copyLink} className="text-gray-500 hover:text-white transition-colors">
+                  {copied ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <Copy className="w-5 h-5" />}
+                </button>
+              </div>
+              <button onClick={go} className="px-8 py-4 bg-white text-black font-black rounded-2xl hover:bg-[#22D3EE] transition-all w-full sm:w-auto">
+                {isAr ? 'احصل على رابطك' : 'Get My Link'}
+              </button>
+            </div>
           </div>
         </div>
       </section>
