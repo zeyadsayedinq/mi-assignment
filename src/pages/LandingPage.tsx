@@ -8,7 +8,7 @@ import { GlitchText } from '../components/GlitchText';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
-import { storeReferralCode } from '../lib/referral';
+import { storeReferralCode, generateReferralCode, getReferralLink } from '../lib/referral';
 import { ReferralWidget } from '../components/ReferralWidget';
 import { supabase } from '../lib/supabase';
 
@@ -98,6 +98,7 @@ export function LandingPage() {
   const { session } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
   const missionCount = useMissionCount();
 
   // Store referral code from URL
@@ -109,14 +110,23 @@ export function LandingPage() {
     if (urlRef) storeReferralCode(urlRef);
   }, []);
 
+  // Load real per-user referral code (deterministic from userId, no DB call)
+  useEffect(() => {
+    if (session?.user?.id) {
+      setReferralCode(generateReferralCode(session.user.id));
+    }
+  }, [session?.user?.id]);
+
   const TYPES = isAr ? TYPES_AR : TYPES_EN;
   const REVIEWS = isAr ? REVIEWS_AR : REVIEWS_EN;
   const FAQS = isAr ? FAQS_AR : FAQS_EN;
   const go = () => navigate(session ? '/app' : '/auth');
 
   const copyLink = () => {
-    const host = window.location.origin;
-    navigator.clipboard.writeText(`${host}/ref/ABCDEF`).catch(() => {});
+    if (!session) { navigate('/auth'); return; }
+    const code = referralCode || generateReferralCode(session.user.id);
+    const link = getReferralLink(code);
+    navigator.clipboard.writeText(link).catch(() => {});
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
 
@@ -387,7 +397,15 @@ export function LandingPage() {
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <div className="flex items-center gap-3 bg-black/40 border border-white/10 rounded-2xl px-5 py-4 w-full sm:w-auto">
-                <code className="text-[#22D3EE] font-mono text-sm tracking-widest">ABCDEF</code>
+                {session ? (
+                  <code className="text-[#22D3EE] font-mono text-sm tracking-widest">
+                    {referralCode || '------'}
+                  </code>
+                ) : (
+                  <code className="text-gray-500 font-mono text-sm tracking-widest">
+                    {isAr ? 'سجّل للحصول على كودك' : 'Sign in for your code'}
+                  </code>
+                )}
                 <button onClick={copyLink} className="text-gray-500 hover:text-white transition-colors">
                   {copied ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <Copy className="w-5 h-5" />}
                 </button>

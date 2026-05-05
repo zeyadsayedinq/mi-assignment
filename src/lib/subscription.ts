@@ -15,8 +15,8 @@ export interface SubscriptionStatus {
 
 export const PLAN_LIMITS: Record<Plan, number> = {
   free: 3,
-  pro_monthly: 15,
-  pro_quarterly: 40,
+  pro_monthly: 25,
+  pro_quarterly: 60,
   pro_yearly: 999999,
 };
 
@@ -81,9 +81,24 @@ export async function getSubscriptionStatus(userId: string, email?: string): Pro
   }
 }
 
-// Real Tap payment - needs backend, skip for now
-export async function createTapCharge(params: any): Promise<{ chargeUrl: string; chargeId: string }> {
-  throw new Error('Payment processing requires backend. Contact support.');
+// Calls /api/create-charge Netlify function which holds the Tap secret key server-side.
+// Never exposes Tap credentials to the browser.
+export async function createTapCharge(params: {
+  plan: Plan;
+  userId: string;
+  email: string;
+  currency: 'EGP' | 'SAR' | 'AED';
+}): Promise<{ chargeUrl: string; chargeId: string }> {
+  const res = await fetch('/api/create-charge', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Payment failed. Please try again or contact support via WhatsApp.');
+  }
+  return res.json();
 }
 
 export function getLocalMissionCount(userId?: string): number {

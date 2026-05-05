@@ -72,7 +72,7 @@ const CURRENCIES = [
 type Billing = 'monthly' | 'quarterly' | 'yearly';
 
 const FREE_FEATURES_AR = [
-  '٣ مهام فقط / شهر',
+  '٣ مهام مجانية للتجربة',
   'كل أنواع الواجبات',
   'عارض الشرائح',
   'مختبر الصور',
@@ -80,7 +80,7 @@ const FREE_FEATURES_AR = [
 ];
 
 const PRO_FEATURES_AR = [
-  'مهام غير محدودة ♾️',
+  '٦٠ مهمة / ترم (ربع سنوي) ♾️',
   'كل أنواع الواجبات (+٢٠ نوع)',
   'تصدير: PDF · Word (.docx) · PowerPoint (.pptx)',
   'تصدير: Excel (.xlsx) · CSV · SQL (.sql)',
@@ -96,7 +96,7 @@ const PRO_FEATURES_AR = [
 ];
 
 const FREE_FEATURES_EN = [
-  '3 missions / month',
+  '3 free missions to try',
   'All assignment types',
   'Slide deck viewer',
   'Image Lab',
@@ -104,7 +104,7 @@ const FREE_FEATURES_EN = [
 ];
 
 const PRO_FEATURES_EN = [
-  'Unlimited missions ♾️',
+  '60 missions / quarter · Unlimited on yearly ♾️',
   'All 20+ assignment types',
   'Export: PDF · Word (.docx) · PowerPoint (.pptx)',
   'Export: Excel (.xlsx) · CSV · SQL (.sql)',
@@ -304,8 +304,8 @@ export function PricingPage() {
             {sub?.plan === 'free' && (
               <p className="text-center text-[#22D3EE] text-xs font-mono mb-4">
                 {isAr
-                  ? `${sub.missionsLeft} / ٣ مهام متبقية`
-                  : `${sub.missionsLeft} / 3 missions left`}
+                  ? `${sub.missionsLeft} / ${sub.missionsLimit ?? 3} مهام متبقية`
+                  : `${sub.missionsLeft} / ${sub.missionsLimit ?? 3} missions left`}
               </p>
             )}
             {!session || !user ? (
@@ -414,12 +414,12 @@ export function PricingPage() {
         {/* FAQ for MENA students */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-4">
           {(isAr ? [
-            { q: 'الخطة ربع السنوية بتغطي إيه بالظبط؟', a: 'بتغطي ٣ شهور كاملة من المهام غير المحدودة — كافية لترم جامعي كامل.' },
+            { q: 'الخطة ربع السنوية بتغطي إيه بالظبط؟', a: 'بتغطي ٣ شهور كاملة — ٦٠ مهمة في الترم. كافية لترم جامعي كامل وبيزيد.' },
             { q: 'ينفع أدفع ببطاقة فودافون كاش؟', a: 'دلوقتي بندعم فوري وميزة في مصر، وكل بطاقات الفيزا والماستركارد.' },
             { q: 'لو ما عجبنيش أقدر أسترجع؟', a: 'تقدر تتواصل معانا خلال ٧ أيام من الاشتراك وبنرجعلك فلوسك.' },
             { q: 'Mi بيحل بالعربي؟', a: 'أيوه! لما بتختار العربي في الإعدادات، Mi بيجاوب بالعربي الفصيح.' },
           ] : [
-            { q: 'What does the quarterly plan cover?', a: 'Full 3 months of unlimited missions — covers a complete university semester.' },
+            { q: 'What does the quarterly plan cover?', a: 'Full 3 months — 60 missions per quarter. More than enough for a complete university semester.' },
             { q: 'Can I get a refund?', a: 'Yes — contact us within 7 days of subscribing for a full refund.' },
             { q: 'Does Mi respond in Arabic?', a: 'Yes! Set the language to Arabic in settings and Mi answers in Arabic.' },
             { q: 'Which universities are supported?', a: 'All universities worldwide — Cairo, AUC, GUC, CIC, KFUPM, AUS, and any global institution.' },

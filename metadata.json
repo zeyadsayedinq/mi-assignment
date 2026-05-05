@@ -1,6 +1,16 @@
 {
-  "name": "Mi-Assignment - Your Online Assignment Helper",
-  "description": "The ultimate AI-powered academic assistant for MENA students. Solve math, write essays, and complete assignments in seconds with step-by-step logic.",
+  "name": "Mi-Assignment",
+  "description": "AI-powered academic assignment solver for MENA university students. Solves essays, presentations, code, math, engineering, and research papers in seconds. Arabic-first, undetectable by AI detection tools. Free to start.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": [
+    "text_generation",
+    "file_analysis",
+    "image_generation",
+    "code_generation",
+    "document_export"
+  ],
+  "targetAudience": "University students in Egypt, Saudi Arabia, UAE, Kuwait, Jordan, Bahrain, Qatar",
+  "supportedLanguages": ["ar", "en"],
+  "category": "education",
+  "pricing": "freemium"
 }

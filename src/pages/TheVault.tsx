@@ -54,15 +54,42 @@ export function TheVault() {
 
   const load = async () => {
     setIsLoading(true);
-    const local: MissionRecord[] = JSON.parse(localStorage.getItem(vaultKey) || '[]');
-    let localAnon: MissionRecord[] = [];
+
+    // Supabase is the primary source for authenticated users.
+    // localStorage is used only as offline fallback so history
+    // survives browser clears and cross-device access.
     if (user?.id) {
-       localAnon = JSON.parse(localStorage.getItem('mi_vault_anon') || '[]');
+      try {
+        const { data, error } = await supabase
+          .from('missions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          // Sync any locally-stored anonymous missions to Supabase then clear them
+          const localAnon: MissionRecord[] = JSON.parse(localStorage.getItem('mi_vault_anon') || '[]');
+          if (localAnon.length > 0) {
+            const toSync = localAnon.map(m => ({ ...m, user_id: user.id }));
+            await supabase.from('missions').upsert(toSync, { onConflict: 'id' }).then(() => {
+              localStorage.removeItem('mi_vault_anon');
+            }, () => {});
+          }
+
+          setMissions(data);
+          // Keep localStorage in sync as offline cache
+          localStorage.setItem(vaultKey, JSON.stringify(data));
+          setIsLoading(false);
+          return;
+        }
+      } catch {}
     }
-    let supa: MissionRecord[] = [];
-    try { if (user?.id) { const { data } = await supabase.from('missions').select('*').eq('user_id', user.id).order('created_at', { ascending: false }); if (data) supa = data; } } catch {}
+
+    // Fallback: use localStorage cache (offline or unauthenticated)
+    const local: MissionRecord[] = JSON.parse(localStorage.getItem(vaultKey) || '[]');
+    const localAnon: MissionRecord[] = JSON.parse(localStorage.getItem('mi_vault_anon') || '[]');
     const map = new Map<string, MissionRecord>();
-    [...local, ...localAnon, ...supa].forEach(m => { if (!map.has(m.id)) map.set(m.id, m); });
+    [...local, ...localAnon].forEach(m => { if (!map.has(m.id)) map.set(m.id, m); });
     setMissions(Array.from(map.values()).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
     setIsLoading(false);
   };
