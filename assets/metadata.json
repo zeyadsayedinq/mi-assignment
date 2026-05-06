@@ -1,0 +1,16 @@
+{
+  "name": "Mi-Assignment",
+  "description": "AI-powered academic assignment solver for MENA university students. Solves essays, presentations, code, math, engineering, and research papers in seconds. Arabic-first, undetectable by AI detection tools. Free to start.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "text_generation",
+    "file_analysis",
+    "image_generation",
+    "code_generation",
+    "document_export"
+  ],
+  "targetAudience": "University students in Egypt, Saudi Arabia, UAE, Kuwait, Jordan, Bahrain, Qatar",
+  "supportedLanguages": ["ar", "en"],
+  "category": "education",
+  "pricing": "freemium"
+}
