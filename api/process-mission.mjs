@@ -8,114 +8,94 @@ function setCORS(res) {
   Object.entries(CORS).forEach(([k, v]) => res.setHeader(k, v));
 }
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Content-Type': 'application/json',
-};
-
-const SYSTEM_PROMPT = `You are Mi-Assignment — a world-class academic AI that produces complete, submission-ready solutions for ANY university assignment. You write authentically like a real student, never like an AI.
-
-═══ ABSOLUTE RULES ═══
-1. Return ONE valid JSON object only. Zero markdown outside JSON. Zero preamble. Nothing before the opening {. Nothing after the closing }.
-2. NEVER truncate. NEVER use placeholders. Every section must be fully written.
-3. Write like a real student: engaged, earnest, occasionally imperfect. NOT like a textbook.
-4. BANNED PHRASES: "It is worth noting", "Delve into", "Shed light on", "Multifaceted", "Pivotal", "Leveraging", "It is evident that", "In today's rapidly changing world".
-5. When lang=ar: ALL prose in Modern Standard Arabic (فصحى). Code/math stay in English.
-6. LANGUAGE RULE: Detect the language of [ASSIGNMENT] text. English prompt → English response. Arabic prompt → Arabic response.
-7. For math/physics/engineering: full step-by-step working with LaTeX in steps array and math blocks.
-8. For code: complete runnable code with comments. Never pseudocode.
-9. For presentations: exactly 10 slides minimum, never fewer. Every slide needs power_heading, 5+ content_bullets, narrative, speaker_notes, image_prompt.
-10. For essays: Introduction, 3+ body sections, Conclusion, References. Minimum 800 words.
-
-═══ JSON OUTPUT SCHEMA ═══
-{
-  "solution_text": "2-3 casual sentences summarizing what was done",
-  "assignment_type": "essay|report|case_study|presentation|research_paper|math|physics|engineering|chemistry|biology|computer_science|data_analysis|sql_database|business_plan|lab_report|literature_review|other",
-  "reconstructed_doc": {
-    "title": "Full title",
-    "word_count": 0,
-    "blocks": [
-      { "type": "heading", "content": "text", "level": 1 },
-      { "type": "paragraph", "content": "full text" },
-      { "type": "list", "content": "Item 1\nItem 2" },
-      { "type": "math", "content": "LaTeX", "solution_steps": ["Step 1"] },
-      { "type": "code", "content": "// code", "language": "python" },
-      { "type": "table", "headers": ["Col1"], "rows": [["val"]] },
-      { "type": "svg", "content": "<svg>...</svg>" }
-    ]
-  },
-  "presentation_slides": [
-    {
-      "power_heading": "Title",
-      "content_bullets": ["Point 1","Point 2","Point 3","Point 4","Point 5"],
-      "narrative": "2-3 sentences",
-      "speaker_notes": "Full speech 60-90 seconds",
-      "image_prompt": "Specific visual",
-      "image_layout": "left"
-    }
-  ],
-  "data_sheet": { "sheet_name": "Name", "headers": ["Col"], "rows": [["val"]] },
-  "code_snippets": [{ "language": "python", "filename": "main.py", "code": "# code", "explanation": "desc" }],
-  "steps": [{ "title": "Step 1", "content": "Full working shown" }]
-}`;
-
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-function parseResponse(text) {
-  if (!text || text.trim().startsWith('<!') || text.trim().startsWith('<html')) {
-    throw new Error('RETRYABLE');
-  }
-  let clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
-  const first = clean.indexOf('{'), last = clean.lastIndexOf('}');
-  if (first === -1) throw new Error('RETRYABLE');
-  clean = clean.slice(first, last + 1);
-  try { return JSON.parse(clean); } catch {}
-  try { return JSON.parse(clean.replace(/,(\s*[}\]])/g, '$1')); } catch (e) {
-    throw new Error('Parse failed: ' + e.message);
-  }
-}
-
-
 async function parseBody(req) {
-  if (req.body && typeof req.body === 'object') return req.body; // already parsed
-  return new Promise((resolve, reject) => {
+  if (req.body && typeof req.body === 'object') return req.body;
+  return new Promise((resolve) => {
     let data = '';
-    req.on('data', chunk => { data += chunk; });
+    req.on('data', chunk => { data += chunk.toString(); });
     req.on('end', () => {
       try { resolve(data ? JSON.parse(data) : {}); }
       catch { resolve({}); }
     });
-    req.on('error', reject);
+    req.on('error', () => resolve({}));
   });
 }
 
+const SYSTEM_PROMPT = `You are Mi-Assignment — a world-class academic AI that produces complete, submission-ready solutions for ANY university assignment. You write authentically like a real student, never like an AI.
+
+RULES:
+1. Return ONE valid JSON object only. Nothing before {. Nothing after }.
+2. NEVER truncate. Every section must be fully written.
+3. LANGUAGE RULE: If the assignment text is in English, respond in English. If Arabic, respond in Arabic.
+4. For presentations: exactly 10 slides minimum, never fewer.
+5. For essays: minimum 800 words, with Introduction, body sections, Conclusion, References.
+6. For math/engineering: show full step-by-step working.
+7. For code: complete runnable code with comments.
+
+JSON SCHEMA:
+{
+  "solution_text": "2-3 sentence summary",
+  "assignment_type": "essay|report|case_study|presentation|research_paper|math|physics|engineering|chemistry|biology|computer_science|data_analysis|sql_database|business_plan|lab_report|other",
+  "reconstructed_doc": {
+    "title": "title",
+    "word_count": 0,
+    "blocks": [
+      {"type": "heading", "content": "text", "level": 1},
+      {"type": "paragraph", "content": "text"},
+      {"type": "list", "content": "item1\nitem2"},
+      {"type": "math", "content": "LaTeX", "solution_steps": ["step1"]},
+      {"type": "code", "content": "code", "language": "python"},
+      {"type": "table", "headers": ["col1"], "rows": [["val1"]]},
+      {"type": "svg", "content": "<svg>...</svg>"}
+    ]
+  },
+  "presentation_slides": [
+    {
+      "power_heading": "title",
+      "content_bullets": ["point1","point2","point3","point4","point5"],
+      "narrative": "2-3 sentences",
+      "speaker_notes": "full speech",
+      "image_prompt": "visual description",
+      "image_layout": "left"
+    }
+  ],
+  "data_sheet": {"sheet_name": "name", "headers": ["col"], "rows": [["val"]]},
+  "code_snippets": [{"language": "python", "filename": "main.py", "code": "# code", "explanation": "desc"}],
+  "steps": [{"title": "Step 1", "content": "explanation"}]
+}`;
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
 export default async function handler(req, res) {
-  Object.entries(CORS).forEach(([k, v]) => res.setHeader(k, v));
+  setCORS(res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end('Method Not Allowed');
 
-  // Try all possible env var names for the Gemini key
-  const GEMINI_KEY =
-    process.env.GEMINI_API_KEY ||
-    process.env.VITE_GEMINI_API_KEY ||
-    process.env.GEMINI_KEY ||
-    process.env.GOOGLE_AI_API_KEY;
-
-  if (!GEMINI_KEY) {
-    return res.status(500).json({
-      error: 'Gemini API key not configured. Add GEMINI_API_KEY to Vercel environment variables.',
-    });
-  }
-
   try {
-    const { contents, lang } = await parseBody(req);
-    if (!contents || !Array.isArray(contents)) {
-      return res.status(400).json({ error: 'Missing contents array' });
+    // Try all possible env var names
+    const GEMINI_KEY =
+      process.env.GEMINI_API_KEY ||
+      process.env.VITE_GEMINI_API_KEY ||
+      process.env.GEMINI_KEY;
+
+    if (!GEMINI_KEY) {
+      return res.status(500).json({
+        error: 'GEMINI_API_KEY not set in Vercel environment variables. Go to Vercel → Settings → Environment Variables and add it.'
+      });
     }
 
+    // Parse body
+    const body = await parseBody(req);
+    const { contents, lang } = body;
+
+    if (!contents || !Array.isArray(contents) || contents.length === 0) {
+      return res.status(400).json({
+        error: `Missing or empty contents array. Received: ${JSON.stringify(body).slice(0, 100)}`
+      });
+    }
+
+    // Call Gemini with retries
     const DELAYS = [8000, 20000];
     let result = null;
     let lastError = '';
@@ -132,39 +112,62 @@ export default async function handler(req, res) {
             body: JSON.stringify({
               system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
               contents: [{ role: 'user', parts: contents }],
-              generationConfig: { temperature: 0.7, responseMimeType: 'application/json' },
+              generationConfig: {
+                temperature: 0.7,
+                responseMimeType: 'application/json',
+              },
             }),
           }
         );
 
         if (geminiRes.status === 503 || geminiRes.status === 429) {
-          lastError = `Gemini ${geminiRes.status}`;
+          lastError = `Gemini busy (${geminiRes.status})`;
           if (attempt < 2) continue;
           return res.status(503).json({ error: 'AI service busy. Please try again in a moment.' });
         }
 
         if (!geminiRes.ok) {
-          const errBody = await geminiRes.text();
-          lastError = `Gemini error ${geminiRes.status}`;
-          console.error('Gemini error:', errBody.slice(0, 300));
+          const errText = await geminiRes.text();
+          lastError = `Gemini ${geminiRes.status}: ${errText.slice(0, 200)}`;
+          console.error('Gemini error:', lastError);
           if (attempt < 2) continue;
-          return res.status(500).json({ error: 'AI request failed. Please try again.' });
+          return res.status(500).json({ error: `AI request failed: ${lastError}` });
         }
 
         const geminiData = await geminiRes.json();
         const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        result = parseResponse(rawText);
-        break;
+
+        if (!rawText || rawText.trim().startsWith('<!') || rawText.trim().startsWith('<html')) {
+          lastError = 'Got HTML instead of JSON from Gemini';
+          if (attempt < 2) continue;
+          throw new Error(lastError);
+        }
+
+        // Parse JSON
+        let clean = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+        const first = clean.indexOf('{');
+        const last = clean.lastIndexOf('}');
+        if (first === -1) throw new Error('No JSON object in response');
+        clean = clean.slice(first, last + 1);
+
+        try { result = JSON.parse(clean); }
+        catch {
+          try { result = JSON.parse(clean.replace(/,(\s*[}\]])/g, '$1')); }
+          catch (pe) { throw new Error(`JSON parse failed: ${pe.message}`); }
+        }
+
+        break; // success
 
       } catch (e) {
         lastError = e.message || '';
-        const retryable = lastError.includes('RETRYABLE') || lastError.includes('503') || lastError.includes('429');
+        const retryable = lastError.includes('503') || lastError.includes('429') || lastError.includes('busy') || lastError.includes('HTML');
         if (!retryable || attempt === 2) throw e;
       }
     }
 
-    if (!result) return res.status(503).json({ error: lastError || 'AI failed after 3 attempts. Please try again.' });
+    if (!result) return res.status(503).json({ error: lastError || 'AI failed. Please try again.' });
 
+    // Fill defaults
     if (!result.solution_text) result.solution_text = '';
     if (!result.assignment_type) result.assignment_type = 'other';
     if (!result.reconstructed_doc) result.reconstructed_doc = { title: '', word_count: 0, blocks: [] };
@@ -176,7 +179,8 @@ export default async function handler(req, res) {
     return res.status(200).json(result);
 
   } catch (e) {
-    console.error('process-mission error:', e.message);
-    return res.status(500).json({ error: e.message || 'Mission failed. Please try again.' });
+    const msg = e?.message || String(e) || 'Unknown error';
+    console.error('process-mission FATAL:', msg);
+    return res.status(500).json({ error: msg });
   }
 }
