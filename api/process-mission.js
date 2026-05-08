@@ -21,153 +21,130 @@ async function parseBody(req) {
   });
 }
 
-const SYSTEM_PROMPT = `You are Mi-Assignment — a world-class academic AI that produces complete, submission-ready solutions for ANY university assignment. You write authentically like a real student, never like an AI.
+const SYSTEM_PROMPT = `You are Mi-Assignment — a world-class academic AI producing complete, submission-ready university assignment solutions. Write like a real student, never like an AI.
 
 RULES:
 1. Return ONE valid JSON object only. Nothing before {. Nothing after }.
-2. NEVER truncate. Every section must be fully written.
-3. LANGUAGE RULE: If the assignment text is in English, respond in English. If Arabic, respond in Arabic.
-4. For presentations: exactly 10 slides minimum, never fewer.
-5. For essays: minimum 800 words, with Introduction, body sections, Conclusion, References.
-6. For math/engineering: show full step-by-step working.
-7. For code: complete runnable code with comments.
+2. NEVER truncate. Every field must be fully written.
+3. LANGUAGE: If assignment text is English respond in English. If Arabic respond in Arabic.
+4. Presentations: exactly 10 slides minimum, never fewer.
+5. Essays: minimum 800 words, Introduction + body sections + Conclusion + References.
+6. Math/engineering: full step-by-step working with LaTeX notation.
+7. Code: complete runnable code with comments, never pseudocode.
 
 JSON SCHEMA:
 {
-  "solution_text": "2-3 sentence summary",
+  "solution_text": "2-3 sentence summary in student voice",
   "assignment_type": "essay|report|case_study|presentation|research_paper|math|physics|engineering|chemistry|biology|computer_science|data_analysis|sql_database|business_plan|lab_report|other",
   "reconstructed_doc": {
-    "title": "title",
+    "title": "Assignment title",
     "word_count": 0,
     "blocks": [
-      {"type": "heading", "content": "text", "level": 1},
-      {"type": "paragraph", "content": "text"},
-      {"type": "list", "content": "item1\nitem2"},
-      {"type": "math", "content": "LaTeX", "solution_steps": ["step1"]},
-      {"type": "code", "content": "code", "language": "python"},
-      {"type": "table", "headers": ["col1"], "rows": [["val1"]]},
-      {"type": "svg", "content": "<svg>...</svg>"}
+      {"type": "heading", "content": "Section Title", "level": 1},
+      {"type": "paragraph", "content": "Full paragraph text"},
+      {"type": "list", "content": "Item 1\nItem 2\nItem 3"},
+      {"type": "math", "content": "LaTeX expression", "solution_steps": ["Step 1", "Step 2"]},
+      {"type": "code", "content": "# full code", "language": "python"},
+      {"type": "table", "headers": ["Col1","Col2"], "rows": [["v1","v2"]]},
+      {"type": "svg", "content": "<svg viewBox='0 0 400 200'>...</svg>"}
     ]
   },
   "presentation_slides": [
     {
-      "power_heading": "title",
-      "content_bullets": ["point1","point2","point3","point4","point5"],
+      "power_heading": "Slide Title",
+      "content_bullets": ["Point 1","Point 2","Point 3","Point 4","Point 5"],
       "narrative": "2-3 sentences",
-      "speaker_notes": "full speech",
-      "image_prompt": "visual description",
+      "speaker_notes": "Full 60-90 second speech",
+      "image_prompt": "Specific visual description",
       "image_layout": "left"
     }
   ],
-  "data_sheet": {"sheet_name": "name", "headers": ["col"], "rows": [["val"]]},
+  "data_sheet": {"sheet_name": "Name", "headers": ["Col"], "rows": [["val"]]},
   "code_snippets": [{"language": "python", "filename": "main.py", "code": "# code", "explanation": "desc"}],
-  "steps": [{"title": "Step 1", "content": "explanation"}]
+  "steps": [{"title": "Step 1", "content": "Full working shown"}]
 }`;
-
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 export default async function handler(req, res) {
   setCORS(res);
-
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end('Method Not Allowed');
 
   try {
-    // Try all possible env var names
     const GEMINI_KEY =
       process.env.GEMINI_API_KEY ||
       process.env.VITE_GEMINI_API_KEY ||
       process.env.GEMINI_KEY;
 
     if (!GEMINI_KEY) {
-      return res.status(500).json({
-        error: 'GEMINI_API_KEY not set in Vercel environment variables. Go to Vercel → Settings → Environment Variables and add it.'
-      });
+      return res.status(500).json({ error: 'GEMINI_API_KEY not configured in Vercel environment variables.' });
     }
 
-    // Parse body
     const body = await parseBody(req);
     const { contents, lang } = body;
 
     if (!contents || !Array.isArray(contents) || contents.length === 0) {
-      return res.status(400).json({
-        error: `Missing or empty contents array. Received: ${JSON.stringify(body).slice(0, 100)}`
-      });
+      return res.status(400).json({ error: 'Missing contents array' });
     }
 
-    // Call Gemini with retries
-    const DELAYS = [8000, 20000];
-    let result = null;
-    let lastError = '';
+    // Single attempt — no retry delays eating the 60s budget
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          contents: [{ role: 'user', parts: contents }],
+          generationConfig: {
+            temperature: 0.7,
+            responseMimeType: 'application/json',
+            maxOutputTokens: 8192,
+          },
+        }),
+      }
+    );
 
-    for (let attempt = 0; attempt < 3; attempt++) {
-      if (attempt > 0) await sleep(DELAYS[attempt - 1]);
+    if (geminiRes.status === 503 || geminiRes.status === 429) {
+      return res.status(503).json({ error: 'AI service busy. Please try again in a moment.' });
+    }
 
-      try {
-        const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-              contents: [{ role: 'user', parts: contents }],
-              generationConfig: {
-                temperature: 0.7,
-                responseMimeType: 'application/json',
-              },
-            }),
-          }
-        );
+    if (geminiRes.status === 403) {
+      const errData = await geminiRes.json().catch(() => ({}));
+      return res.status(403).json({ error: `API key error: ${errData?.error?.message || 'Invalid or revoked API key.'}` });
+    }
 
-        if (geminiRes.status === 503 || geminiRes.status === 429) {
-          lastError = `Gemini busy (${geminiRes.status})`;
-          if (attempt < 2) continue;
-          return res.status(503).json({ error: 'AI service busy. Please try again in a moment.' });
-        }
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      console.error('Gemini error:', geminiRes.status, errText.slice(0, 300));
+      return res.status(500).json({ error: `AI request failed (${geminiRes.status}). Please try again.` });
+    }
 
-        if (!geminiRes.ok) {
-          const errText = await geminiRes.text();
-          lastError = `Gemini ${geminiRes.status}: ${errText.slice(0, 200)}`;
-          console.error('Gemini error:', lastError);
-          if (attempt < 2) continue;
-          return res.status(500).json({ error: `AI request failed: ${lastError}` });
-        }
+    const geminiData = await geminiRes.json();
+    const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-        const geminiData = await geminiRes.json();
-        const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (!rawText || rawText.trim().startsWith('<!') || rawText.trim().startsWith('<html')) {
+      return res.status(503).json({ error: 'AI service returned an error. Please try again.' });
+    }
 
-        if (!rawText || rawText.trim().startsWith('<!') || rawText.trim().startsWith('<html')) {
-          lastError = 'Got HTML instead of JSON from Gemini';
-          if (attempt < 2) continue;
-          throw new Error(lastError);
-        }
+    // Parse JSON safely
+    let clean = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+    const first = clean.indexOf('{');
+    const last = clean.lastIndexOf('}');
+    if (first === -1) {
+      return res.status(500).json({ error: 'AI response was not valid JSON. Please try again.' });
+    }
+    clean = clean.slice(first, last + 1);
 
-        // Parse JSON
-        let clean = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
-        const first = clean.indexOf('{');
-        const last = clean.lastIndexOf('}');
-        if (first === -1) throw new Error('No JSON object in response');
-        clean = clean.slice(first, last + 1);
-
-        try { result = JSON.parse(clean); }
-        catch {
-          try { result = JSON.parse(clean.replace(/,(\s*[}\]])/g, '$1')); }
-          catch (pe) { throw new Error(`JSON parse failed: ${pe.message}`); }
-        }
-
-        break; // success
-
-      } catch (e) {
-        lastError = e.message || '';
-        const retryable = lastError.includes('503') || lastError.includes('429') || lastError.includes('busy') || lastError.includes('HTML');
-        if (!retryable || attempt === 2) throw e;
+    let result;
+    try { result = JSON.parse(clean); }
+    catch {
+      try { result = JSON.parse(clean.replace(/,(\s*[}\]])/g, '$1')); }
+      catch (e) {
+        return res.status(500).json({ error: `Response parse failed: ${e.message}` });
       }
     }
 
-    if (!result) return res.status(503).json({ error: lastError || 'AI failed. Please try again.' });
-
-    // Fill defaults
+    // Fill defaults so UI never crashes
     if (!result.solution_text) result.solution_text = '';
     if (!result.assignment_type) result.assignment_type = 'other';
     if (!result.reconstructed_doc) result.reconstructed_doc = { title: '', word_count: 0, blocks: [] };
@@ -179,8 +156,7 @@ export default async function handler(req, res) {
     return res.status(200).json(result);
 
   } catch (e) {
-    const msg = e?.message || String(e) || 'Unknown error';
-    console.error('process-mission FATAL:', msg);
-    return res.status(500).json({ error: msg });
+    console.error('process-mission FATAL:', e.message);
+    return res.status(500).json({ error: e.message || 'Mission failed. Please try again.' });
   }
 }
