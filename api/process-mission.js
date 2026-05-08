@@ -296,15 +296,32 @@ export default async function handler(req, res) {
 
     let clean = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
     const first = clean.indexOf('{');
-    const last = clean.lastIndexOf('}');
     if (first === -1) return res.status(500).json({ error: 'AI response was not valid JSON. Please try again.' });
+    
+    // Find the matching closing brace using bracket counting (not lastIndexOf)
+    // This handles cases where Gemini appends text after the JSON object
+    let depth = 0, last = -1;
+    for (let i = first; i < clean.length; i++) {
+      if (clean[i] === '{') depth++;
+      else if (clean[i] === '}') {
+        depth--;
+        if (depth === 0) { last = i; break; }
+      }
+    }
+    if (last === -1) return res.status(500).json({ error: 'Incomplete JSON response. Please try again.' });
     clean = clean.slice(first, last + 1);
 
     let result;
     try { result = JSON.parse(clean); }
     catch {
       try { result = JSON.parse(clean.replace(/,(\s*[}\]])/g, '$1')); }
-      catch (e) { return res.status(500).json({ error: `Response parse failed: ${e.message}` }); }
+      catch {
+        // Last resort: truncate at last valid position
+        try {
+          const truncated = clean.substring(0, clean.lastIndexOf('},') + 1) + '}';
+          result = JSON.parse(truncated);
+        } catch (e) { return res.status(500).json({ error: `Response parse failed: ${e.message}` }); }
+      }
     }
 
     if (!result.solution_text) result.solution_text = '';
