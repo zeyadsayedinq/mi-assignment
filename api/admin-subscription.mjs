@@ -15,6 +15,20 @@ const CORS = {
 
 const OWNER_EMAILS = ['zeyadsayedinq@gmail.com', 'ranafaraj30@gmail.com'];
 
+
+async function parseBody(req) {
+  if (req.body && typeof req.body === 'object') return req.body; // already parsed
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => {
+      try { resolve(data ? JSON.parse(data) : {}); }
+      catch { resolve({}); }
+    });
+    req.on('error', reject);
+  });
+}
+
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { setCORS(res); return res.status(200).end(); }
 
@@ -42,7 +56,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const { plan, action, days } = req.body;
+      const { plan, action, days } = await parseBody(req);
 
       if (action === 'revoke' || plan === 'free') {
         await supabase.from('subscriptions').upsert(

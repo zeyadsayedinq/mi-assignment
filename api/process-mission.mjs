@@ -77,6 +77,20 @@ function parseResponse(text) {
   }
 }
 
+
+async function parseBody(req) {
+  if (req.body && typeof req.body === 'object') return req.body; // already parsed
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => {
+      try { resolve(data ? JSON.parse(data) : {}); }
+      catch { resolve({}); }
+    });
+    req.on('error', reject);
+  });
+}
+
 export default async function handler(req, res) {
   Object.entries(CORS).forEach(([k, v]) => res.setHeader(k, v));
 
@@ -97,7 +111,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { contents, lang } = req.body;
+    const { contents, lang } = await parseBody(req);
     if (!contents || !Array.isArray(contents)) {
       return res.status(400).json({ error: 'Missing contents array' });
     }
