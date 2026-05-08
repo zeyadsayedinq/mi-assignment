@@ -256,7 +256,9 @@ export function ResultsDashboard({ data, onReset, missionMeta }: ResultsProps) {
       {data.solution_text && (
         <div className="bg-[#0A0B0E] border border-gray-800 rounded-xl px-5 py-4">
           <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-2">{isAr ? 'الملخص' : 'Executive Summary'}</p>
-          <MiMarkdown content={data.solution_text} />
+          <div className="break-words overflow-hidden" dir={isAr ? 'rtl' : 'ltr'}>
+            <MiMarkdown content={data.solution_text} />
+          </div>
         </div>
       )}
 
@@ -309,7 +311,7 @@ export function ResultsDashboard({ data, onReset, missionMeta }: ResultsProps) {
                 {doc.blocks?.map((block: any, i: number) => (
                   <div key={i}>
                     {block.type === 'heading' && <h3 className="text-white font-bold text-lg mt-5 first:mt-0 border-s-4 border-[#22D3EE] ps-4">{block.content}</h3>}
-                    {block.type === 'paragraph' && <MiMarkdown content={block.content} />}
+                    {block.type === 'paragraph' && <div className="break-words" dir={isAr ? 'rtl' : 'ltr'}><MiMarkdown content={block.content} /></div>}
                     {block.type === 'list' && (
                       <div className="space-y-1.5 pl-4">
                         <MiMarkdown content={(Array.isArray(block.content) ? block.content.map((it: string) => `- ${it}`).join('\n') : block.content)} />

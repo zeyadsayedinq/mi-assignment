@@ -69,7 +69,7 @@ export function SlideViewer({ slides, title, onClose }: SlideViewerProps) {
       <div className="h-11 flex items-center justify-between px-5 border-b border-white/[0.06] shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 rounded-full" style={{ background: accentColor }} />
-          <span className="text-white/60 font-mono text-xs uppercase tracking-widest truncate max-w-xs">
+          <span className="text-white/60 text-xs font-medium truncate max-w-xs">
             {title || 'Presentation'}
           </span>
           {slide?.slide_type && (
@@ -137,7 +137,8 @@ export function SlideViewer({ slides, title, onClose }: SlideViewerProps) {
             )}
 
             {/* Main text area */}
-            <div className={cn("flex-1 flex flex-col justify-center px-12 py-10 relative z-10 overflow-y-auto",
+            <div dir={(slide?.power_heading || "").split("").some(c => c >= "؀" && c <= "ۿ") ? "rtl" : "ltr"}
+            className={cn("flex-1 flex flex-col justify-center px-12 py-10 relative z-10 overflow-y-auto",
               hasImage && layout === 'left' && "pl-8",
               hasImage && layout === 'right' && "pr-8"
             )}>

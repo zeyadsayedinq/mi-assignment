@@ -68,7 +68,7 @@ OUTPUT REQUIREMENTS FOR MATH/STATS:
   }
 
   // Business / Management
-  if (/pestel|swot|porter|business plan|marketing strategy|competitive analysis|market analysis|financial model|cash flow|npv|irr|break.even|stakeholder|supply chain|balanced scorecard/.test(text)) {
+  if (/pestel|swot|porter|business plan|marketing strategy|competitive analysis|market analysis|financial model|cash flow|npv|irr|break.even|stakeholder|supply chain|balanced scorecard|خطة أعمال|تحليل|استراتيجية|سوق|تسويق|ربحية|استثمار/.test(text)) {
     return {
       domain: 'BUSINESS',
       rules: `BUSINESS DOMAIN:
@@ -80,16 +80,24 @@ OUTPUT REQUIREMENTS FOR MATH/STATS:
     };
   }
 
-  // Law
-  if (/contract|tort|liability|negligence|jurisdiction|statute|plaintiff|defendant|case law|legal|legislation|breach|damages|constitutional/.test(text)) {
+  // Law (English + Arabic keywords)
+  if (/contract|tort|liability|negligence|jurisdiction|statute|plaintiff|defendant|case law|legal|legislation|breach|damages|constitutional|intellectual property|عقد|مسئولية|قانون|محكمة|دعوى|قضائية|تشريع|عدول|ضمان|تعويض|بند|نزاع|حماية المستهلك|مدني|جنائي|براءة|ملكية فكرية|استئناف|حكم|شريعة/.test(text)) {
     return {
       domain: 'LAW',
-      rules: `LAW DOMAIN: IRAC structure for every legal question. Cite case law [Name, Year]. Exact statute section numbers. State legal position directly.`
+      rules: `LAW DOMAIN ACTIVATED:
+- Structure every legal argument using IRAC: Issue → Rule → Application → Conclusion
+- Cite specific article/clause numbers (e.g. "المادة ١٧ من القانون رقم ١٨١ لسنة ٢٠١٨")
+- Cite case law with [Court, Case Number, Year] format
+- Distinguish between facts and legal principles clearly
+- Draft any required legal documents (notices, complaints) with proper formal structure
+- State legal positions directly — never hedge with "it could be argued"
+- For Egyptian law: reference specific laws by number and year
+- Output language follows input language (Arabic in → Arabic out)`
     };
   }
 
   // Medical
-  if (/patient|diagnosis|treatment|clinical|nursing|pharmacy|drug|dosage|symptom|pathophysiology|anatomy|medical|healthcare|care plan|pharmacology/.test(text)) {
+  if (/patient|diagnosis|treatment|clinical|nursing|pharmacy|drug|dosage|symptom|pathophysiology|anatomy|medical|healthcare|care plan|pharmacology|مريض|تشخيص|علاج|دواء|جرعة|مستشفى|رعاية|تمريض|صيدلة/.test(text)) {
     return {
       domain: 'MEDICAL',
       rules: `MEDICAL DOMAIN: Clinical terminology. Evidence-based. ADPIE for care plans. Drug: generic name, dose, route, frequency, contraindications.`
