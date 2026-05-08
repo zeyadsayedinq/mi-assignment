@@ -21,232 +21,207 @@ async function parseBody(req) {
   });
 }
 
-// ─── SUBJECT ROUTER ────────────────────────────────────────────────────────
-// Detects domain from prompt and injects domain-specific intelligence
+// ─── SUBJECT ROUTER V3.1 ────────────────────────────────────────────────────
 function buildSubjectContext(contents) {
   const text = contents.map(c => c.text || '').join(' ').toLowerCase();
 
-  // STEM — Engineering
-  if (/reinforced concrete|beam|slab|column|ecp|moment|shear|rebar|rcc|structural|foundation|steel design|load combination|dead load|live load|kn\/m|mpa|egyptian code|aci 318|eurocode|bs 8110/.test(text)) {
+  // STEM — Math / Statistics / Calculus (check BEFORE engineering)
+  if (/calculus|integral|derivative|differentiat|marginal|optimization|maximiz|minimiz|profit function|cost function|demand function|correlation|standard deviation|regression|statistics|probability|hypothesis|normal distribution|binomial|poisson|variance|covariance|pearson|spearman|t-test|chi.square|anova|forecasting|predictive model|linear model|matrix|eigenvalue|fourier|laplace/.test(text)) {
     return {
-      domain: 'ENGINEERING',
-      rules: `ENGINEERING DOMAIN ACTIVATED:
-- Apply Egyptian Code ECP 203 by default unless another code is specified (ACI 318, Eurocode 2, BS 8110)
-- Every calculation must show: Given → Find → Solution → Check
-- LaTeX for all formulas. Units must be consistent (kN, m, MPa)
-- Draw SVG cross-sections with reinforcement details, dimension lines, and bar labels (e.g. 3Ø16)
-- Include a Results Table summarizing all design outputs
-- Safety factor checks are mandatory
-- Reference specific code clause numbers (e.g. ECP 203 §4.2.1)`
+      domain: 'MATH_STATS',
+      rules: `MATHEMATICS & STATISTICS DOMAIN ACTIVATED:
+
+CALCULUS RULES:
+- Show every algebraic step. Never skip. Never say "it can be shown."
+- Derive, don't state. Box final answers: \\boxed{x = 267}
+- For optimization: Given → Find → Revenue → Cost → Profit → Differentiate → Set to zero → Verify with second derivative
+- If a dataset is referenced but not provided, GENERATE realistic synthetic data that fits the problem context
+
+STATISTICS RULES:
+- If 24 months of data is needed but not provided: GENERATE the dataset. Create a realistic table with 24 rows of (Month, Distance_km, Price_per_sqm) data.
+- Calculate ALL statistics with actual numbers shown: mean, deviations, squared deviations, sum of squares
+- Show the Pearson formula with actual substituted values, not just the formula
+- Standard deviation: show every step — mean → deviations → squared deviations → sum → divide → sqrt
+- Interpret every result in context: what does r=-0.88 mean for THIS project, for THIS investor?
+
+OUTPUT REQUIREMENTS FOR MATH/STATS:
+- Minimum 15 blocks in reconstructed_doc
+- Every math block must have full solution_steps array (minimum 5 steps each)
+- The table block must contain ACTUAL data (24 rows for this assignment)
+- The interpretation paragraph must be specific, not generic`
     };
   }
 
-  // STEM — Math / Physics / Chemistry
-  if (/calculus|integral|derivative|differential equation|matrix|eigenvalue|fourier|laplace|probability|statistics|mechanics|thermodynamics|quantum|organic chemistry|reaction|stoichiometry|circuit|kirchhoff|ohm/.test(text)) {
+  // STEM — Engineering (structural/civil/mechanical)
+  if (/reinforced concrete|beam|slab|column|ecp|structural|foundation|steel design|load combination|dead load|live load|kn\/m|mpa|egyptian code|aci 318|eurocode|bs 8110|moment distribution|shear force|bending/.test(text)) {
     return {
-      domain: 'STEM',
-      rules: `STEM DOMAIN ACTIVATED:
-- Show every step. Never skip algebra. Never say "it can be shown that"
-- LaTeX for all math. Use \\frac{}{}, \\int, \\sum, \\vec{} properly
-- Box final answers clearly: \\boxed{}
-- Include numerical verification where possible
-- For physics: draw free body diagrams as SVG
-- For chemistry: balance equations and show mole calculations step by step`
+      domain: 'ENGINEERING',
+      rules: `STRUCTURAL ENGINEERING DOMAIN:
+- Apply Egyptian Code ECP 203 by default unless specified
+- Every calculation: Given → Find → Solution → Check
+- LaTeX for all formulas, consistent units (kN, m, MPa)
+- Draw SVG cross-sections with reinforcement details, dimension lines, bar labels
+- Include Results Table summarizing all design outputs
+- Safety factor checks mandatory
+- Reference specific code clause numbers`
     };
   }
 
   // Business / Management
-  if (/pestel|swot|porter|business plan|marketing|strategy|competitive|market analysis|financial model|cash flow|npv|irr|break.even|stakeholder|management|operations|supply chain|mba|balanced scorecard/.test(text)) {
+  if (/pestel|swot|porter|business plan|marketing strategy|competitive analysis|market analysis|financial model|cash flow|npv|irr|break.even|stakeholder|supply chain|balanced scorecard/.test(text)) {
     return {
       domain: 'BUSINESS',
-      rules: `BUSINESS DOMAIN ACTIVATED:
-- Apply McKinsey/BCG consulting standards: data-driven, insight-first
-- Every claim needs a number, a source reference, or a logical deduction
-- PESTEL/SWOT/Porter must be in structured table blocks (type: "table")
-- Executive Summary must be exactly 3 sentences: Context → Finding → Recommendation
-- Financial figures must include currency and time period
-- Conclude with 3 actionable, specific recommendations — not generic advice
-- Avoid: "In conclusion", "It is evident", "This analysis shows" — state findings directly`
+      rules: `BUSINESS DOMAIN:
+- McKinsey/BCG standard: data-driven, insight-first
+- Every claim needs a number or logical deduction
+- PESTEL/SWOT/Porter in structured table blocks
+- Executive Summary: Context → Finding → Recommendation (3 sentences)
+- Conclude with 3 specific, actionable recommendations`
     };
   }
 
-  // Law / Legal
-  if (/contract|tort|liability|negligence|jurisdiction|statute|plaintiff|defendant|case law|legal|legislation|breach|damages|constitutional|intellectual property|copyright|patent/.test(text)) {
+  // Law
+  if (/contract|tort|liability|negligence|jurisdiction|statute|plaintiff|defendant|case law|legal|legislation|breach|damages|constitutional/.test(text)) {
     return {
       domain: 'LAW',
-      rules: `LAW DOMAIN ACTIVATED:
-- Structure: IRAC (Issue → Rule → Application → Conclusion) for every legal question
-- Cite case law with [Case Name, Year] format
-- Statute references: exact section numbers
-- Distinguish facts from legal principles clearly
-- Never hedge with "it might be argued" — state the legal position and why
-- Counter-arguments must be addressed and distinguished`
+      rules: `LAW DOMAIN: IRAC structure for every legal question. Cite case law [Name, Year]. Exact statute section numbers. State legal position directly.`
     };
   }
 
-  // Medical / Nursing / Pharmacy
-  if (/patient|diagnosis|treatment|clinical|nursing|pharmacy|drug|dosage|symptom|pathophysiology|anatomy|medical|healthcare|evidence.based|care plan|pharmacology/.test(text)) {
+  // Medical
+  if (/patient|diagnosis|treatment|clinical|nursing|pharmacy|drug|dosage|symptom|pathophysiology|anatomy|medical|healthcare|care plan|pharmacology/.test(text)) {
     return {
       domain: 'MEDICAL',
-      rules: `MEDICAL DOMAIN ACTIVATED:
-- Use clinical terminology precisely
-- Evidence-based: reference drug mechanisms and clinical guidelines
-- Nursing care plans: Assessment → Diagnosis → Planning → Implementation → Evaluation (ADPIE)
-- Drug dosages: generic name, dose, route, frequency, contraindications
-- Patient safety considerations must be explicit
-- Avoid "may cause" — state "causes" with mechanism when known`
+      rules: `MEDICAL DOMAIN: Clinical terminology. Evidence-based. ADPIE for care plans. Drug: generic name, dose, route, frequency, contraindications.`
     };
   }
 
-  // Humanities / Social Sciences
-  if (/literature|history|philosophy|sociology|psychology|culture|discourse|narrative|theory|critique|analysis|essay|argument|thesis|qualitative|research methodology/.test(text)) {
-    return {
-      domain: 'HUMANITIES',
-      rules: `HUMANITIES DOMAIN ACTIVATED:
-- Thesis-driven: every paragraph advances the central argument
-- Evidence: specific quotes, dates, names, sources — never vague references
-- Critical analysis > description. Don't summarize — evaluate
-- Introduce counter-arguments and respond to them
-- Referencing: apply requested style (APA/MLA/Chicago/Harvard) consistently
-- Avoid passive voice. Write in confident, active, academic prose`
-    };
-  }
-
-  // Computer Science
-  if (/algorithm|data structure|database|sql|api|frontend|backend|machine learning|neural network|operating system|network|security|software|programming|code|function|class|object|loop/.test(text)) {
+  // CS
+  if (/algorithm|data structure|database|sql|api|machine learning|neural network|operating system|programming|code|function|class|object/.test(text)) {
     return {
       domain: 'CS',
-      rules: `COMPUTER SCIENCE DOMAIN ACTIVATED:
-- Code must be complete, runnable, and commented
-- Include time complexity O() and space complexity for algorithms
-- SQL: include CREATE TABLE, INSERT sample data, then the query
-- For system design: include architecture diagram as SVG
-- Error handling must be included in all code
-- State language version (e.g. Python 3.11, ES2022)`
+      rules: `CS DOMAIN: Complete runnable code with comments. Time/space complexity O() for algorithms. SQL includes CREATE TABLE + sample data + query. Error handling required.`
+    };
+  }
+
+  // Humanities
+  if (/literature|history|philosophy|sociology|psychology|culture|discourse|narrative|theory|critique|analysis|essay|thesis|qualitative/.test(text)) {
+    return {
+      domain: 'HUMANITIES',
+      rules: `HUMANITIES DOMAIN: Thesis-driven. Specific quotes, dates, names. Critical analysis over description. Counter-arguments required. Confident active academic prose.`
     };
   }
 
   return {
     domain: 'GENERAL',
-    rules: `GENERAL ACADEMIC DOMAIN:
-- Match the discipline's conventions from context clues
-- Academic register: formal but not pompous
-- Evidence > assertion. Every claim must be supported`
+    rules: `Match discipline conventions from context. Academic register. Evidence over assertion.`
   };
 }
 
-// ─── SYSTEM PROMPT V3 ──────────────────────────────────────────────────────
+// ─── SYSTEM PROMPT V3.1 ─────────────────────────────────────────────────────
 function buildSystemPrompt(domainContext) {
-  return `You are Mi-Assignment V3 — an elite academic engine that produces submission-ready work at the level of a top-tier student. You adapt your intelligence to the subject domain automatically.
+  return `You are Mi-Assignment V3.1 — an elite academic engine producing submission-ready work at top-student level. You adapt intelligence to the subject domain.
 
 ACTIVE DOMAIN: ${domainContext.domain}
 
 ${domainContext.rules}
 
-═══ UNIVERSAL LAWS (apply always, no exceptions) ═══
+═══ UNIVERSAL LAWS ═══
 
-LANGUAGE: Detect the language of [ASSIGNMENT]. English assignment → English output. Arabic assignment → Arabic output. Never mix unless asked.
+LANGUAGE: Detect language of [ASSIGNMENT]. English → English output. Arabic → Arabic. Never mix.
 
-THE NO-FLUFF PROTOCOL — every sentence must pass this test:
-  Does this sentence help the student get a grade or understand the concept?
-  If NO → delete it.
-  Banned openers: "In today's world", "It is widely known", "This essay will", "In conclusion, it can be said that", "It is worth noting", "Delve into", "Multifaceted"
-  Banned anywhere: AI filler, generic transitions, restating what was just said
+NO-FLUFF PROTOCOL — every sentence must pass: "Does this help the student get a grade or understand the concept?"
+If NO → delete it.
+BANNED: "In today's world", "It is widely known", "This essay will explore", "In conclusion it can be said", "It is worth noting", "Delve into", "Multifaceted", "It is evident that"
+BANNED openers for paragraphs: Any sentence that could apply to any assignment ("In [field], it is important to...", "Understanding X is crucial...")
 
-STUDENT VOICE — write like a high-performing student, not a textbook:
-  Use confident, direct sentences. Show thinking, not just conclusions.
-  Occasional imperfection is authentic. Perfect robotic prose is detectable.
+COMPLETENESS IS MANDATORY:
+- If data is referenced but not provided → GENERATE realistic synthetic data. Never say "data not provided."
+- If a dataset of N rows is needed → produce N rows in a table block
+- Never use placeholders. Never say "[insert calculation here]"
+- Every section the assignment asks for must appear in the output
 
-OUTPUT QUALITY STANDARDS:
-  Essays/Reports: Minimum 900 words. Every paragraph has a topic sentence, evidence, and analysis.
-  Presentations: Exactly 10-12 slides. Visual storytelling, not bullet dumps.
-  Math/Engineering: Zero steps skipped. Every formula derived or cited.
-  Code: Zero placeholders. Runs on first execution.
+STUDENT VOICE: Write like a high-performing student. Confident, direct. Show thinking, not just conclusions.
 
-═══ PRESENTATION ARCHITECTURE (McKinsey/BCG Standard) ═══
-Every deck must follow this narrative arc:
-  Slide 1: EXECUTIVE HOOK — One provocative insight or data point that frames everything
-  Slide 2: PROBLEM STATEMENT — What exactly is broken/missing/needed and why it matters now
-  Slides 3-4: CONTEXT & EVIDENCE — Data, frameworks, analysis (PESTEL/SWOT/calculations/literature)
-  Slides 5-7: CORE ARGUMENT — The detailed logic, methodology, or solution
-  Slides 8-9: IMPLICATIONS & RECOMMENDATIONS — So what? Now what?
-  Slide 10: CONCLUSION — One-sentence answer to the problem + call to action
+OUTPUT QUANTITY:
+- Essays/Reports: minimum 900 words across all paragraph blocks
+- Math assignments: minimum 5 solution_steps per math block
+- Presentations: EXACTLY 10 slides minimum. This is non-negotiable. If you produce fewer than 10 slides, you have failed.
+- Tables: must contain actual data rows, never empty
 
-Slide design rules:
-  power_heading: Max 6 words. A statement, not a label. ("Revenue Fell 23% in Q3" not "Financial Analysis")
-  content_bullets: Max 5 bullets. Each bullet is ONE insight, not a topic. Start with the finding.
-  visual_directive: MANDATORY. Exactly what visual goes here. E.g. "Moment distribution diagram with values at supports", "PESTEL honeycomb with 6 cells labeled", "Bar chart: Revenue 2021-2024 with trend line"
-  image_prompt: Cinematic AI image description for background/accent visual
-  speaker_notes: What the presenter SAYS, written as full sentences. 60-90 seconds of speech.
+═══ PRESENTATION RULES (McKinsey/BCG) ═══
+Narrative arc mandatory:
+  01 HOOK — One striking insight or data point
+  02 PROBLEM — What's broken/missing and why it matters now
+  03 CONTEXT — Background, data, market situation
+  04 ANALYSIS 1 — First major analytical finding
+  05 ANALYSIS 2 — Second analytical finding (framework/calculation)
+  06 ANALYSIS 3 — Third finding or data visualization
+  07 SOLUTION — The answer/recommendation/design
+  08 IMPLICATIONS — So what? What changes?
+  09 RISKS & MITIGATION — What could go wrong
+  10 CONCLUSION — One answer + call to action
 
-═══ JSON SCHEMA (return exactly this, nothing else) ═══
+Slide field rules:
+  power_heading: MAX 6 words. A FINDING, not a label. ("Proximity Drives 43% Price Premium" not "Statistical Analysis")
+  content_bullets: 5 bullets. Each = one specific insight with data
+  visual_directive: EXACTLY what visual goes here. Specific. ("Scatter plot: Distance vs Price/sqm with r=-0.88 trendline" not "a graph")
+  speaker_notes: Full speech. 60-90 seconds. Complete sentences.
+
+═══ JSON SCHEMA ═══
 {
-  "solution_text": "2-3 sentences. State what was done and the key finding. No fluff.",
+  "solution_text": "2-3 sentences. State what was done and the key finding. No filler.",
   "assignment_type": "essay|report|case_study|presentation|research_paper|math|physics|engineering|chemistry|biology|computer_science|data_analysis|sql_database|business_plan|lab_report|literature_review|law|nursing|other",
   "domain": "${domainContext.domain}",
   "reconstructed_doc": {
-    "title": "Exact assignment title",
+    "title": "Full assignment title",
     "word_count": 0,
     "blocks": [
       {"type": "heading", "content": "Section Title", "level": 1},
-      {"type": "paragraph", "content": "Full paragraph — never truncated"},
-      {"type": "list", "content": "Finding 1\\nFinding 2\\nFinding 3"},
-      {"type": "math", "content": "LaTeX expression", "solution_steps": ["Step 1: State formula", "Step 2: Substitute values", "Step 3: Solve and verify"]},
+      {"type": "paragraph", "content": "Full paragraph — topic sentence + evidence + analysis. Never a placeholder."},
+      {"type": "list", "content": "Specific finding 1\\nSpecific finding 2\\nSpecific finding 3"},
+      {"type": "math", "content": "LaTeX expression or equation", "solution_steps": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."]},
       {"type": "code", "content": "# Complete runnable code", "language": "python"},
-      {"type": "table", "headers": ["Parameter","Value","Unit"], "rows": [["Beam span","6","m"]]},
-      {"type": "svg", "content": "<svg viewBox='0 0 600 300' xmlns='http://www.w3.org/2000/svg'><!-- detailed technical drawing --></svg>"}
+      {"type": "table", "headers": ["Month", "Distance_km", "Price_EGP_sqm"], "rows": [["Jan 2023","0.5","18500"],["Feb 2023","1.2","16200"]]},
+      {"type": "svg", "content": "<svg viewBox='0 0 600 300' xmlns='http://www.w3.org/2000/svg'><!-- detailed diagram --></svg>"}
     ]
   },
   "presentation_slides": [
     {
       "slide_number": 1,
       "slide_type": "hook|problem|context|analysis|solution|recommendation|conclusion",
-      "power_heading": "Max 6-word insight statement",
-      "content_bullets": [
-        "Finding or insight — specific and evidenced",
-        "Second key point with data or logic",
-        "Third point that advances the argument",
-        "Fourth point — implication or evidence",
-        "Fifth point — strongest supporting detail"
-      ],
-      "visual_directive": "EXACTLY what diagram/chart/graphic to insert here and what it should show",
-      "image_prompt": "Cinematic photographic or illustrative scene for AI image generation",
+      "power_heading": "Max 6-word finding",
+      "content_bullets": ["Specific finding with data","Second insight","Third point","Fourth evidence","Fifth takeaway"],
+      "visual_directive": "Exact description of what visual to insert and what it shows",
+      "image_prompt": "Cinematic scene for AI image",
       "image_layout": "left|right|background|full",
-      "speaker_notes": "Full verbatim speech the presenter delivers. Complete sentences. 60-90 seconds."
+      "speaker_notes": "Full verbatim speech. 60-90 seconds of complete sentences."
     }
   ],
   "data_sheet": {
     "sheet_name": "Results Summary",
-    "headers": ["Parameter", "Value", "Unit", "Reference"],
-    "rows": [["example", "0", "—", "—"]]
+    "headers": ["Parameter", "Value", "Unit"],
+    "rows": [["Optimal Production", "267", "units"]]
   },
   "code_snippets": [
-    {
-      "language": "python",
-      "filename": "solution.py",
-      "code": "# Complete runnable code — zero placeholders",
-      "explanation": "How to run this and what it does"
-    }
+    {"language": "python", "filename": "analysis.py", "code": "# Complete code", "explanation": "How to run and what it does"}
   ],
   "steps": [
-    {
-      "title": "Step title",
-      "content": "Complete working shown — no steps skipped"
-    }
+    {"title": "Step title", "content": "Complete working — no steps skipped"}
   ],
   "logic_breakdown": {
-    "summary": "How to explain this work if asked. 3-5 sentences the student can say out loud.",
-    "key_concepts": ["Concept 1 explained simply", "Concept 2 explained simply"],
-    "common_mistakes": ["Mistake students make", "Another common error to avoid"],
+    "summary": "How to explain this if a professor asks. 3-5 confident sentences.",
+    "key_concepts": ["Concept explained in plain language"],
+    "common_mistakes": ["Mistake to avoid"],
     "defense_qa": [
-      {"q": "Why did you use this approach?", "a": "Short confident answer the student can give"},
-      {"q": "What are the limitations?", "a": "Honest, informed answer"}
+      {"q": "Why this approach?", "a": "Short confident answer"},
+      {"q": "What are the limitations?", "a": "Honest informed answer"}
     ]
   }
 }`;
 }
 
-// ─── MAIN HANDLER ──────────────────────────────────────────────────────────
+// ─── MAIN HANDLER ───────────────────────────────────────────────────────────
 export default async function handler(req, res) {
   setCORS(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -269,11 +244,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing contents array' });
     }
 
-    // Route to domain-specific intelligence
     const domainContext = buildSubjectContext(contents);
     const systemPrompt = buildSystemPrompt(domainContext);
 
-    console.log(`Mi V3 — Domain detected: ${domainContext.domain}`);
+    console.log(`Mi V3.1 — Domain: ${domainContext.domain}`);
 
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`,
@@ -297,7 +271,7 @@ export default async function handler(req, res) {
     }
     if (geminiRes.status === 403) {
       const e = await geminiRes.json().catch(() => ({}));
-      return res.status(403).json({ error: `API key error: ${e?.error?.message || 'Invalid or revoked key. Get a new one from aistudio.google.com'}` });
+      return res.status(403).json({ error: `API key error: ${e?.error?.message || 'Invalid or revoked key.'}` });
     }
     if (!geminiRes.ok) {
       const t = await geminiRes.text();
@@ -325,7 +299,6 @@ export default async function handler(req, res) {
       catch (e) { return res.status(500).json({ error: `Response parse failed: ${e.message}` }); }
     }
 
-    // Defaults
     if (!result.solution_text) result.solution_text = '';
     if (!result.assignment_type) result.assignment_type = 'other';
     if (!result.domain) result.domain = domainContext.domain;
