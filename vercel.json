@@ -5,14 +5,8 @@
   "installCommand": "npm install --legacy-peer-deps",
   "framework": null,
   "functions": {
-    "api/process-mission.mjs": {
+    "api/*.mjs": {
       "maxDuration": 60
-    },
-    "api/check-quota.mjs": {
-      "maxDuration": 15
-    },
-    "api/record-mission.mjs": {
-      "maxDuration": 15
     }
   },
   "rewrites": [
