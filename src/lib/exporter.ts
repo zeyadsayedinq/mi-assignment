@@ -165,11 +165,29 @@ async function svgToPngBuffer(svgString: string): Promise<{ buffer: Uint8Array, 
 // ─── DOCX Builder for Word export ──────────────────────────────────────────────
 async function buildDocx(data: any, payloadName: string, isPro = false, clean = false): Promise<Blob> {
   const children: any[] = [];
-  
+  const hasArabic = (t: string) => /[؀-ۿ]/.test(t || '');
+  const makePara = (text: string, opts: any = {}) => {
+    const isRTL = hasArabic(text);
+    return new Paragraph({
+      ...opts,
+      bidirectional: isRTL,
+      alignment: isRTL ? 'right' : (opts.alignment || 'left'),
+      children: opts.children || [new TextRun({
+        text: cleanLaTeX(text),
+        font: isRTL ? 'Arial' : 'Calibri',
+        size: opts.size || 22,
+        bold: opts.bold || false,
+        color: opts.color || '1E293B',
+      })],
+      spacing: opts.spacing || { after: 160 },
+    });
+  };
+
   // Title
   children.push(new Paragraph({
     text: cleanLaTeX(payloadName) || (clean ? "Solved Assignment" : "Mi-Assignment Report"),
     heading: HeadingLevel.TITLE,
+    bidirectional: hasArabic(payloadName),
     spacing: { after: 400 }
   }));
 
@@ -198,20 +216,19 @@ async function buildDocx(data: any, payloadName: string, isPro = false, clean = 
     for (const block of (doc.blocks || [])) {
       if (block.type === 'heading') {
         children.push(new Paragraph({
-          text: cleanLaTeX(block.content),
+          text: cleanLaTeX(block.content || ''),
           heading: HeadingLevel.HEADING_2,
+          bidirectional: hasArabic(block.content || ''),
           spacing: { before: 300, after: 200 }
         }));
       } else if (block.type === 'paragraph') {
-        children.push(new Paragraph({
-          text: cleanLaTeX(block.content),
-          spacing: { after: 200 }
-        }));
+        children.push(makePara(block.content || '', { size: 22, color: '334155' }));
       } else if (block.type === 'list') {
-        const items = Array.isArray(block.content) ? block.content : String(block.content).split('\n').filter(Boolean);
+        const items = Array.isArray(block.content) ? block.content : String(block.content || '').split('\n').filter(Boolean);
         items.forEach((item: string) => {
           children.push(new Paragraph({
             text: cleanLaTeX(item.replace(/^[-•]\s*/, '')),
+            bidirectional: hasArabic(item),
             bullet: { level: 0 },
             spacing: { after: 100 }
           }));
@@ -261,20 +278,26 @@ async function buildDocx(data: any, payloadName: string, isPro = false, clean = 
           });
         }
       } else if (block.type === 'table') {
-        const rows = String(block.content).split('\n').filter(Boolean);
-        if (rows.length > 0) {
-          const tableRows = rows.map((row: string, i: number) => {
-            return new TableRow({
-              children: row.split('|').filter(Boolean).map(cell => new TableCell({
-                children: [new Paragraph({ children: [new TextRun({ text: cleanLaTeX(cell.trim()), bold: i === 0 })] })],
-              }))
+        if (block.headers?.length > 0 && block.rows?.length > 0) {
+          const newTableRows = [
+            new TableRow({ children: block.headers.map((h: string) => new TableCell({ children: [new Paragraph({ text: String(h), spacing: { after: 80 } })], shading: { fill: 'E2E8F0' } })) }),
+            ...(block.rows || []).map((row: string[]) => new TableRow({ children: (Array.isArray(row) ? row : [String(row)]).map((cell: string) => new TableCell({ children: [new Paragraph({ text: String(cell || ''), bidirectional: hasArabic(String(cell || '')), spacing: { after: 80 } })] })) }))
+          ];
+          children.push(new Table({ rows: newTableRows, width: { size: 9000, type: 'dxa' } }));
+          children.push(new Paragraph({ text: '', spacing: { after: 200 } }));
+        } else if (block.content && String(block.content) !== 'undefined') {
+          const rows = String(block.content).split('\n').filter(Boolean);
+          if (rows.length > 0) {
+            const tableRows = rows.map((row: string, i: number) => {
+              return new TableRow({
+                children: row.split('|').filter(Boolean).map(cell => new TableCell({
+                  children: [new Paragraph({ children: [new TextRun({ text: cleanLaTeX(cell.trim()), bold: i === 0 })] })],
+                }))
+              });
             });
-          });
-          children.push(new Table({
-            rows: tableRows,
-            margins: { top: 100, bottom: 100, left: 100, right: 100 }
-          }));
-          children.push(new Paragraph({ text: "", spacing: { after: 200 } })); // spacer
+            children.push(new Table({ rows: tableRows, margins: { top: 100, bottom: 100, left: 100, right: 100 } }));
+            children.push(new Paragraph({ text: '', spacing: { after: 200 } }));
+          }
         }
       } else if (block.type === 'code') {
         children.push(new Paragraph({
@@ -350,13 +373,26 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
   const addPage = () => { pdf.addPage(); y = MARGIN; };
   const checkPage = (needed = LINE_H) => { if (y + needed > MAX_Y) addPage(); };
 
+  const isArabicText = (t: string) => /[؀-ۿ]/.test(t);
   const writeLine = (text: string, size = 11, bold = false, color: [number, number, number] = [30, 30, 30]) => {
+    if (!text || text === 'undefined') return;
     const rawText = cleanLaTeX(text);
     pdf.setFontSize(size);
     pdf.setFont('helvetica', bold ? 'bold' : 'normal');
     pdf.setTextColor(...color);
+    // For Arabic text: jsPDF helvetica can't render Arabic — render as transliterated or skip
+    // The PDF will show boxes, but DOCX handles Arabic correctly via TextRun
     const lines = pdf.splitTextToSize(rawText, W - MARGIN * 2);
-    lines.forEach((line: string) => { checkPage(); pdf.text(line, MARGIN, y); y += LINE_H; });
+    const isRTL = isArabicText(rawText);
+    lines.forEach((line: string) => {
+      checkPage();
+      if (isRTL) {
+        pdf.text(line, W - MARGIN, y, { align: 'right' });
+      } else {
+        pdf.text(line, MARGIN, y);
+      }
+      y += LINE_H;
+    });
   };
 
   if (!clean) {
@@ -449,8 +485,34 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
            writeLine("[Diagram/SVG rendering failed. Please refer to the web app for the visual representation]", 10, true, [148, 163, 184]);
            y += 5;
         }
-      } else {
-        writeLine(block.content || '', 10, false, [51, 65, 85]);
+      } else if (block.type === 'table') {
+        // Handle table blocks with headers/rows (new format) or content (old format)
+        if (block.headers?.length > 0) {
+          y += 2;
+          // Draw headers
+          const colW = (W - MARGIN * 2) / block.headers.length;
+          pdf.setFillColor(15, 23, 42); pdf.rect(MARGIN, y - 4, W - MARGIN * 2, 8, 'F');
+          pdf.setFontSize(8); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(255, 255, 255);
+          block.headers.forEach((h: string, k: number) => {
+            pdf.text(String(h).substring(0, 20), MARGIN + k * colW + 1, y);
+          });
+          y += 6;
+          // Draw rows
+          pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(51, 65, 85);
+          (block.rows || []).forEach((row: string[], j: number) => {
+            if (j % 2 === 0) { pdf.setFillColor(248, 250, 252); pdf.rect(MARGIN, y - 4, W - MARGIN * 2, 7, 'F'); }
+            (Array.isArray(row) ? row : [row]).forEach((cell: string, k: number) => {
+              pdf.text(String(cell).substring(0, 25), MARGIN + k * colW + 1, y);
+            });
+            y += 7; checkPage();
+          });
+          y += 3;
+        } else if (block.content && block.content !== 'undefined') {
+          writeLine(String(block.content), 10, false, [51, 65, 85]);
+        }
+        // else: empty table — skip, render nothing
+      } else if (block.content && block.content !== 'undefined') {
+        writeLine(block.content, 10, false, [51, 65, 85]);
       }
     }
   }

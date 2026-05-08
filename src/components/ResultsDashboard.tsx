@@ -308,7 +308,7 @@ export function ResultsDashboard({ data, onReset, missionMeta }: ResultsProps) {
                 </button>
               </div>
               <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
-                {doc.blocks?.map((block: any, i: number) => (
+                {doc.blocks?.filter((block: any) => block && block.type).map((block: any, i: number) => (
                   <div key={i}>
                     {block.type === 'heading' && <h3 className="text-white font-bold text-lg mt-5 first:mt-0 border-s-4 border-[#22D3EE] ps-4">{block.content}</h3>}
                     {block.type === 'paragraph' && <div className="break-words" dir={isAr ? 'rtl' : 'ltr'}><MiMarkdown content={block.content} /></div>}
@@ -339,16 +339,38 @@ export function ResultsDashboard({ data, onReset, missionMeta }: ResultsProps) {
                         <pre className="p-4 text-sm text-gray-300 overflow-x-auto"><code>{block.content}</code></pre>
                       </div>
                     )}
-                    {block.type === 'table' && (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm border border-gray-800 rounded-xl overflow-hidden">
-                          <tbody>{String(block.content).split('\n').filter(Boolean).map((row: string, j: number) => (
-                            <tr key={j} className={j % 2 === 0 ? 'bg-[#050608]' : ''}>
-                              {row.split('|').filter(Boolean).map((cell: string, k: number) => (
-                                <td key={k} className={cn('px-3 py-2 text-gray-300 border-b border-gray-900', j === 0 && 'font-bold text-white')}>{cell.trim()}</td>
-                              ))}
-                            </tr>
-                          ))}</tbody>
+                    {block.type === 'table' && (block.headers?.length > 0 || block.rows?.length > 0 || block.content) && (
+                      <div className="overflow-x-auto rounded-xl border border-gray-800">
+                        <table className="w-full text-sm">
+                          {block.headers?.length > 0 && (
+                            <thead>
+                              <tr className="bg-white/5">
+                                {block.headers.map((h: string, k: number) => (
+                                  <th key={k} className="px-4 py-2.5 text-white font-bold text-xs text-start uppercase tracking-tight border-b border-gray-800">{h}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                          )}
+                          <tbody>
+                            {block.rows?.length > 0
+                              ? block.rows.map((row: string[], j: number) => (
+                                  <tr key={j} className={j % 2 === 0 ? 'bg-[#050608]' : 'bg-[#0A0B0E]'}>
+                                    {(Array.isArray(row) ? row : [row]).map((cell: string, k: number) => (
+                                      <td key={k} className="px-4 py-2 text-gray-300 text-sm border-b border-gray-900">{cell}</td>
+                                    ))}
+                                  </tr>
+                                ))
+                              : block.content
+                                ? String(block.content).split('\n').filter(Boolean).map((row: string, j: number) => (
+                                    <tr key={j} className={j % 2 === 0 ? 'bg-[#050608]' : ''}>
+                                      {row.split('|').filter(Boolean).map((cell: string, k: number) => (
+                                        <td key={k} className={cn('px-4 py-2 text-gray-300 border-b border-gray-900', j === 0 && 'font-bold text-white')}>{cell.trim()}</td>
+                                      ))}
+                                    </tr>
+                                  ))
+                                : null
+                            }
+                          </tbody>
                         </table>
                       </div>
                     )}

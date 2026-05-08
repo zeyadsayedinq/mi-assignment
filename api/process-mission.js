@@ -105,7 +105,7 @@ OUTPUT REQUIREMENTS FOR MATH/STATS:
   }
 
   // CS
-  if (/algorithm|data structure|database|sql|api|machine learning|neural network|operating system|programming|code|function|class|object/.test(text)) {
+  if (/algorithm|data structure|database|sql|api|rest api|endpoint|backend|frontend|web app|mobile app|machine learning|neural network|operating system|programming|code|function|class|object|oop|uml|er diagram|entity|relationship|schema|crud|mvc|microservice|docker|authentication|jwt|middleware|subsystem|system design|architecture|component|module|interface|inheritance|polymorphism|encapsulation|قاعدة بيانات|برمجة|خوارزمية|نظام|تطبيق|واجهة|كود/.test(text)) {
     return {
       domain: 'CS',
       rules: `CS DOMAIN: Complete runnable code with comments. Time/space complexity O() for algorithms. SQL includes CREATE TABLE + sample data + query. Error handling required.`
