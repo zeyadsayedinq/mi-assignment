@@ -11,7 +11,7 @@ import { cn } from '../lib/utils';
 const OWNER_EMAILS = ['zeyadsayedinq@gmail.com', 'ranafaraj30@gmail.com'];
 
 const PLAN_LIMITS: Record<string, number> = {
-  free: 3, pro_monthly: 25, pro_quarterly: 60, pro_yearly: 999999,
+  free: 3, pro_monthly: 15, pro_quarterly: 40, pro_yearly: 999999,
 };
 
 function StatCard({ label, value, sub, icon: Icon, color }: any) {

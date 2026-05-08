@@ -511,14 +511,7 @@ export async function downloadMissionPackage(data: any, payloadName: string = "M
     data.presentation_slides?.length ? `- \`Briefing_Deck.pptx\` — ${data.presentation_slides.length} slide presentation` : '',
     data.data_sheet?.rows?.length ? `- \`Data_Sheet.csv\` — Data table (${data.data_sheet.rows.length} rows)` : '',
     data.data_sheet?.rows?.length ? `- \`Database_Import.sql\` — SQL CREATE + INSERT statements` : '',
-    data.code_snippets?.length ? (() => {
-      const dxfFiles = data.code_snippets.filter((s: any) => s.language?.toLowerCase() === 'dxf' || s.filename?.endsWith('.dxf'));
-      const codeFiles = data.code_snippets.filter((s: any) => s.language?.toLowerCase() !== 'dxf' && !s.filename?.endsWith('.dxf'));
-      const lines = [];
-      if (codeFiles.length) lines.push(`- \`Source_Code/\` — ${codeFiles.length} code file(s)`);
-      if (dxfFiles.length) lines.push(`- \`${dxfFiles[0].filename || 'detail.dxf'}\` — AutoCAD DXF file (drag into AutoCAD to import)`);
-      return lines.join('\n');
-    })() : '',
+    data.code_snippets?.length ? `- \`Source_Code/\` — ${data.code_snippets.length} code file(s)` : '',
     `- \`raw_data.json\` — Complete Mi response data`,
   ].filter(Boolean).join('\n');
   zip.file('README.md', readme);
@@ -667,21 +660,13 @@ export async function downloadMissionPackage(data: any, payloadName: string = "M
   // 6. Code files
   if (data.code_snippets?.length) {
     const folder = zip.folder('Source_Code')!;
-    const extMap: Record<string, string> = { python: 'py', javascript: 'js', typescript: 'ts', java: 'java', cpp: 'cpp', c: 'c', sql: 'sql', r: 'R', matlab: 'm', html: 'html', css: 'css', bash: 'sh', dxf: 'dxf', autocad: 'dxf', vba: 'vba', vbs: 'vbs' };
+    const extMap: Record<string, string> = { python: 'py', javascript: 'js', typescript: 'ts', java: 'java', cpp: 'cpp', c: 'c', sql: 'sql', r: 'R', matlab: 'm', html: 'html', css: 'css', bash: 'sh' };
     data.code_snippets.forEach((s: any, i: number) => {
-      const lang = s.language?.toLowerCase() || '';
-      const ext = extMap[lang] || lang || 'txt';
+      const ext = extMap[s.language?.toLowerCase()] || s.language?.toLowerCase() || 'txt';
       const fname = s.filename || `file_${i + 1}.${ext}`;
       let content = s.code || '';
-      // DXF files cannot have comment headers — export raw
-      const isDxf = lang === 'dxf' || lang === 'autocad' || fname.endsWith('.dxf');
-      if (!isDxf && s.explanation) content = `# ${s.explanation}\n\n${content}`;
-      // DXF files go at root level for easy drag-into-AutoCAD access
-      if (isDxf) {
-        zip.file(fname, content);
-      } else {
-        folder.file(fname, content);
-      }
+      if (s.explanation) content = `# ${s.explanation}\n\n${content}`;
+      folder.file(fname, content);
     });
   }
 

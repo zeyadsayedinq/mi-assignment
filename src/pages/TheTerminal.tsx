@@ -46,7 +46,6 @@ export function TheTerminal() {
   const [limitInfo, setLimitInfo] = useState<LimitReachedError | null>(null);
   const [processingMsg, setProcessingMsg] = useState('');
   const [showImageLab, setShowImageLab] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
   const [missionMeta, setMissionMeta] = useState<{ name: string; university: string; course: string } | null>(null);
 
   const PROCESSING = isAr ? PROCESSING_AR : PROCESSING_EN;
@@ -70,7 +69,6 @@ export function TheTerminal() {
     setMissionState('analyzing');
     setErrorMessage('');
     setLimitInfo(null);
-    setRetryCount(0);
     Analytics.missionLaunched(missionType || 'unknown', university || 'unknown');
     setMissionMeta({
       name: files.length > 0 ? files[0].name : prompt.substring(0, 40),
@@ -79,8 +77,7 @@ export function TheTerminal() {
     });
 
     try {
-      // Pass the raw prompt so mi.ts can detect language from content, not UI setting
-      const result = await processMission(files, prompt, university, course, system, reference, missionType, undefined);
+      const result = await processMission(files, prompt, university, course, system, reference, missionType);
       setSolutionData(result);
       setMissionState('accomplished');
       Analytics.missionCompleted(result.assignment_type || 'unknown', 0);
@@ -215,12 +212,6 @@ export function TheTerminal() {
                     <p className="text-gray-600 text-xs">
                       {isAr ? 'Mi بيحل واجبك. الوقت المتوسط: ١٥–٤٠ ثانية.' : 'Mi is solving your assignment. Average: 15–40 seconds.'}
                     </p>
-                    {retryCount > 0 && (
-                      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                        className="text-orange-400/70 text-[10px] font-mono mt-1 uppercase tracking-widest">
-                        {isAr ? `إعادة المحاولة ${retryCount}/3 — خدمة مزدحمة مؤقتاً...` : `Retrying ${retryCount}/3 — AI provider busy, please wait...`}
-                      </motion.p>
-                    )}
                     {missionMeta && (
                       <div className="mt-4 flex gap-2 justify-center flex-wrap">
                         {[missionMeta.name, missionMeta.university, missionMeta.course].filter(Boolean).map((tag, i) => (
@@ -246,8 +237,8 @@ export function TheTerminal() {
                     </h3>
                     <p className="text-gray-400 text-sm leading-relaxed mb-2">
                       {isAr
-                        ? `استخدمت ${limitInfo?.missionsUsed || 0} من أصل ${limitInfo?.limit || 3} مهام هذه الفترة.`
-                        : `You've used ${limitInfo?.missionsUsed || 0} of ${limitInfo?.limit || 3} missions this period.`}
+                        ? `استخدمت ${limitInfo?.missionsUsed || 0} من أصل ${limitInfo?.limit || 3} مهام مجانية هذا الشهر.`
+                        : `You've used ${limitInfo?.missionsUsed || 0} of ${limitInfo?.limit || 3} free missions this period.`}
                     </p>
                     <p className="text-gray-600 text-xs">
                       {isAr

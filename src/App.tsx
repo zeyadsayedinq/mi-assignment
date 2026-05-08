@@ -1,10 +1,9 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
-import { Routes, Route, useLocation, Navigate, useParams, useNavigate } from 'react-router-dom';
+import { Routes, Route, useParams, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ExplosionProvider } from './contexts/ExplosionContext';
 import { Sidebar } from './components/Sidebar';
-import { ErrorBoundary } from './components/ErrorBoundary';
 import { IntroSequence } from './components/IntroSequence';
 import { SEO } from './components/SEO';
 import { Menu } from 'lucide-react';
@@ -21,37 +20,9 @@ const PricingPage = lazy(() => import('./pages/PricingPage').then(m => ({ defaul
 const TermsPage = lazy(() => import('./pages/TermsPage').then(m => ({ default: m.TermsPage })));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const PaymentSuccessPage = lazy(() => import('./pages/PaymentSuccessPage').then(m => ({ default: m.PaymentSuccessPage })));
 const SOPs = lazy(() => import('./pages/SOPs').then(m => ({ default: m.SOPs })));
 const AssignmentTypeGuide = lazy(() => import('./pages/AssignmentTypeGuide').then(m => ({ default: m.AssignmentTypeGuide })));
-const PaymentSuccessPage = lazy(() => import('./pages/PaymentSuccessPage').then(m => ({ default: m.PaymentSuccessPage })));
-
-// ── Ref code handler ─────────────────────────────────────────────────────────
-
-function RefHandler() {
-  const { refCode } = useParams<{ refCode: string }>();
-  const navigate = useNavigate();
-  React.useEffect(() => {
-    if (refCode) {
-      localStorage.setItem('mi_ref_code', refCode.toUpperCase());
-    }
-    navigate('/auth?next=/app', { replace: true });
-  }, [refCode, navigate]);
-  return <LoadingFallback />;
-}
-
-function NotFoundPage() {
-  const navigate = useNavigate();
-  return (
-    <div style={{ minHeight: '100vh', background: '#020617', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: 'sans-serif', padding: '20px', textAlign: 'center' }}>
-      <div style={{ fontSize: 64, fontWeight: 900, color: '#22D3EE', lineHeight: 1 }}>404</div>
-      <div style={{ fontSize: 20, fontWeight: 700, margin: '16px 0 8px' }}>Page not found</div>
-      <div style={{ fontSize: 14, color: '#475569', marginBottom: 28 }}>الصفحة دي مش موجودة.</div>
-      <button onClick={() => navigate('/')} style={{ background: '#22D3EE', color: '#000', border: 'none', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-        Go Home
-      </button>
-    </div>
-  );
-}
 
 // Scroll to top on route change
 function ScrollToTop() {
@@ -66,6 +37,16 @@ function LoadingFallback() {
       <div className="w-12 h-12 border-4 border-[#22D3EE]/20 border-t-[#22D3EE] rounded-full animate-spin" />
     </div>
   );
+}
+
+// Captures /ref/:code → stores in localStorage → redirects to auth
+function RefCodeHandler() {
+  const { refCode } = useParams<{ refCode: string }>();
+  React.useEffect(() => {
+    if (refCode) localStorage.setItem('mi_ref_code', refCode.toUpperCase());
+    window.location.href = '/auth?next=/app';
+  }, []);
+  return null;
 }
 
 function AppContent() {
@@ -120,20 +101,16 @@ function AppContent() {
               
               {/* Protected Routes */}
               <Route path="/app" element={session ? <TheHQ /> : <Navigate to="/auth" replace />} />
-              <Route path="/terminal" element={session ? <ErrorBoundary><TheTerminal /></ErrorBoundary> : <Navigate to="/auth" replace />} />
+              <Route path="/terminal" element={session ? <TheTerminal /> : <Navigate to="/auth" replace />} />
               <Route path="/vault" element={session ? <TheVault /> : <Navigate to="/auth" replace />} />
               <Route path="/academy" element={session ? <TheAcademy /> : <Navigate to="/auth" replace />} />
               <Route path="/settings" element={session ? <SettingsPage /> : <Navigate to="/auth" replace />} />
               <Route path="/admin" element={session ? <AdminDashboard /> : <Navigate to="/auth" replace />} />
               
-              {/* Referral link handler — captures code and redirects to auth */}
-              <Route path="/ref/:refCode" element={<RefHandler />} />
-
-              {/* Payment success — shown after Tap payment completes */}
-              <Route path="/payment-success" element={<PaymentSuccessPage />} />
-
               {/* Fallback */}
-              <Route path="*" element={<NotFoundPage />} />
+              <Route path="/ref/:refCode" element={<RefCodeHandler />} />
+              <Route path="/payment-success" element={session ? <Suspense fallback={<LoadingFallback />}><PaymentSuccessPage /></Suspense> : <Navigate to="/auth" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
         </main>

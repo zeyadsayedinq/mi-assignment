@@ -23,8 +23,8 @@ function sa() {
 // ── Plan limits ───────────────────────────────────────────────────────────────
 const PLAN_LIMITS: Record<string, number> = {
   free:          3,      // per calendar month
-  pro_monthly:   25,     // per calendar month
-  pro_quarterly: 60,     // per 90 days
+  pro_monthly:   15,     // per calendar month
+  pro_quarterly: 40,     // per 90 days
   pro_yearly:    999999, // effectively unlimited
 };
 
@@ -360,43 +360,11 @@ async function startServer() {
     } catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
-  // Alias: /api/send-email (called by AuthPage)
-  app.post("/api/send-email", async (req, res) => {
-    try {
-      const { type, to, data = {} } = req.body;
-      if (!to || !type) return res.status(400).json({ error: "Missing to or type" });
-      const isAr = data.isAr || false;
-      const appUrl = process.env.VITE_APP_URL || "https://mi-assignment.com";
-      let subject = "", html = "";
-      if (type === "welcome") {
-        subject = isAr ? "أهلاً بك في Mi-Assignment! 🎓" : "Welcome to Mi-Assignment! 🎓";
-        html = emailWrap(isAr
-          ? `<h2>أهلاً وسهلاً! 🎓</h2><p>حسابك جاهز. ابعتلي الواجب وخليني أحله في ثوانٍ.</p><a href="${appUrl}/terminal" class="btn">ابدأ أول مهمة ←</a>`
-          : `<h2>Welcome to Mi-Assignment! 🎓</h2><p>Your account is ready. Submit any assignment and get a complete solution in seconds.</p><a href="${appUrl}/terminal" class="btn">Start your first mission →</a>`,
-        isAr);
-      } else if (type === "limit_reached") {
-        subject = isAr ? "⚡ وصلت للحد — رقّي حسابك" : "⚡ Mission limit reached — upgrade to continue";
-        html = emailWrap(isAr
-          ? `<h2>⚡ خلصت مهامك</h2><p>استخدمت ${data.missionsUsed || 0} مهمة. اشترك في Pro للمتابعة.</p><a href="${appUrl}/pricing" class="btn">رقّي دلوقتي ←</a>`
-          : `<h2>⚡ You've hit your limit</h2><p>You've used ${data.missionsUsed || 0} missions. Upgrade to Pro to continue.</p><a href="${appUrl}/pricing" class="btn">Upgrade now →</a>`,
-        isAr);
-      }
-      if (subject) await sendEmail(to, subject, html);
-      res.json({ sent: true });
-    } catch (e: any) { res.status(500).json({ error: e.message }); }
-  });
-
   // ── MAIN QUOTA ENDPOINT ────────────────────────────────────────────────────
   app.post("/api/check-quota", async (req, res) => {
     try {
-      const { userId, email, lang } = req.body;
+      const { userId, lang } = req.body;
       if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
-      // Owner bypass — always unlimited
-      const OWNER_EMAILS = ["zeyadsayedinq@gmail.com", "ranafaraj30@gmail.com"];
-      if (email && OWNER_EMAILS.includes(email.toLowerCase())) {
-        return res.json({ allowed: true, plan: "owner", limit: 999999 });
-      }
 
       const sub = await getSubStatus(userId);
       if (!sub.canUse) {
@@ -466,7 +434,7 @@ async function startServer() {
 
 
   // ── REFERRAL PROCESSING ─────────────────────────────────────────────────────
-  app.post("/api/apply-referral", async (req, res) => {
+  app.post("/api/referral/process", async (req, res) => {
     try {
       const { newUserId, refCode } = req.body;
       if (!newUserId || !refCode) return res.status(400).json({ error: "Missing params" });

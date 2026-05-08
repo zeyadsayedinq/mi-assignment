@@ -78,36 +78,25 @@ export function AuthPage() {
         navigate(next);
       } else {
         // signup
-        const { data: signUpData, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email, password,
           options: { emailRedirectTo: `${window.location.origin}${next}` },
         });
         if (error) throw error;
         setSuccess(isAr ? 'شوف إيميلك لتأكيد الحساب!' : 'Check your email to confirm your account!');
         Analytics.authCompleted('email_signup');
-
-        // Fire welcome email (non-blocking)
-        fetch('/api/send-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'welcome',
-            to: email,
-            data: { name: email.split('@')[0], isAr },
-          }),
-        }).catch(() => {});
-
-        // Apply referral code if one was stored from a /ref/CODE link (non-blocking)
-        const refCode = localStorage.getItem('mi_ref_code');
-        const newUserId = signUpData?.user?.id;
-        if (refCode && newUserId) {
-          fetch('/api/apply-referral', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ newUserId, refCode }),
-          }).then(() => {
-            localStorage.removeItem('mi_ref_code');
-          }).catch(() => {});
+        // Welcome email
+        fetch('/api/send-email', { method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ type: 'welcome', to: email, data: { name: email.split('@')[0], isAr } })
+        }).catch(()=>{});
+        // Apply referral if present
+        if (data?.user?.id) {
+          const ref = localStorage.getItem('mi_ref_code');
+          if (ref) {
+            fetch('/api/apply-referral', { method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ newUserId: data.user.id, refCode: ref })
+            }).then(()=>localStorage.removeItem('mi_ref_code')).catch(()=>{});
+          }
         }
       }
     } catch (err: any) {

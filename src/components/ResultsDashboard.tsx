@@ -2,7 +2,7 @@ import { TiltCard } from './MILogo3D';
 import { useExplosion } from '../contexts/ExplosionContext';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, Download, Copy, Check, MonitorPlay, Code2, Table2, FileText, Sparkles, ChevronDown, ChevronRight, Brain, Share2 } from 'lucide-react';
+import { CheckCircle2, Download, Copy, Check, MonitorPlay, Code2, Table2, FileText, Sparkles, ChevronDown, ChevronRight, Brain } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/utils';
 import { SlideViewer } from './SlideViewer';
@@ -162,8 +162,6 @@ export function ResultsDashboard({ data, onReset, missionMeta }: ResultsProps) {
   const [activeTab, setActiveTab] = useState('solution');
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [isPackaging, setIsPackaging] = useState(false);
-  const [isSharing, setIsSharing] = useState(false);
-  const [shareDone, setShareDone] = useState(false);
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
   const [showSlideViewer, setShowSlideViewer] = useState(false);
 
@@ -211,28 +209,6 @@ export function ResultsDashboard({ data, onReset, missionMeta }: ResultsProps) {
     finally { setIsPackaging(false); }
   };
 
-  const handleShare = async () => {
-    setIsSharing(true);
-    try {
-      const summaryText = data?.solution_text
-        ? data.solution_text.substring(0, 120) + '...'
-        : '';
-      const type = data?.assignment_type?.toUpperCase() || 'MISSION';
-      const shareText = isAr
-        ? `✅ Mi-Assignment حلّ ${type} في ثواني!\n${summaryText}\n\nجرّب مجاناً: https://www.mi-assignment.com`
-        : `✅ Mi-Assignment solved my ${type} in seconds!\n${summaryText}\n\nTry free: https://www.mi-assignment.com`;
-
-      if (navigator.share) {
-        await navigator.share({ title: 'Mi-Assignment', text: shareText });
-      } else {
-        await navigator.clipboard.writeText(shareText);
-      }
-      setShareDone(true);
-      setTimeout(() => setShareDone(false), 2500);
-    } catch {}
-    setIsSharing(false);
-  };
-
   const wrapMath = (content: string) => {
     if (!content) return "";
     let trimmed = content.trim();
@@ -268,15 +244,6 @@ export function ResultsDashboard({ data, onReset, missionMeta }: ResultsProps) {
               <MonitorPlay className="w-3.5 h-3.5" /> {isAr ? 'عرض' : 'Present'}
             </button>
           )}
-          <button onClick={handleShare} disabled={isSharing}
-            className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 text-white text-xs font-bold rounded-xl hover:bg-white/10 transition-all disabled:opacity-50">
-            {shareDone
-              ? <Check className="w-3.5 h-3.5 text-emerald-400" />
-              : <Share2 className="w-3.5 h-3.5" />}
-            {shareDone
-              ? (isAr ? 'تم! ✓' : 'Copied!')
-              : (isAr ? 'مشاركة' : 'Share')}
-          </button>
           <button onClick={(e) => handleDownload(e)} disabled={isPackaging}
             className="flex items-center gap-2 px-3 py-2 bg-[#22D3EE] text-black text-xs font-black rounded-xl hover:bg-white transition-all disabled:opacity-50">
             {isPackaging ? <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : <Download className="w-3.5 h-3.5" />}

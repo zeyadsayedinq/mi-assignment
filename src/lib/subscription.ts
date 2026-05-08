@@ -81,23 +81,13 @@ export async function getSubscriptionStatus(userId: string, email?: string): Pro
   }
 }
 
-// Calls /api/create-charge Netlify function which holds the Tap secret key server-side.
-// Never exposes Tap credentials to the browser.
-export async function createTapCharge(params: {
-  plan: Plan;
-  userId: string;
-  email: string;
-  currency: 'EGP' | 'SAR' | 'AED';
-}): Promise<{ chargeUrl: string; chargeId: string }> {
+// Real Tap payment - needs backend, skip for now
+export async function createTapCharge(params: any): Promise<{ chargeUrl: string; chargeId: string }> {
   const res = await fetch('/api/create-charge', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'Payment failed. Please try again or contact support via WhatsApp.');
-  }
+  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.message || 'Payment failed'); }
   return res.json();
 }
 

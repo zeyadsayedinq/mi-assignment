@@ -1,127 +1,141 @@
--- =========================================================
--- Mi-Assignment — Supabase Schema
--- Run this in Supabase SQL Editor: Dashboard → SQL Editor → New query
--- =========================================================
+-- ═══════════════════════════════════════════════════════════
+--  Mi-Assignment v2.1 — Supabase Database Schema
+--  Run this in your Supabase SQL Editor
+-- ═══════════════════════════════════════════════════════════
 
--- ─── MISSIONS ────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS missions (
-  id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  payload_name  TEXT NOT NULL DEFAULT 'Mission',
-  university    TEXT,
-  course        TEXT,
-  assignment_type TEXT DEFAULT 'other',
-  status        TEXT DEFAULT 'SUCCESS',
-  summary       TEXT DEFAULT '',
-  solution_data JSONB,
-  lang          TEXT DEFAULT 'en',
-  created_at    TIMESTAMPTZ DEFAULT NOW()
-);
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE INDEX IF NOT EXISTS missions_user_id_idx ON missions(user_id);
-CREATE INDEX IF NOT EXISTS missions_created_at_idx ON missions(created_at DESC);
-
--- RLS
-ALTER TABLE missions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can read their own missions"  ON missions FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert their own missions" ON missions FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can delete their own missions" ON missions FOR DELETE USING (auth.uid() = user_id);
-
-
--- ─── SUBSCRIPTIONS ────────────────────────────────────────
+-- ── Subscriptions table ─────────────────────────────────────
 CREATE TABLE IF NOT EXISTS subscriptions (
-  id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id       UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
-  plan          TEXT NOT NULL DEFAULT 'free',  -- 'free' | 'pro_monthly' | 'pro_quarterly' | 'pro_yearly'
-  status        TEXT NOT NULL DEFAULT 'inactive', -- 'active' | 'inactive' | 'cancelled'
+  id            UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  plan          TEXT NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'pro')),
+  status        TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'cancelled', 'expired', 'pending')),
+  started_at    TIMESTAMPTZ DEFAULT NOW(),
   expires_at    TIMESTAMPTZ,
   tap_charge_id TEXT,
   updated_at    TIMESTAMPTZ DEFAULT NOW(),
-  created_at    TIMESTAMPTZ DEFAULT NOW()
+  UNIQUE(user_id)
 );
 
+-- ── Missions table (enhanced) ──────────────────────────────
+CREATE TABLE IF NOT EXISTS missions (
+  id              UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id         UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  payload_name    TEXT NOT NULL,
+  university      TEXT,
+  course          TEXT,
+  assignment_type TEXT DEFAULT 'other',
+  status          TEXT DEFAULT 'SUCCESS',
+  summary         TEXT,
+  solution_data   JSONB,
+  lang            TEXT DEFAULT 'en'
+);
+
+-- ── Usage tracking ─────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS usage_events (
+  id         UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id    UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  event      TEXT NOT NULL,
+  properties JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ── RLS Policies ───────────────────────────────────────────
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE missions ENABLE ROW LEVEL SECURITY;
+
+-- Users can only read their own subscription
+CREATE POLICY "Users read own subscription" ON subscriptions
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- Users can only read their own missions
+CREATE POLICY "Users read own missions" ON missions
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- Users can insert their own missions
+CREATE POLICY "Users insert own missions" ON missions
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Users can delete their own missions
+CREATE POLICY "Users delete own missions" ON missions
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Service role bypasses all RLS (for server-side operations)
+
+-- ── Indexes ────────────────────────────────────────────────
+CREATE INDEX IF NOT EXISTS missions_user_id_idx ON missions(user_id);
+CREATE INDEX IF NOT EXISTS missions_created_at_idx ON missions(created_at DESC);
 CREATE INDEX IF NOT EXISTS subscriptions_user_id_idx ON subscriptions(user_id);
 
-ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can read their own subscription" ON subscriptions FOR SELECT USING (auth.uid() = user_id);
--- Only service_role (Netlify function) can insert/update subscriptions
-CREATE POLICY "Service role can manage subscriptions" ON subscriptions FOR ALL USING (auth.role() = 'service_role');
+-- ── Auto-update updated_at ─────────────────────────────────
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
+$$ LANGUAGE plpgsql;
 
+CREATE TRIGGER subscriptions_updated_at
+  BEFORE UPDATE ON subscriptions
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
--- ─── REFERRALS ────────────────────────────────────────────
--- One row per referrer. ref_code is unique.
--- referred_ids stores array of user_ids who used this code.
+-- ── Referrals System ───────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS referrals (
-  id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   referrer_id   UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   ref_code      TEXT NOT NULL UNIQUE,
-  referred_ids  UUID[] DEFAULT '{}',
-  status        TEXT DEFAULT 'pending',  -- 'pending' | 'converted'
-  created_at    TIMESTAMPTZ DEFAULT NOW()
+  referred_id   UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  status        TEXT NOT NULL DEFAULT 'pending', -- pending | converted
+  bonus_granted BOOLEAN DEFAULT FALSE,
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  converted_at  TIMESTAMPTZ
 );
 
-CREATE INDEX IF NOT EXISTS referrals_referrer_id_idx ON referrals(referrer_id);
-CREATE INDEX IF NOT EXISTS referrals_ref_code_idx ON referrals(ref_code);
+CREATE INDEX IF NOT EXISTS referrals_referrer_idx ON referrals(referrer_id);
+CREATE INDEX IF NOT EXISTS referrals_code_idx ON referrals(ref_code);
 
 ALTER TABLE referrals ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can read their own referral row" ON referrals FOR SELECT USING (auth.uid() = referrer_id);
-CREATE POLICY "Users can insert their own referral row" ON referrals FOR INSERT WITH CHECK (auth.uid() = referrer_id);
--- Updates (adding referred_ids) are done by service_role via Netlify function
-CREATE POLICY "Service role can update referrals" ON referrals FOR UPDATE USING (auth.role() = 'service_role');
 
+-- Users can read their own referrals (to see count, stats)
+CREATE POLICY "Users read own referrals" ON referrals
+  FOR SELECT USING (auth.uid() = referrer_id);
 
--- ─── BONUS MISSIONS ───────────────────────────────────────
--- Tracks awarded bonus missions (referral rewards).
--- check-quota.mjs sums these up and adds to the user's effective limit.
-CREATE TABLE IF NOT EXISTS bonus_missions (
-  id         UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id    UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  bonus      INTEGER NOT NULL DEFAULT 2,
-  reason     TEXT DEFAULT 'referral_signup',  -- 'referral_signup' | 'referral_reward' | 'promo'
-  ref_code   TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Allow insert of referred_id during signup (via service role in server)
+-- Server uses service role key which bypasses RLS
 
-CREATE INDEX IF NOT EXISTS bonus_missions_user_id_idx ON bonus_missions(user_id);
+-- ── Public mission counter (no auth required) ──────────────────────────────────
+-- This view exposes only the count, no user data
+CREATE OR REPLACE VIEW public_mission_count AS
+  SELECT COUNT(*) AS total FROM missions;
 
-ALTER TABLE bonus_missions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can read their own bonuses" ON bonus_missions FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Service role can insert bonuses" ON bonus_missions FOR INSERT WITH CHECK (auth.role() = 'service_role');
+-- Allow anonymous reads of the counter
+GRANT SELECT ON public_mission_count TO anon;
 
+-- ── OWNER RLS POLICIES (run these in Supabase SQL Editor) ────────────────────
+-- These allow the owner email to read ALL data directly from the browser
+-- without needing the service role key or a backend server.
 
--- ─── PAYMENT EVENTS ───────────────────────────────────────
--- Audit log of all payment events received from Tap webhooks.
-CREATE TABLE IF NOT EXISTS payment_events (
-  id         UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id    UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  plan       TEXT,
-  charge_id  TEXT NOT NULL,
-  amount     NUMERIC,
-  currency   TEXT,
-  status     TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Allow owner to read all missions
+CREATE POLICY "Owner reads all missions" ON missions
+  FOR SELECT USING (
+    auth.jwt() ->> 'email' = 'zeyadsayedinq@gmail.com'
+  );
 
-CREATE INDEX IF NOT EXISTS payment_events_user_id_idx ON payment_events(user_id);
-CREATE INDEX IF NOT EXISTS payment_events_charge_id_idx ON payment_events(charge_id);
+-- Allow owner to read all subscriptions
+CREATE POLICY "Owner reads all subscriptions" ON subscriptions
+  FOR SELECT USING (
+    auth.jwt() ->> 'email' = 'zeyadsayedinq@gmail.com'
+  );
 
-ALTER TABLE payment_events ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Service role can manage payment_events" ON payment_events FOR ALL USING (auth.role() = 'service_role');
+-- Allow owner to UPDATE subscriptions (grant/revoke Pro)
+CREATE POLICY "Owner updates subscriptions" ON subscriptions
+  FOR UPDATE USING (
+    auth.jwt() ->> 'email' = 'zeyadsayedinq@gmail.com'
+  );
 
-
--- ─── UPDATE check-quota to factor in bonus missions ───────
--- NOTE: The Netlify check-quota.mjs function is updated separately (see that file).
--- This comment documents the intended logic:
---   effective_limit = PLAN_LIMITS[plan] + SUM(bonus_missions.bonus) WHERE user_id = userId
---   canUse = missionsUsed < effective_limit
-
-
--- ─── HELPER: Count total bonus missions for a user ────────
-CREATE OR REPLACE FUNCTION get_bonus_missions(p_user_id UUID)
-RETURNS INTEGER
-LANGUAGE SQL STABLE
-AS $$
-  SELECT COALESCE(SUM(bonus), 0)::INTEGER
-  FROM bonus_missions
-  WHERE user_id = p_user_id;
-$$;
+-- Allow owner to INSERT subscriptions (new grant)
+CREATE POLICY "Owner inserts subscriptions" ON subscriptions
+  FOR INSERT WITH CHECK (
+    auth.jwt() ->> 'email' = 'zeyadsayedinq@gmail.com'
+  );
