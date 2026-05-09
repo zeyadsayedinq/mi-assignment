@@ -280,7 +280,7 @@ export default async function handler(req, res) {
           generationConfig: {
             temperature: 0.65,
             responseMimeType: 'application/json',
-            maxOutputTokens: 8192,
+            maxOutputTokens: 16384,
           },
         }),
       }
@@ -326,13 +326,46 @@ export default async function handler(req, res) {
     let result;
     try { result = JSON.parse(clean); }
     catch {
+      // Fix trailing commas
       try { result = JSON.parse(clean.replace(/,(\s*[}\]])/g, '$1')); }
       catch {
-        // Last resort: truncate at last valid position
+        // Gemini hit token limit mid-JSON — reconstruct by closing all open brackets
         try {
-          const truncated = clean.substring(0, clean.lastIndexOf('},') + 1) + '}';
-          result = JSON.parse(truncated);
-        } catch (e) { return res.status(500).json({ error: `Response parse failed: ${e.message}` }); }
+          let fixed = clean;
+          // Count unclosed brackets
+          let opens = 0, inStr = false, escape = false;
+          for (const ch of fixed) {
+            if (escape) { escape = false; continue; }
+            if (ch === '\\') { escape = true; continue; }
+            if (ch === '"') { inStr = !inStr; continue; }
+            if (!inStr) {
+              if (ch === '{' || ch === '[') opens++;
+              else if (ch === '}' || ch === ']') opens--;
+            }
+          }
+          // Close any unclosed strings and brackets
+          if (inStr) fixed += '"';
+          // Remove trailing comma before we close
+          fixed = fixed.replace(/,\s*$/, '');
+          // Close brackets
+          const stack = [];
+          inStr = false; escape = false;
+          for (const ch of fixed) {
+            if (escape) { escape = false; continue; }
+            if (ch === '\\') { escape = true; continue; }
+            if (ch === '"') { inStr = !inStr; continue; }
+            if (!inStr) {
+              if (ch === '{') stack.push('}');
+              else if (ch === '[') stack.push(']');
+              else if ((ch === '}' || ch === ']') && stack.length) stack.pop();
+            }
+          }
+          fixed += stack.reverse().join('');
+          fixed = fixed.replace(/,(\s*[}\]])/g, '$1');
+          result = JSON.parse(fixed);
+        } catch (e) {
+          return res.status(500).json({ error: `Response parse failed: ${e.message}` });
+        }
       }
     }
 
