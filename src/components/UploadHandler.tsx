@@ -1,288 +1,391 @@
-import React, { useCallback, useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useDropzone } from 'react-dropzone';
-import { UploadCloud, File, X, Zap, Image, FileText, Code, BookOpen, Calculator, Presentation } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState, useRef } from 'react';
+import { Upload, X, ChevronDown, Zap, FileText, Image, Code2, Calculator, BookOpen, Presentation, Globe, Building2, PlusCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/utils';
 
 interface UploadHandlerProps {
-  onLaunch: (files: File[], prompt: string, university?: string, course?: string, system?: string, reference?: string, missionType?: string) => void;
+  onLaunch: (files: File[], prompt: string, university?: string, course?: string, system?: string, reference?: string, missionType?: string, country?: string, major?: string) => void;
+  isProcessing?: boolean;
 }
 
-// ─── Bilingual data ─────────────────────────────────────────────────────────
-const UNIVERSITIES_EN = ["AUC", "GUC", "CIC", "BUE", "MIU", "MSA", "Ain Shams", "Cairo University", "Alexandria", "KFUPM", "King Abdulaziz", "King Saud", "AUS", "UAEU", "Zayed University", "Ivy League", "Russell Group", "Other"];
-const UNIVERSITIES_AR = ["AUC", "GUC", "CIC", "BUE", "MIU", "MSA", "عين شمس", "جامعة القاهرة", "الإسكندرية", "جامعة الملك فهد (KFUPM)", "جامعة الملك عبدالعزيز", "جامعة الملك سعود", "AUS", "UAEU", "جامعة زايد", "جامعة دولية أخرى"];
+// ── COUNTRY DATA ─────────────────────────────────────────────────────────────
+const COUNTRIES = [
+  { code: 'EG', en: 'Egypt 🇪🇬', ar: 'مصر 🇪🇬' },
+  { code: 'SA', en: 'Saudi Arabia 🇸🇦', ar: 'السعودية 🇸🇦' },
+  { code: 'AE', en: 'UAE 🇦🇪', ar: 'الإمارات 🇦🇪' },
+  { code: 'KW', en: 'Kuwait 🇰🇼', ar: 'الكويت 🇰🇼' },
+  { code: 'BH', en: 'Bahrain 🇧🇭', ar: 'البحرين 🇧🇭' },
+  { code: 'JO', en: 'Jordan 🇯🇴', ar: 'الأردن 🇯🇴' },
+  { code: 'LB', en: 'Lebanon 🇱🇧', ar: 'لبنان 🇱🇧' },
+  { code: 'INT', en: 'International 🌍', ar: 'دولي 🌍' },
+];
 
-const SYSTEMS_EN = ["IGCSE (Cambridge/Edexcel)", "IB Diploma (SL/HL)", "American Diploma (SAT/AP)", "Egyptian National", "Saudi National", "Undergraduate", "Postgraduate/Masters"];
-const SYSTEMS_AR = ["IGCSE (كامبريدج / إيدكسل)", "IB دبلوما (SL/HL)", "الدبلومة الأمريكية (SAT/AP)", "نظام مصري", "نظام سعودي", "بكالوريوس", "ماجستير / دراسات عليا"];
+const UNIVERSITIES: Record<string, { en: string; ar: string }[]> = {
+  EG: [
+    // Public
+    { en: 'Cairo University', ar: 'جامعة القاهرة' },
+    { en: 'Ain Shams', ar: 'عين شمس' },
+    { en: 'Alexandria University', ar: 'جامعة الإسكندرية' },
+    { en: 'Mansoura University', ar: 'جامعة المنصورة' },
+    { en: 'Tanta University', ar: 'جامعة طنطا' },
+    { en: 'Zagazig University', ar: 'جامعة الزقازيق' },
+    { en: 'Assiut University', ar: 'جامعة أسيوط' },
+    { en: 'South Valley University', ar: 'جامعة جنوب الوادي' },
+    { en: 'Helwan University', ar: 'جامعة حلوان' },
+    { en: 'Suez Canal University', ar: 'جامعة قناة السويس' },
+    { en: 'Benha University', ar: 'جامعة بنها' },
+    { en: 'Kafr El-Sheikh University', ar: 'جامعة كفر الشيخ' },
+    { en: 'Sohag University', ar: 'جامعة سوهاج' },
+    { en: 'Menoufia University', ar: 'جامعة المنوفية' },
+    { en: 'Damietta University', ar: 'جامعة دمياط' },
+    { en: 'Port Said University', ar: 'جامعة بورسعيد' },
+    { en: 'Fayoum University', ar: 'جامعة الفيوم' },
+    { en: 'Minia University', ar: 'جامعة المنيا' },
+    { en: 'Aswan University', ar: 'جامعة أسوان' },
+    { en: 'Sadat City University', ar: 'جامعة مدينة السادات' },
+    { en: 'Al-Azhar University', ar: 'جامعة الأزهر' },
+    // Private
+    { en: 'AUC', ar: 'الجامعة الأمريكية بالقاهرة (AUC)' },
+    { en: 'GUC', ar: 'الجامعة الألمانية بالقاهرة (GUC)' },
+    { en: 'BUE', ar: 'الجامعة البريطانية (BUE)' },
+    { en: 'MIU', ar: 'جامعة مصر الدولية (MIU)' },
+    { en: 'MSA University', ar: 'جامعة MSA' },
+    { en: 'CIC', ar: 'CIC' },
+    { en: 'MTI University', ar: 'جامعة MTI' },
+    { en: 'PUA', ar: 'الأكاديمية العربية (PUA)' },
+    { en: 'AAST', ar: 'أكاديمية العلوم والتكنولوجيا (AAST)' },
+    { en: 'Nile University', ar: 'جامعة النيل' },
+    { en: 'October 6 University', ar: 'جامعة أكتوبر 6' },
+    { en: 'Horus University', ar: 'جامعة حورس' },
+    { en: 'Must University', ar: 'جامعة مصر للعلوم والتكنولوجيا (Must)' },
+    { en: 'Ahram Canadian University', ar: 'جامعة الأهرام الكندية' },
+    { en: 'Pharos University', ar: 'جامعة فاروس' },
+    { en: 'Al-Ittihad University', ar: 'جامعة الاتحاد' },
+    { en: 'Delta University', ar: 'جامعة الدلتا' },
+    { en: 'Egyptian Chinese University', ar: 'الجامعة المصرية الصينية' },
+  ],
+  SA: [
+    { en: 'King Saud University', ar: 'جامعة الملك سعود' },
+    { en: 'King Abdulaziz University', ar: 'جامعة الملك عبدالعزيز' },
+    { en: 'KFUPM', ar: 'جامعة الملك فهد للبترول (KFUPM)' },
+    { en: 'KAUST', ar: 'جامعة الملك عبدالله للعلوم (KAUST)' },
+    { en: 'King Faisal University', ar: 'جامعة الملك فيصل' },
+    { en: 'King Khalid University', ar: 'جامعة الملك خالد' },
+    { en: 'Umm Al-Qura University', ar: 'جامعة أم القرى' },
+    { en: 'Imam Muhammad University', ar: 'جامعة الإمام محمد بن سعود' },
+    { en: 'Taibah University', ar: 'جامعة طيبة' },
+    { en: 'Tabuk University', ar: 'جامعة تبوك' },
+    { en: 'Al-Jouf University', ar: 'جامعة الجوف' },
+    { en: "Ha'il University", ar: 'جامعة حائل' },
+    { en: 'Najran University', ar: 'جامعة نجران' },
+    { en: 'Al-Baha University', ar: 'جامعة الباحة' },
+    { en: 'Prince Sultan University', ar: 'جامعة الأمير سلطان' },
+    { en: 'Dar Al-Hekma University', ar: 'جامعة دار الحكمة' },
+    { en: 'Effat University', ar: 'جامعة عفت' },
+    { en: 'Alfaisal University', ar: 'جامعة الفيصل' },
+    { en: 'BAU', ar: 'جامعة الأعمال والتكنولوجيا (BAU)' },
+  ],
+  AE: [
+    { en: 'UAEU', ar: 'جامعة الإمارات العربية (UAEU)' },
+    { en: 'AUS', ar: 'الجامعة الأمريكية بالشارقة (AUS)' },
+    { en: 'Zayed University', ar: 'جامعة زايد' },
+    { en: 'Khalifa University', ar: 'جامعة خليفة' },
+    { en: 'HCT', ar: 'HCT' },
+    { en: 'University of Sharjah', ar: 'جامعة الشارقة' },
+    { en: 'Abu Dhabi University', ar: 'جامعة أبوظبي' },
+    { en: 'Al Ain University', ar: 'جامعة العين' },
+    { en: 'Gulf Medical University', ar: 'جامعة الخليج الطبية' },
+    { en: 'Ajman University', ar: 'جامعة عجمان' },
+    { en: 'BITS Pilani Dubai', ar: 'BITS Pilani دبي' },
+    { en: 'Dubai University', ar: 'جامعة دبي' },
+  ],
+  KW: [
+    { en: 'Kuwait University', ar: 'جامعة الكويت' },
+    { en: 'GUST', ar: 'جامعة الخليج للعلوم والتكنولوجيا (GUST)' },
+    { en: 'AUK', ar: 'الجامعة الأمريكية بالكويت (AUK)' },
+    { en: 'Gulf University for Science & Technology', ar: 'جامعة الخليج' },
+  ],
+  BH: [
+    { en: 'University of Bahrain', ar: 'جامعة البحرين' },
+    { en: 'AMA International University', ar: 'جامعة AMA الدولية' },
+    { en: 'RCSI Bahrain', ar: 'RCSI البحرين' },
+    { en: 'Ahlia University', ar: 'جامعة أهلية' },
+  ],
+  JO: [
+    { en: 'University of Jordan', ar: 'الجامعة الأردنية' },
+    { en: 'Yarmouk University', ar: 'جامعة اليرموك' },
+    { en: 'JUST', ar: 'جامعة العلوم والتكنولوجيا الأردنية (JUST)' },
+    { en: 'German-Jordanian University', ar: 'الجامعة الألمانية الأردنية' },
+    { en: 'Applied Science University', ar: 'جامعة العلوم التطبيقية' },
+  ],
+  LB: [
+    { en: 'AUB', ar: 'الجامعة الأمريكية في بيروت (AUB)' },
+    { en: 'LAU', ar: 'الجامعة اللبنانية الأمريكية (LAU)' },
+    { en: 'Notre Dame University', ar: 'جامعة سيدة اللويزة (NDU)' },
+    { en: 'Lebanese University', ar: 'الجامعة اللبنانية' },
+  ],
+  INT: [
+    { en: 'IGCSE', ar: 'IGCSE' },
+    { en: 'IB (International Baccalaureate)', ar: 'الباكالوريا الدولية (IB)' },
+    { en: 'A-Level', ar: 'A-Level' },
+    { en: 'SAT / AP', ar: 'SAT / AP' },
+    { en: 'Edexcel', ar: 'إيدكسل' },
+  ],
+};
 
-const COURSES_EN = ["Mass Communication / PR", "Marketing / Business", "Engineering", "Computer Science / IT", "Medicine / Pharmacy", "Graphic Design", "Law", "Humanities / English", "Mathematics", "Science (Physics/Chem/Bio)", "Architecture", "Economics", "Education"];
-const COURSES_AR = ["إعلام / علاقات عامة", "تسويق / إدارة أعمال", "هندسة", "علوم حاسب / تقنية معلومات", "طب / صيدلة", "تصميم جرافيك", "قانون", "إنسانيات / أدب إنجليزي", "رياضيات", "علوم (فيزياء / كيمياء / أحياء)", "عمارة", "اقتصاد", "تربية"];
+// ── MAJORS ────────────────────────────────────────────────────────────────────
+const MAJORS_EN: Record<string, string[]> = {
+  '⚙️ Engineering & Tech': ['Civil Engineering', 'Architecture', 'Electrical Engineering', 'Mechanical Engineering', 'Chemical Engineering', 'Electronics Engineering', 'Computer Science (CS)', 'Information Technology (IT)', 'Software Engineering', 'Cybersecurity', 'Artificial Intelligence', 'Information Systems (IS)', 'Petroleum Engineering', 'Industrial Engineering', 'Environmental Engineering'],
+  '🏥 Medical & Health': ['Medicine (MBBS)', 'Dentistry', 'Pharmacy', 'Nursing', 'Physiotherapy', 'Nutrition & Food Sciences', 'Medical Lab Sciences', 'Hospital Administration', 'Veterinary Medicine', 'Biomedical Sciences'],
+  '💼 Business & Admin': ['Business Administration (MBA)', 'Marketing', 'Accounting', 'Economics', 'Finance & Banking', 'Human Resources (HR)', 'Supply Chain Management', 'Entrepreneurship', 'International Trade', 'Management Information Systems (MIS)', 'Actuarial Science'],
+  '⚖️ Law & Politics': ['Private Law', 'Public Law', 'Commercial Law', 'Political Science', 'International Relations', 'Sharia & Law', 'Legal Studies'],
+  '📺 Media & Arts': ['Journalism & Mass Communication', 'Public Relations', 'Media Production', 'Graphic Design', 'Visual Arts', 'Film & TV Production', 'Digital Media', 'Advertising', 'Photography'],
+  '📖 Humanities': ['English Literature', 'Arabic Literature', 'Translation & Linguistics', 'Psychology', 'Sociology', 'Philosophy', 'History', 'Education & Teaching', 'Social Work', 'Geography'],
+  '🔬 Pure Sciences': ['Mathematics', 'Statistics', 'Physics', 'Chemistry', 'Biology', 'Geology', 'Environmental Science', 'Biotechnology', 'Biochemistry'],
+};
 
-const REFERENCES_EN = ["APA 7th Edition", "MLA 9th Edition", "Harvard", "Chicago", "IEEE", "None / Not Required"];
-const REFERENCES_AR = ["APA الإصدار السابع", "MLA الإصدار التاسع", "هارفارد", "شيكاغو", "IEEE", "بدون توثيق"];
+const MAJORS_AR: Record<string, string[]> = {
+  '⚙️ هندسة وتقنية': ['هندسة مدنية', 'هندسة معمارية', 'هندسة كهربائية', 'هندسة ميكانيكية', 'هندسة كيميائية', 'هندسة إلكترونيات', 'علوم حاسب (CS)', 'تقنية معلومات (IT)', 'هندسة برمجيات', 'أمن المعلومات والسيبراني', 'ذكاء اصطناعي', 'نظم معلومات', 'هندسة بترول', 'هندسة صناعية', 'هندسة بيئية'],
+  '🏥 طب وصحة': ['طب بشري', 'طب أسنان', 'صيدلة', 'تمريض', 'علاج طبيعي', 'تغذية وعلوم غذائية', 'مختبرات طبية', 'إدارة مستشفيات', 'طب بيطري', 'علوم طبية حيوية'],
+  '💼 أعمال وإدارة': ['إدارة أعمال (MBA)', 'تسويق', 'محاسبة', 'اقتصاد', 'مالية وبنوك', 'موارد بشرية', 'سلاسل إمداد', 'ريادة أعمال', 'تجارة دولية', 'نظم معلومات إدارية (MIS)', 'علوم اكتوارية'],
+  '⚖️ قانون وسياسة': ['قانون خاص', 'قانون عام', 'قانون تجاري', 'علوم سياسية', 'علاقات دولية', 'شريعة وقانون', 'دراسات قانونية'],
+  '📺 إعلام وفنون': ['إعلام وصحافة', 'علاقات عامة', 'إنتاج إعلامي', 'تصميم جرافيك', 'فنون بصرية', 'إنتاج سينمائي وتلفزيوني', 'إعلام رقمي', 'إعلان وتسويق', 'تصوير'],
+  '📖 إنسانيات': ['أدب إنجليزي', 'أدب عربي', 'ترجمة ولغويات', 'علم نفس', 'علم اجتماع', 'فلسفة', 'تاريخ', 'تربية وتعليم', 'خدمة اجتماعية', 'جغرافيا'],
+  '🔬 علوم بحتة': ['رياضيات', 'إحصاء', 'فيزياء', 'كيمياء', 'أحياء', 'جيولوجيا', 'علوم بيئية', 'تقنية حيوية', 'كيمياء حيوية'],
+};
+
+const SYSTEMS_EN = ['Egyptian Credit Hours', 'Egyptian Semester', 'APA 7th', 'Harvard', 'Vancouver', 'Chicago', 'MLA', 'IEEE', 'ISO', 'Other'];
+const SYSTEMS_AR = ['ساعات معتمدة مصرية', 'فصلي مصري', 'APA الطبعة السابعة', 'هارفارد', 'فانكوفر', 'شيكاغو', 'MLA', 'IEEE', 'ISO', 'أخرى'];
 
 const MISSION_TYPES_EN = [
-  { id: 'essay', label: 'Essay / Report', icon: FileText, color: 'from-blue-500/20 to-blue-500/5 border-blue-500/30 text-blue-400' },
-  { id: 'presentation', label: 'Presentation', icon: Presentation, color: 'from-[#A855F7]/20 to-[#A855F7]/5 border-[#A855F7]/30 text-[#A855F7]' },
-  { id: 'code', label: 'Code / Project', icon: Code, color: 'from-emerald-500/20 to-emerald-500/5 border-emerald-500/30 text-emerald-400' },
-  { id: 'math', label: 'Math / Physics', icon: Calculator, color: 'from-orange-500/20 to-orange-500/5 border-orange-500/30 text-orange-400' },
-  { id: 'research', label: 'Research', icon: BookOpen, color: 'from-[#22D3EE]/20 to-[#22D3EE]/5 border-[#22D3EE]/30 text-[#22D3EE]' },
-  { id: 'design', label: 'Design / Visual', icon: Image, color: 'from-pink-500/20 to-pink-500/5 border-pink-500/30 text-pink-400' },
+  { value: 'essay', icon: '✍️', label: 'Essay / Report' },
+  { value: 'presentation', icon: '📊', label: 'Presentation' },
+  { value: 'computer_science', icon: '💻', label: 'Code / Project' },
+  { value: 'math', icon: '📐', label: 'Math / Physics' },
+  { value: 'research_paper', icon: '🔬', label: 'Research' },
+  { value: 'case_study', icon: '📋', label: 'Case Study' },
+  { value: 'data_analysis', icon: '📈', label: 'Data Analysis' },
+  { value: 'law', icon: '⚖️', label: 'Legal' },
 ];
-
 const MISSION_TYPES_AR = [
-  { id: 'essay', label: 'مقال / تقرير', icon: FileText, color: 'from-blue-500/20 to-blue-500/5 border-blue-500/30 text-blue-400' },
-  { id: 'presentation', label: 'بروزنتيشن', icon: Presentation, color: 'from-[#A855F7]/20 to-[#A855F7]/5 border-[#A855F7]/30 text-[#A855F7]' },
-  { id: 'code', label: 'كود / مشروع', icon: Code, color: 'from-emerald-500/20 to-emerald-500/5 border-emerald-500/30 text-emerald-400' },
-  { id: 'math', label: 'رياضيات / فيزياء', icon: Calculator, color: 'from-orange-500/20 to-orange-500/5 border-orange-500/30 text-orange-400' },
-  { id: 'research', label: 'بحث', icon: BookOpen, color: 'from-[#22D3EE]/20 to-[#22D3EE]/5 border-[#22D3EE]/30 text-[#22D3EE]' },
-  { id: 'design', label: 'تصميم / فيجوال', icon: Image, color: 'from-pink-500/20 to-pink-500/5 border-pink-500/30 text-pink-400' },
+  { value: 'essay', icon: '✍️', label: 'مقال / تقرير' },
+  { value: 'presentation', icon: '📊', label: 'بروزنتيشن' },
+  { value: 'computer_science', icon: '💻', label: 'كود / مشروع' },
+  { value: 'math', icon: '📐', label: 'رياضيات / فيزياء' },
+  { value: 'research_paper', icon: '🔬', label: 'بحث' },
+  { value: 'case_study', icon: '📋', label: 'دراسة حالة' },
+  { value: 'data_analysis', icon: '📈', label: 'تحليل بيانات' },
+  { value: 'law', icon: '⚖️', label: 'قانوني' },
 ];
 
-const QUICK_PROMPTS_EN = [
-  { label: 'Solve & Explain', prompt: 'Solve this assignment completely. Show all working and explain every step clearly.' },
-  { label: 'Full Essay', prompt: 'Write a comprehensive, well-structured essay with introduction, body paragraphs with evidence, and conclusion.' },
-  { label: 'Presentation', prompt: 'Create a professional presentation with compelling slides, visuals, and speaker notes.' },
-  { label: 'Debug Code', prompt: 'Analyze this code, fix all bugs, optimize performance, and explain every change.' },
-  { label: 'Research', prompt: 'Write a deep research report with analysis, citations, and academic conclusion.' },
-  { label: 'Summarize', prompt: 'Extract core intelligence. Executive summary + key takeaways + critical analysis.' },
-];
-
-const QUICK_PROMPTS_AR = [
-  { label: 'احلّها كاملة', prompt: 'احل الواجب ده كامل. وريني كل خطوة بالتفصيل بالعربي.' },
-  { label: 'اكتب مقال', prompt: 'اكتب مقال أكاديمي متكامل بمقدمة وعرض وخاتمة، مع حجج وأدلة.' },
-  { label: 'بروزنتيشن', prompt: 'اعمل بروزنتيشن احترافي مع شرائح، صور، ونوتس للعرض.' },
-  { label: 'صحّح الكود', prompt: 'افحص الكود ده، صلح كل الأخطاء، وشرحلي كل تعديل.' },
-  { label: 'بحث عميق', prompt: 'اكتب تقرير بحثي متكامل بالتحليل والمراجع والخاتمة الأكاديمية.' },
-  { label: 'لخّص', prompt: 'لخّصلي المحتوى ده في نقاط أساسية وتحليل مختصر.' },
-];
-
-export function UploadHandler({ onLaunch }: UploadHandlerProps) {
+// ── Component ─────────────────────────────────────────────────────────────────
+export function UploadHandler({ onLaunch, isProcessing }: UploadHandlerProps) {
   const { i18n } = useTranslation();
   const isAr = i18n.language === 'ar';
-  const location = useLocation();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [files, setFiles] = useState<File[]>([]);
   const [prompt, setPrompt] = useState('');
+  const [country, setCountry] = useState('');
   const [university, setUniversity] = useState('');
-  const [course, setCourse] = useState('');
+  const [customUni, setCustomUni] = useState('');
+  const [showCustomUni, setShowCustomUni] = useState(false);
+  const [major, setMajor] = useState('');
   const [system, setSystem] = useState('');
-  const [reference, setReference] = useState('');
   const [missionType, setMissionType] = useState('');
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
 
-  const UNIVERSITIES = isAr ? UNIVERSITIES_AR : UNIVERSITIES_EN;
   const SYSTEMS = isAr ? SYSTEMS_AR : SYSTEMS_EN;
-  const COURSES = isAr ? COURSES_AR : COURSES_EN;
-  const REFERENCES = isAr ? REFERENCES_AR : REFERENCES_EN;
   const MISSION_TYPES = isAr ? MISSION_TYPES_AR : MISSION_TYPES_EN;
-  const QUICK_PROMPTS = isAr ? QUICK_PROMPTS_AR : QUICK_PROMPTS_EN;
+  const MAJORS = isAr ? MAJORS_AR : MAJORS_EN;
+  const countryUnis = country ? (UNIVERSITIES[country] || []) : [];
 
-  useEffect(() => {
-    if (location.state?.template) {
-      const mapEn: Record<string, string> = {
-        math: 'Solve step-by-step. Show full working. Final answers clearly formatted.',
-        essay: 'Write a structured essay with intro, body paragraphs with arguments and evidence, and a compelling conclusion.',
-        code: 'Debug, fix, and optimize. Explain all changes.',
-        summarize: 'Executive summary + key takeaways.',
-        presentation: 'Create a professional presentation with slides, visuals, and speaker notes.',
-        research: 'Deep research with citations, critical analysis, and academic conclusion.',
-      };
-      const mapAr: Record<string, string> = {
-        math: 'احل خطوة بخطوة. وريني كل الحسابات. الإجابات واضحة.',
-        essay: 'اكتب مقال أكاديمي بمقدمة وعرض وخاتمة مع حجج وأدلة.',
-        code: 'صحّح الكود وشرحلي كل تعديل.',
-        summarize: 'ملخص تنفيذي + نقاط أساسية.',
-        presentation: 'اعمل بروزنتيشن احترافي مع شرائح وصور ونوتس.',
-        research: 'بحث عميق بمراجع وتحليل وخاتمة أكاديمية.',
-      };
-      const map = isAr ? mapAr : mapEn;
-      if (map[location.state.template]) setPrompt(map[location.state.template]);
-      if (location.state.missionType) setMissionType(location.state.missionType);
-    }
-  }, [location.state, isAr]);
-
-  const onDrop = useCallback((accepted: File[]) => {
-    setFiles(prev => [...prev, ...accepted]);
-    const img = accepted.find(f => f.type.startsWith('image/'));
-    if (img) setPreviewUrl(URL.createObjectURL(img));
-  }, []);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'application/pdf': ['.pdf'],
-      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
-      'text/*': ['.txt', '.md', '.csv'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-      'application/msword': ['.doc']
-    }
-  });
-
-  const removeFile = (idx: number) => {
-    setFiles(prev => {
-      const next = prev.filter((_, i) => i !== idx);
-      if (next.length === 0) setPreviewUrl(null);
-      return next;
-    });
+  const handleFiles = (newFiles: FileList | null) => {
+    if (!newFiles) return;
+    const arr = Array.from(newFiles).filter(f =>
+      ['application/pdf', 'image/', 'text/', 'application/msword', '.docx'].some(t => f.type.startsWith(t) || f.name.endsWith('.docx') || f.name.endsWith('.txt'))
+    );
+    setFiles(prev => [...prev, ...arr].slice(0, 5));
   };
 
-  const canLaunch = files.length > 0 || prompt.trim().length > 10;
+  const canLaunch = (prompt.trim().length >= 10 || files.length > 0) && !isProcessing;
 
-  const fields = [
-    {
-      label: isAr ? 'الجامعة' : 'University',
-      value: university, setter: setUniversity, options: UNIVERSITIES,
-      placeholder: isAr ? 'اختار الجامعة' : 'Select University',
-    },
-    {
-      label: isAr ? 'التخصص / المادة' : 'Course / Major',
-      value: course, setter: setCourse, options: COURSES,
-      placeholder: isAr ? 'اختار المادة' : 'Select Course',
-    },
-    {
-      label: isAr ? 'النظام الأكاديمي' : 'Academic System',
-      value: system, setter: setSystem, options: SYSTEMS,
-      placeholder: isAr ? 'اختار النظام' : 'Select System',
-    },
-    {
-      label: isAr ? 'أسلوب التوثيق' : 'Reference Style',
-      value: reference, setter: setReference, options: REFERENCES,
-      placeholder: isAr ? 'اختار التوثيق' : 'Select Style',
-    },
-  ];
+  const handleLaunch = () => {
+    if (!canLaunch) return;
+    const finalUni = showCustomUni ? customUni : university;
+    const allMajors = Object.values(isAr ? MAJORS_AR : MAJORS_EN).flat();
+    onLaunch(files, prompt, finalUni, major, system, '', missionType, country, major);
+  };
 
   return (
-    <div className="space-y-5" dir={isAr ? 'rtl' : 'ltr'}>
+    <div className={cn('w-full space-y-4', isAr && 'font-[Cairo]')} dir={isAr ? 'rtl' : 'ltr'}>
 
-      {/* Mission type */}
+      {/* Mission Type Pills */}
       <div>
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-3 block">
+        <p className="text-[10px] font-mono text-gray-600 uppercase tracking-widest mb-2">
           {isAr ? 'نوع الواجب' : 'Assignment Type'}
-        </label>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+        </p>
+        <div className="flex flex-wrap gap-2">
           {MISSION_TYPES.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setMissionType(missionType === t.id ? '' : t.id)}
-              className={cn(
-                'flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border text-xs font-medium transition-all bg-gradient-to-b',
-                missionType === t.id ? t.color : 'from-transparent border-gray-800 text-gray-500 hover:border-gray-600 hover:text-gray-300'
-              )}
-            >
-              <t.icon className="w-4 h-4" />
-              <span className="text-[10px] text-center leading-tight">{t.label}</span>
+            <button key={t.value} onClick={() => setMissionType(missionType === t.value ? '' : t.value)}
+              className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all border',
+                missionType === t.value
+                  ? 'bg-[#22D3EE]/20 text-[#22D3EE] border-[#22D3EE]/40'
+                  : 'bg-[#0A0B0E] text-gray-500 border-gray-800 hover:border-gray-700 hover:text-gray-300')}>
+              <span>{t.icon}</span>{t.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Context fields */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {fields.map(({ label, value, setter, options, placeholder }) => (
-          <div key={label}>
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">{label}</label>
-            <select
-              value={value}
-              onChange={e => setter(e.target.value)}
-              className="w-full bg-[#0A0B0E] border border-gray-800 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-[#22D3EE] transition-all cursor-pointer"
-              dir={isAr ? 'rtl' : 'ltr'}
-            >
-              <option value="">{placeholder}</option>
-              {options.map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </div>
-        ))}
-      </div>
-
-      {/* Upload zone */}
-      <div>
-        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2 block">
-          {isAr ? 'ارفع الملف' : 'Upload Files'}{' '}
-          <span className="text-gray-700">{isAr ? '(PDF، صور، نص — اختياري)' : '(PDF, Images, Text — Optional)'}</span>
-        </label>
-        <div
-          {...getRootProps()}
-          className={cn(
-            'border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all',
-            isDragActive ? 'border-[#22D3EE] bg-[#22D3EE]/5' : 'border-gray-800 hover:border-gray-600 hover:bg-white/[0.02]'
-          )}
-        >
-          <input {...getInputProps()} />
-          {previewUrl ? (
-            <img src={previewUrl} alt="" className="h-28 object-contain rounded-lg mx-auto mb-3 border border-gray-800" />
-          ) : (
-            <UploadCloud className={cn('w-10 h-10 mx-auto mb-3 transition-colors', isDragActive ? 'text-[#22D3EE]' : 'text-gray-700')} />
-          )}
-          <p className="text-gray-500 text-sm">
-            {isDragActive
-              ? (isAr ? 'افلت الملف هنا...' : 'Drop it here...')
-              : (isAr ? 'اسحب الملف هنا أو انقر للرفع' : 'Drag & drop or click to upload')}
+      {/* Context Row — Country + University + Major */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* Country */}
+        <div>
+          <p className="text-[10px] font-mono text-gray-600 uppercase tracking-widest mb-1.5">
+            {isAr ? 'الدولة' : 'Country'}
           </p>
-          <p className="text-gray-700 text-xs mt-1">PDF, DOCX, PNG, JPG, TXT, MD, CSV</p>
+          <div className="relative">
+            <select value={country} onChange={e => { setCountry(e.target.value); setUniversity(''); setShowCustomUni(false); }}
+              className="w-full bg-[#0A0B0E] border border-gray-800 rounded-xl px-3 py-2.5 text-sm text-white appearance-none focus:outline-none focus:border-gray-600 cursor-pointer">
+              <option value="">{isAr ? 'اختار الدولة' : 'Select Country'}</option>
+              {COUNTRIES.map(c => (
+                <option key={c.code} value={c.code}>{isAr ? c.ar : c.en}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute end-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600 pointer-events-none" />
+          </div>
         </div>
 
-        <AnimatePresence>
-          {files.length > 0 && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3 space-y-2">
-              {files.map((file, i) => (
-                <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                  className="flex items-center gap-3 bg-[#0A0B0E] border border-gray-800 rounded-xl px-4 py-2.5">
-                  <File className="w-4 h-4 text-[#22D3EE] shrink-0" />
-                  <span className="text-gray-300 text-xs flex-1 truncate">{file.name}</span>
-                  <span className="text-gray-600 text-[10px] shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
-                  <button onClick={() => removeFile(i)} className="text-gray-600 hover:text-red-400 transition-colors">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </motion.div>
-              ))}
-            </motion.div>
+        {/* University */}
+        <div>
+          <p className="text-[10px] font-mono text-gray-600 uppercase tracking-widest mb-1.5">
+            {isAr ? 'الجامعة' : 'University'}
+          </p>
+          {showCustomUni ? (
+            <div className="flex gap-2">
+              <input value={customUni} onChange={e => setCustomUni(e.target.value)}
+                placeholder={isAr ? 'اكتب اسم جامعتك' : 'Type your university'}
+                className="flex-1 bg-[#0A0B0E] border border-[#22D3EE]/40 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none placeholder-gray-700" />
+              <button onClick={() => setShowCustomUni(false)} className="text-gray-600 hover:text-white text-xs px-2">✕</button>
+            </div>
+          ) : (
+            <div className="relative">
+              <select value={university} onChange={e => {
+                if (e.target.value === '__custom__') { setShowCustomUni(true); setUniversity(''); }
+                else setUniversity(e.target.value);
+              }}
+                className="w-full bg-[#0A0B0E] border border-gray-800 rounded-xl px-3 py-2.5 text-sm text-white appearance-none focus:outline-none focus:border-gray-600 cursor-pointer">
+                <option value="">{isAr ? 'اختار الجامعة' : 'Select University'}</option>
+                {countryUnis.map(u => (
+                  <option key={u.en} value={u.en}>{isAr ? u.ar : u.en}</option>
+                ))}
+                {!country && <option disabled>{isAr ? '← اختار الدولة أولاً' : '← Select country first'}</option>}
+                <option value="__custom__">{isAr ? '➕ جامعتي مش في القائمة' : '➕ My uni is not listed'}</option>
+              </select>
+              <ChevronDown className="absolute end-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600 pointer-events-none" />
+            </div>
           )}
-        </AnimatePresence>
+        </div>
+
+        {/* Major */}
+        <div>
+          <p className="text-[10px] font-mono text-gray-600 uppercase tracking-widest mb-1.5">
+            {isAr ? 'التخصص' : 'Major'}
+          </p>
+          <div className="relative">
+            <select value={major} onChange={e => setMajor(e.target.value)}
+              className="w-full bg-[#0A0B0E] border border-gray-800 rounded-xl px-3 py-2.5 text-sm text-white appearance-none focus:outline-none focus:border-gray-600 cursor-pointer">
+              <option value="">{isAr ? 'اختار التخصص' : 'Select Major'}</option>
+              {Object.entries(MAJORS).map(([category, items]) => (
+                <optgroup key={category} label={category}>
+                  {items.map(item => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <ChevronDown className="absolute end-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600 pointer-events-none" />
+          </div>
+        </div>
       </div>
+
+      {/* Academic System */}
+      <div>
+        <p className="text-[10px] font-mono text-gray-600 uppercase tracking-widest mb-1.5">
+          {isAr ? 'النظام الأكاديمي / التوثيق' : 'Academic System / Reference Style'}
+        </p>
+        <div className="relative">
+          <select value={system} onChange={e => setSystem(e.target.value)}
+            className="w-full bg-[#0A0B0E] border border-gray-800 rounded-xl px-3 py-2.5 text-sm text-white appearance-none focus:outline-none focus:border-gray-600 cursor-pointer">
+            <option value="">{isAr ? 'اختياري' : 'Optional'}</option>
+            {SYSTEMS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <ChevronDown className="absolute end-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600 pointer-events-none" />
+        </div>
+      </div>
+
+      {/* File Upload */}
+      <div
+        onDragOver={e => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={e => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
+        onClick={() => fileInputRef.current?.click()}
+        className={cn('border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition-all',
+          dragging ? 'border-[#22D3EE]/60 bg-[#22D3EE]/5' : 'border-gray-800 hover:border-gray-700 bg-[#0A0B0E]/50')}>
+        <input ref={fileInputRef} type="file" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.webp,.csv" className="hidden"
+          onChange={e => handleFiles(e.target.files)} />
+        <Upload className="w-5 h-5 text-gray-600 mx-auto mb-2" />
+        <p className="text-gray-600 text-xs">{isAr ? 'ارفع الملف أو اسحبه هنا' : 'Drop files or click to upload'}</p>
+        <p className="text-gray-700 text-[10px] mt-1">PDF · Images · Word · Text</p>
+      </div>
+
+      {/* Files preview */}
+      {files.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {files.map((f, i) => (
+            <div key={i} className="flex items-center gap-2 bg-[#0A0B0E] border border-gray-800 rounded-xl px-3 py-1.5">
+              <FileText className="w-3 h-3 text-[#22D3EE]" />
+              <span className="text-xs text-gray-400 max-w-[120px] truncate">{f.name}</span>
+              <button onClick={() => setFiles(files.filter((_, j) => j !== i))} className="text-gray-700 hover:text-red-400 transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Prompt */}
       <div>
-        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">
-            {isAr ? 'اكتب الواجب أو التعليمات' : 'Mission Brief / Prompt'}
-          </label>
-          <div className="flex gap-1.5 flex-wrap justify-end">
-            {QUICK_PROMPTS.map(q => (
-              <button key={q.label} onClick={() => setPrompt(q.prompt)}
-                className="px-2 py-0.5 text-[9px] font-mono bg-[#0A0B0E] border border-gray-800 text-gray-500 rounded hover:border-[#22D3EE]/50 hover:text-[#22D3EE] transition-all">
-                {q.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <p className="text-[10px] font-mono text-gray-600 uppercase tracking-widest mb-1.5">
+          {isAr ? 'اكتب الواجب أو التعليمات' : 'Assignment / Instructions'}
+        </p>
         <textarea
-          value={prompt}
-          onChange={e => setPrompt(e.target.value)}
-          placeholder={isAr ? 'اكتب الواجب كامل أو أي تعليمات خاصة من الدكتور...' : 'Describe your assignment, requirements, or paste it directly...'}
-          rows={4}
-          dir={isAr ? 'rtl' : 'ltr'}
-          className="w-full bg-[#0A0B0E] border border-gray-800 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-[#22D3EE] transition-all resize-none placeholder:text-gray-600"
+          value={prompt} onChange={e => setPrompt(e.target.value)}
+          rows={5}
+          placeholder={isAr
+            ? 'الصق الواجب هنا أو اشرح المطلوب بالتفصيل...'
+            : 'Paste your assignment here or describe exactly what is needed...'}
+          className="w-full bg-[#0A0B0E] border border-gray-800 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-[#22D3EE]/50 transition-all resize-none placeholder:text-gray-700"
         />
-        <p className={cn('text-gray-700 text-[10px] mt-1', isAr ? 'text-start' : 'text-end')}>{prompt.length} {isAr ? 'حرف' : 'characters'}</p>
       </div>
 
       {/* Launch */}
       <button
-        onClick={() => onLaunch(files, prompt, university, course, system, reference, missionType)}
+        onClick={handleLaunch}
         disabled={!canLaunch}
-        className="w-full py-5 bg-gradient-to-r from-[#22D3EE] to-[#A855F7] text-black font-black text-sm uppercase tracking-[0.2em] rounded-2xl hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(34,211,238,0.15)]"
-      >
-        <Zap className="w-5 h-5" />
-        {isAr ? '🚀 ابدأ المهمة' : 'Launch Mission'}
-        <Zap className="w-5 h-5" />
+        className={cn('w-full py-4 rounded-2xl font-black text-sm tracking-wide transition-all',
+          canLaunch
+            ? 'bg-gradient-to-r from-[#22D3EE] to-[#A855F7] text-black hover:opacity-90 active:scale-[0.99]'
+            : 'bg-gray-900 text-gray-700 cursor-not-allowed')}>
+        {isProcessing
+          ? (isAr ? '⏳ جاري الحل...' : '⏳ Processing...')
+          : (isAr ? '🚀 ابدأ المهمة' : '🚀 Launch Mission')}
       </button>
 
-      {!canLaunch && (
-        <p className="text-center text-gray-600 text-xs">
-          {isAr ? 'ارفع ملف أو اكتب ١٠ حروف على الأقل.' : 'Upload a file or write at least 10 characters to launch.'}
+      {!canLaunch && !isProcessing && (
+        <p className="text-center text-gray-700 text-xs">
+          {isAr ? 'ارفع ملف أو اكتب ١٠ حروف على الأقل' : 'Upload a file or write at least 10 characters'}
         </p>
       )}
     </div>

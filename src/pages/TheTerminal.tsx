@@ -64,7 +64,8 @@ export function TheTerminal() {
   const handleMissionLaunch = async (
     files: File[], prompt: string,
     university?: string, course?: string,
-    system?: string, reference?: string, missionType?: string
+    system?: string, reference?: string, missionType?: string,
+    country?: string, major?: string
   ) => {
     setMissionState('analyzing');
     setErrorMessage('');
@@ -77,7 +78,10 @@ export function TheTerminal() {
     });
 
     try {
-      const result = await processMission(files, prompt, university, course, system, reference, missionType);
+      // Build enriched context with country + major for curriculum-aware solving
+      const enrichedUniversity = [country, university].filter(Boolean).join(' – ');
+      const enrichedCourse = [major, course].filter(Boolean).join(' / ');
+      const result = await processMission(files, prompt, enrichedUniversity || university, enrichedCourse || course, system, reference, missionType);
       setSolutionData(result);
       setMissionState('accomplished');
       Analytics.missionCompleted(result.assignment_type || 'unknown', 0);

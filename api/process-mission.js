@@ -23,7 +23,13 @@ async function parseBody(req) {
 
 // ─── SUBJECT ROUTER V3.1 ────────────────────────────────────────────────────
 function buildSubjectContext(contents) {
-  const text = contents.map(c => c.text || '').join(' ').toLowerCase();
+  const fullText = contents.map(c => c.text || '').join(' ');
+  const text = fullText.toLowerCase();
+  const ctxMatch = fullText.match(/\[CONTEXT\]([^\[]+)/);
+  const ctxLine = ctxMatch ? ctxMatch[1] : '';
+  const detectedUni = (ctxLine.match(/University:\s*([^|\n]+)/i) || [])[1]?.trim() || '';
+  const detectedMajor = (ctxLine.match(/Course[^:]*:\s*([^|\n]+)/i) || [])[1]?.trim() || '';
+  const detectedCountry = (ctxLine.match(/Country:\s*([^|\n]+)/i) || [])[1]?.trim() || '';
 
   // STEM — Math / Statistics / Calculus (check BEFORE engineering)
   if (/calculus|integral|derivative|differentiat|marginal|optimization|maximiz|minimiz|profit function|cost function|demand function|correlation|standard deviation|regression|statistics|probability|hypothesis|normal distribution|binomial|poisson|variance|covariance|pearson|spearman|t-test|chi.square|anova|forecasting|predictive model|linear model|matrix|eigenvalue|fourier|laplace/.test(text)) {
@@ -67,19 +73,6 @@ OUTPUT REQUIREMENTS FOR MATH/STATS:
     };
   }
 
-  // Business / Management
-  if (/pestel|swot|porter|business plan|marketing strategy|competitive analysis|market analysis|financial model|cash flow|npv|irr|break.even|stakeholder|supply chain|balanced scorecard|خطة أعمال|تحليل|استراتيجية|سوق|تسويق|ربحية|استثمار/.test(text)) {
-    return {
-      domain: 'BUSINESS',
-      rules: `BUSINESS DOMAIN:
-- McKinsey/BCG standard: data-driven, insight-first
-- Every claim needs a number or logical deduction
-- PESTEL/SWOT/Porter in structured table blocks
-- Executive Summary: Context → Finding → Recommendation (3 sentences)
-- Conclude with 3 specific, actionable recommendations`
-    };
-  }
-
   // Law (English + Arabic keywords)
   if (/contract|tort|liability|negligence|jurisdiction|statute|plaintiff|defendant|case law|legal|legislation|breach|damages|constitutional|intellectual property|عقد|مسئولية|قانون|محكمة|دعوى|قضائية|تشريع|عدول|ضمان|تعويض|بند|نزاع|حماية المستهلك|مدني|جنائي|براءة|ملكية فكرية|استئناف|حكم|شريعة/.test(text)) {
     return {
@@ -93,6 +86,19 @@ OUTPUT REQUIREMENTS FOR MATH/STATS:
 - State legal positions directly — never hedge with "it could be argued"
 - For Egyptian law: reference specific laws by number and year
 - Output language follows input language (Arabic in → Arabic out)`
+    };
+  }
+
+  // Business / Management
+  if (/pestel|swot|porter|business plan|marketing strategy|competitive analysis|market analysis|financial model|cash flow|npv|irr|break.even|stakeholder|supply chain|balanced scorecard|خطة أعمال|تحليل|استراتيجية|سوق|تسويق|ربحية|استثمار/.test(text)) {
+    return {
+      domain: 'BUSINESS',
+      rules: `BUSINESS DOMAIN:
+- McKinsey/BCG standard: data-driven, insight-first
+- Every claim needs a number or logical deduction
+- PESTEL/SWOT/Porter in structured table blocks
+- Executive Summary: Context → Finding → Recommendation (3 sentences)
+- Conclude with 3 specific, actionable recommendations`
     };
   }
 
@@ -120,9 +126,15 @@ OUTPUT REQUIREMENTS FOR MATH/STATS:
     };
   }
 
+  const curriculumNote = [
+    detectedUni ? `University: ${detectedUni} — match this institution's academic standards` : '',
+    detectedMajor ? `Major: ${detectedMajor} — use discipline-specific terminology and frameworks` : '',
+    detectedCountry ? `Country: ${detectedCountry} — apply relevant local standards and references` : '',
+  ].filter(Boolean).join('\n');
+
   return {
     domain: 'GENERAL',
-    rules: `Match discipline conventions from context. Academic register. Evidence over assertion.`
+    rules: `Match discipline conventions from context. Academic register. Evidence over assertion.${curriculumNote ? '\n\nCURRICULUM ANCHORS:\n' + curriculumNote : ''}`
   };
 }
 
