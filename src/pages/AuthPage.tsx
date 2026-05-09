@@ -23,7 +23,7 @@ export function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const navigate = useNavigate();
-  const next = searchParams.get('next') || '/app';
+  const next = searchParams.get('next') || '/terminal';
 
   // Handle password recovery link from email
   useEffect(() => {
@@ -78,7 +78,7 @@ export function AuthPage() {
         navigate(next);
       } else {
         // signup
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email, password,
           options: { emailRedirectTo: `${window.location.origin}${next}` },
         });
@@ -100,7 +100,31 @@ export function AuthPage() {
         }
       }
     } catch (err: any) {
-      setError(err.message || (isAr ? 'فشل تسجيل الدخول.' : 'Authentication failed.'));
+      const msg = err.message || '';
+      // Friendly error messages for common Supabase errors
+      if (msg.includes('rate limit') || msg.includes('too many')) {
+        setError(isAr
+          ? 'تجاوزت الحد المسموح به من الإيميلات. استنى ٥ دقائق وحاول تاني.'
+          : 'Too many attempts. Please wait 5 minutes and try again.');
+      } else if (msg.includes('already registered') || msg.includes('User already registered')) {
+        setError(isAr
+          ? 'الإيميل ده مسجل قبل كده. جرب تسجيل الدخول بدل إنشاء حساب.'
+          : 'This email is already registered. Try signing in instead.');
+      } else if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials')) {
+        setError(isAr
+          ? 'كلمة المرور غلط أو الإيميل مش مسجل.'
+          : 'Wrong password or email not registered.');
+      } else if (msg.includes('Email not confirmed')) {
+        setError(isAr
+          ? 'محتاج تأكد إيميلك الأول. شوف صندوق الوارد بتاعك.'
+          : 'Please confirm your email first. Check your inbox.');
+      } else if (msg.includes('Password should be')) {
+        setError(isAr
+          ? 'كلمة المرور لازم تكون ٦ حروف على الأقل.'
+          : 'Password must be at least 6 characters.');
+      } else {
+        setError(msg || (isAr ? 'فشل تسجيل الدخول.' : 'Authentication failed.'));
+      }
     } finally {
       setLoading(false);
     }
@@ -111,7 +135,7 @@ export function AuthPage() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${window.location.origin}${next}` },
+        options: { redirectTo: `${window.location.origin}${next === '/app' ? '/terminal' : next}` },
       });
       if (error) throw error;
       Analytics.authCompleted('google_oauth');
@@ -223,9 +247,14 @@ export function AuthPage() {
 
             {/* Magic link info */}
             {mode === 'magic' && (
-              <p className="text-gray-500 text-xs bg-[#050608] border border-gray-900 rounded-xl px-4 py-3">
-                {isAr ? 'هنبعتلك رابط دخول على إيميلك. مش محتاج كلمة مرور.' : "We'll send a one-click login link to your email. No password needed."}
-              </p>
+              <div className="bg-[#050608] border border-gray-900 rounded-xl px-4 py-3 space-y-1">
+                <p className="text-gray-400 text-xs">
+                  {isAr ? 'هنبعتلك رابط دخول فوري على إيميلك. مش محتاج كلمة مرور.' : "We'll send a one-click login link to your email. No password needed."}
+                </p>
+                <p className="text-gray-600 text-[10px]">
+                  {isAr ? 'لو مش شايف الإيميل، شوف Spam.' : "If you don't see it, check your spam folder."}
+                </p>
+              </div>
             )}
 
             {/* Reset info */}
@@ -251,7 +280,7 @@ export function AuthPage() {
               )}
             </AnimatePresence>
 
-            <button type="submit" disabled={loading}
+            <button type="submit" disabled={loading || !!success}
               className="w-full py-3.5 bg-gradient-to-r from-[#22D3EE] to-[#A855F7] text-black font-black rounded-xl hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm uppercase tracking-widest">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> :
                 mode === 'magic' ? <><Zap className="w-4 h-4" />{isAr ? 'أرسل الرابط' : 'Send Link'}</> :
