@@ -431,6 +431,7 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
       checkPage(10);
       if (block.type === 'heading') {
         y += 3;
+        // Skip if this heading duplicates the document title (already written at top)
         writeLine(block.content, 13, true, [15, 23, 42]);
         pdf.setDrawColor(200, 200, 200); pdf.setLineWidth(0.2);
         pdf.line(MARGIN, y, W - MARGIN, y); y += 5;
@@ -804,8 +805,9 @@ export async function downloadMissionPackage(data: any, payloadName: string = "M
     // Alternative approaches — add to Full_Breakdown as extra section (handled in PDF/DOCX)
     // They appear as a section at the end of Full_Breakdown automatically via reconstructed_doc blocks
 
-    // MEDICAL extras
-    if (extras.medical) {
+    // MEDICAL extras — ONLY for medical domain assignments
+    const isMedicalDomain = (data.domain || '').toUpperCase().includes('MEDICAL');
+    if (isMedicalDomain && extras.medical) {
       const med = extras.medical;
       // Drug Interaction Matrix CSV
       if (med.drug_interaction_matrix?.length) {
@@ -813,8 +815,8 @@ export async function downloadMissionPackage(data: any, payloadName: string = "M
         const rows = med.drug_interaction_matrix.map((r: any) => [r.drug_a, r.drug_b, r.interaction, r.severity, r.management]);
         zip.file('Drug_Interaction_Matrix.csv', buildCSV(headers, rows));
       }
-      // Patient Education Leaflet
-      if (med.patient_leaflet) {
+      // Patient Education Leaflet — only for medical
+      if (isMedicalDomain && med.patient_leaflet) {
         zip.file('Patient_Education_Leaflet.txt', med.patient_leaflet);
       }
     }
