@@ -90,9 +90,9 @@ function buildSubjectContext(contents) {
   };
 
   const curriculumNote = [
-    detectedUni ? \`University: \${detectedUni} — \${getCountryStandards(detectedCountry, detectedUni)}\` : '',
-    detectedMajor ? \`Major: \${detectedMajor} — use discipline-specific terminology, frameworks, and assessment criteria for this field\` : '',
-    detectedCountry && !detectedUni ? \`Country: \${detectedCountry} — \${getCountryStandards(detectedCountry, '')}\` : '',
+    detectedUni ? `University: ${detectedUni} — ${getCountryStandards(detectedCountry, detectedUni)}` : '',
+    detectedMajor ? `Major: ${detectedMajor} — use discipline-specific terminology, frameworks, and assessment criteria for this field` : '',
+    detectedCountry && !detectedUni ? `Country: ${detectedCountry} — ${getCountryStandards(detectedCountry, '')}` : '',
   ].filter(Boolean).join('\n');
 
   // MULTI-DOMAIN detection: if multiple domains detected, use comprehensive mode
@@ -143,6 +143,66 @@ ${curriculumNote ? 'CURRICULUM ANCHORS:\n' + curriculumNote : ''}
 OUTPUT RULE: The reconstructed_doc must have separate headed sections for EACH part of the assignment. A student reading this should have a complete answer to every question asked.`
     };
   }
+
+
+
+
+
+  // STEM — Engineering (structural/civil/mechanical)
+  if (/reinforced concrete|beam|slab|column|ecp|structural|foundation|steel design|load combination|dead load|live load|kn\/m|mpa|egyptian code|aci 318|eurocode|bs 8110|moment distribution|shear force|bending|bbs|bar bending|rebar|stirrup|bar schedule|retaining wall|pid controller|mechanical|thermodynamic|hydraulic|circuit|electrical|هندسة|خرسانة|حديد|تسليح|عزم|قص|أساس|BBS|جدول الحديد|قفل|كانة/.test(text)) {
+    return {
+      domain: 'ENGINEERING',
+      rules: `ENGINEERING DOMAIN:
+- Full calculation: Given → Find → Assumptions → Solution (step-by-step) → Verify → Safety Factor
+- Egypt: cite ECP 203 clauses (e.g. "ECP 203-2018 Section 4.2.1")
+- Saudi: cite SBC 304 (concrete), SBC 301 (loads)
+- UAE/International: BS 8110 or Eurocode 2
+- Always label units: kN, kN/m², m, mm, MPa
+- Safety factors: sliding ≥ 1.5, overturning ≥ 2.0, bearing capacity ≥ 3.0
+- SVG cross-sections required for structural elements: show bars, stirrups, cover, dimensions
+
+BAR BENDING SCHEDULE (BBS) — generate whenever rebar/reinforcement/stirrups/تسليح/حديد/BBS/قفل/كانة appears:
+- Generate a complete table: Bar Mark | Shape | Dia (mm) | A | B | C | D | Cut Length (mm) | No. Bars | Total Length (m) | Weight (kg)
+- Use BS 8666 shape codes: 00=straight, 11=L-bar, 21=U-bar, 51=closed stirrup/link
+- Cutting lengths: Straight=L | L-bar=A+B−r−2d | U-bar=A+2B−2r | Stirrup=2(A+B)+24d (for 135° hooks)
+- Hook allowance: 9d for 90° hook, 12d for 135° seismic hook
+- Weight per bar (kg) = (d²/162.2) × total length in metres
+- After BBS table, draw SVG reinforcement diagram: show bar positions, spacing, concrete cover (25mm beams, 40mm foundations)
+- Label every bar: e.g. "2T20 top" "R8-150 links"
+- Output language follows input language (Arabic in → Arabic out)`
+    };
+  }
+
+  // STEM — Math / Statistics / Calculus (check BEFORE engineering)
+  // BUT: skip if this is a multi-domain assignment (handle below)
+  const hasNonMathDomain = /patient|diagnosis|stroke|hemiparesis|retaining wall|PID controller|PESTEL|SWOT|feasibility|thrombolytic|clinical|nursing/.test(text);
+  if (!hasNonMathDomain && /calculus|integral|derivative|differentiat|marginal|optimization|maximiz|minimiz|profit function|cost function|demand function|correlation|standard deviation|regression|statistics|probability|hypothesis|normal distribution|binomial|poisson|variance|covariance|pearson|spearman|t-test|chi.square|anova|forecasting|predictive model|linear model|matrix|eigenvalue|fourier|laplace/.test(text)) {
+    return {
+      domain: 'MATH_STATS',
+      rules: `MATHEMATICS & STATISTICS DOMAIN ACTIVATED:
+
+CALCULUS RULES:
+- Show every algebraic step. Never skip. Never say "it can be shown."
+- Derive, don't state. Box final answers: \\boxed{x = 267}
+- For optimization: Given → Find → Revenue → Cost → Profit → Differentiate → Set to zero → Verify with second derivative
+- If a dataset is referenced but not provided, GENERATE realistic synthetic data that fits the problem context
+
+STATISTICS RULES:
+- If 24 months of data is needed but not provided: GENERATE the dataset. Create a realistic table with 24 rows of (Month, Distance_km, Price_per_sqm) data.
+- Calculate ALL statistics with actual numbers shown: mean, deviations, squared deviations, sum of squares
+- Show the Pearson formula with actual substituted values, not just the formula
+- Standard deviation: show every step — mean → deviations → squared deviations → sum → divide → sqrt
+- Interpret every result in context: what does r=-0.88 mean for THIS project, for THIS investor?
+
+OUTPUT REQUIREMENTS FOR MATH/STATS:
+- Minimum 15 blocks in reconstructed_doc
+- Every math block must have full solution_steps array (minimum 5 steps each)
+- The table block must contain ACTUAL data (24 rows for this assignment)
+- The interpretation paragraph must be specific, not generic`
+    };
+  }
+
+
 
   return {
     domain: 'GENERAL',
@@ -475,58 +535,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: e.message || 'Mission failed. Please try again.' });
   }
 }
-  // STEM — Engineering (structural/civil/mechanical)
-  if (/reinforced concrete|beam|slab|column|ecp|structural|foundation|steel design|load combination|dead load|live load|kn\/m|mpa|egyptian code|aci 318|eurocode|bs 8110|moment distribution|shear force|bending|bbs|bar bending|rebar|stirrup|bar schedule|retaining wall|pid controller|mechanical|thermodynamic|hydraulic|circuit|electrical|هندسة|خرسانة|حديد|تسليح|عزم|قص|أساس|BBS|جدول الحديد|قفل|كانة/.test(text)) {
-    return {
-      domain: 'ENGINEERING',
-      rules: `ENGINEERING DOMAIN:
-- Full calculation: Given → Find → Assumptions → Solution (step-by-step) → Verify → Safety Factor
-- Egypt: cite ECP 203 clauses (e.g. "ECP 203-2018 Section 4.2.1")
-- Saudi: cite SBC 304 (concrete), SBC 301 (loads)
-- UAE/International: BS 8110 or Eurocode 2
-- Always label units: kN, kN/m², m, mm, MPa
-- Safety factors: sliding ≥ 1.5, overturning ≥ 2.0, bearing capacity ≥ 3.0
-- SVG cross-sections required for structural elements: show bars, stirrups, cover, dimensions
-
-BAR BENDING SCHEDULE (BBS) — generate whenever rebar/reinforcement/stirrups/تسليح/حديد/BBS/قفل/كانة appears:
-- Generate a complete table: Bar Mark | Shape | Dia (mm) | A | B | C | D | Cut Length (mm) | No. Bars | Total Length (m) | Weight (kg)
-- Use BS 8666 shape codes: 00=straight, 11=L-bar, 21=U-bar, 51=closed stirrup/link
-- Cutting lengths: Straight=L | L-bar=A+B−r−2d | U-bar=A+2B−2r | Stirrup=2(A+B)+24d (for 135° hooks)
-- Hook allowance: 9d for 90° hook, 12d for 135° seismic hook
-- Weight per bar (kg) = (d²/162.2) × total length in metres
-- After BBS table, draw SVG reinforcement diagram: show bar positions, spacing, concrete cover (25mm beams, 40mm foundations)
-- Label every bar: e.g. "2T20 top" "R8-150 links"
-- Output language follows input language (Arabic in → Arabic out)`
-    };
-  }
-
-  // STEM — Math / Statistics / Calculus (check BEFORE engineering)
-  // BUT: skip if this is a multi-domain assignment (handle below)
-  const hasNonMathDomain = /patient|diagnosis|stroke|hemiparesis|retaining wall|PID controller|PESTEL|SWOT|feasibility|thrombolytic|clinical|nursing/.test(text);
-  if (!hasNonMathDomain && /calculus|integral|derivative|differentiat|marginal|optimization|maximiz|minimiz|profit function|cost function|demand function|correlation|standard deviation|regression|statistics|probability|hypothesis|normal distribution|binomial|poisson|variance|covariance|pearson|spearman|t-test|chi.square|anova|forecasting|predictive model|linear model|matrix|eigenvalue|fourier|laplace/.test(text)) {
-    return {
-      domain: 'MATH_STATS',
-      rules: `MATHEMATICS & STATISTICS DOMAIN ACTIVATED:
-
-CALCULUS RULES:
-- Show every algebraic step. Never skip. Never say "it can be shown."
-- Derive, don't state. Box final answers: \\boxed{x = 267}
-- For optimization: Given → Find → Revenue → Cost → Profit → Differentiate → Set to zero → Verify with second derivative
-- If a dataset is referenced but not provided, GENERATE realistic synthetic data that fits the problem context
-
-STATISTICS RULES:
-- If 24 months of data is needed but not provided: GENERATE the dataset. Create a realistic table with 24 rows of (Month, Distance_km, Price_per_sqm) data.
-- Calculate ALL statistics with actual numbers shown: mean, deviations, squared deviations, sum of squares
-- Show the Pearson formula with actual substituted values, not just the formula
-- Standard deviation: show every step — mean → deviations → squared deviations → sum → divide → sqrt
-- Interpret every result in context: what does r=-0.88 mean for THIS project, for THIS investor?
-
-OUTPUT REQUIREMENTS FOR MATH/STATS:
-- Minimum 15 blocks in reconstructed_doc
-- Every math block must have full solution_steps array (minimum 5 steps each)
-- The table block must contain ACTUAL data (24 rows for this assignment)
-- The interpretation paragraph must be specific, not generic`
-    };
-  }
-
-
