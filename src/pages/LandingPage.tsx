@@ -48,7 +48,7 @@ function CountUp({ target, suffix = '' }: { target: number; suffix?: string }) {
 
 const TYPES_EN = [
   { icon: FileText, label: 'Essays & Reports', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-  { icon: Sparkles, label: 'Presentations + AI Images', color: 'text-[#A855F7] bg-[#A855F7]/10 border-[#A855F7]/20' },
+  { icon: Sparkles, label: 'Presentations with Smart Visuals', color: 'text-[#A855F7] bg-[#A855F7]/10 border-[#A855F7]/20' },
   { icon: Code, label: 'Code & SQL', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
   { icon: Calculator, label: 'Math & Engineering', color: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
   { icon: BookOpen, label: 'Research Papers', color: 'text-[#22D3EE] bg-[#22D3EE]/10 border-[#22D3EE]/20' },
@@ -56,7 +56,7 @@ const TYPES_EN = [
 ];
 const TYPES_AR = [
   { icon: FileText, label: 'مقالات وتقارير', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-  { icon: Sparkles, label: 'بروزنتيشن + صور AI', color: 'text-[#A855F7] bg-[#A855F7]/10 border-[#A855F7]/20' },
+  { icon: Sparkles, label: 'برزنتيشن + صور احترافية', color: 'text-[#A855F7] bg-[#A855F7]/10 border-[#A855F7]/20' },
   { icon: Code, label: 'كود وقواعد بيانات', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
   { icon: Calculator, label: 'رياضيات وهندسة', color: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
   { icon: BookOpen, label: 'أبحاث علمية', color: 'text-[#22D3EE] bg-[#22D3EE]/10 border-[#22D3EE]/20' },
@@ -71,12 +71,12 @@ const REVIEWS_EN = [
 const REVIEWS_AR = [
   { text: 'حصلت على A في دراسة الحالة. الكتابة بالظبط زي طالب حقيقي.', name: 'نور أ.', uni: 'AUC القاهرة', stars: 5 },
   { text: 'استخدمته في ٣ واجبات هندسة. الحسابات كانت صح كل مرة.', name: 'خالد م.', uni: 'GUC', stars: 5 },
-  { text: 'البروزنتيشن كان أحسن مما كنت هعمله في ٣ ساعات.', name: 'سارة ف.', uni: 'AUS دبي', stars: 5 },
+  { text: 'البرزنتيشن كان أحسن مما كنت هعمله في ٣ ساعات.', name: 'سارة ف.', uni: 'AUS دبي', stars: 5 },
   { text: 'الوضع العربي مذهل. بيكتب زي طالب مش روبوت.', name: 'عبدالله ر.', uni: 'KFUPM', stars: 5 },
 ];
 const FAQS_EN = [
   { q: 'Will professors know I used Mi?', a: 'Mi writes like a real student — authentic, calibrated to your university level. Reads like you wrote it yourself.' },
-  { q: 'What types does it handle?', a: 'Essays, reports, presentations with AI images, code, math step-by-step, engineering, SQL, business plans, research, lab reports — 20+ types.' },
+  { q: 'What types does it handle?', a: 'Essays, reports, presentations with smart visuals, code, math step-by-step, engineering, SQL, business plans, research, lab reports — 20+ types.' },
   { q: 'How fast?', a: 'Most assignments: 15-40 seconds. Complex engineering or long essays: up to 90 seconds.' },
   { q: 'Arabic support?', a: 'Yes — full Arabic interface RTL. Mi responds in Modern Standard Arabic (فصحى).' },
   { q: 'Is 1000 EGP worth it?', a: '1000 EGP = 90 days, 40 missions. A full semester. One solved assignment saves you hours — that alone covers the cost.' },
@@ -84,7 +84,7 @@ const FAQS_EN = [
 ];
 const FAQS_AR = [
   { q: 'الدكتور هيعرف؟', a: 'Mi بيكتب زي طالب حقيقي — طبيعي ومكيّف لمستوى جامعتك. بيبان إنك إنت اللي كتبته.' },
-  { q: 'إيه الأنواع اللي بيحلها؟', a: 'مقالات، بروزنتيشن مع صور AI، كود، رياضيات، هندسة، SQL، خطط أعمال، أبحاث، تقارير معمل — أكتر من ٢٠ نوع.' },
+  { q: 'إيه الأنواع اللي بيحلها؟', a: 'مقالات، برزنتيشن مع صور احترافية، كود، رياضيات، هندسة، SQL، خطط أعمال، أبحاث، تقارير معمل — أكتر من ٢٠ نوع.' },
   { q: 'بيشتغل بسرعة؟', a: 'معظم الواجبات ١٥-٤٠ ثانية. المعقدة حتى ٩٠ ثانية.' },
   { q: 'بيشتغل بالعربي؟', a: 'أيوه — واجهة RTL كاملة. Mi بيرد بالعربية الفصحى.' },
   { q: '١٠٠٠ ج.م تستاهل؟', a: '١٠٠٠ ج.م = ٩٠ يوم، ٤٠ مهمة. ترم كامل. واجب واحد بيوفر ساعات — ده وحده بيغطي التكلفة.' },
@@ -163,7 +163,7 @@ export function LandingPage() {
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#22D3EE]/10 border border-[#22D3EE]/20 text-[#22D3EE] text-[11px] font-mono uppercase tracking-widest mb-7">
               <Shield className="w-3 h-3" />
-              {isAr ? 'المساعد الأكاديمي للطلاب العرب' : 'AI Academic Helper for MENA Students'}
+              {isAr ? 'المساعد الأكاديمي للطلاب العرب' : 'Mi — Academic Engine for MENA Students'}
             </div>
             <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9] mb-7">
               {isAr ? (
@@ -175,7 +175,7 @@ export function LandingPage() {
               )}
             </h1>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed mb-3">
-              {isAr ? 'مقالات، بروزنتيشن، كود، رياضيات — محلول في ١٥ ثانية، مكتوب زي طالب حقيقي.'
+              {isAr ? 'مقالات، برزنتيشن، كود، رياضيات — محلول في ١٥ ثانية، مكتوب زي طالب حقيقي.'
                 : 'Essays, presentations, code, math, engineering — solved in 15 seconds, written like a real student.'}
             </p>
             <p className="text-gray-600 text-xs mb-10">

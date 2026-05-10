@@ -11,14 +11,14 @@ interface SEOProps {
 // Per-page SEO metadata
 const PAGE_META: Record<string, { title: string; description: string; keywords?: string }> = {
   '/': {
-    title: 'Mi-Assignment — حل الواجبات بالذكاء الاصطناعي | AI Homework Helper MENA',
-    description: 'Mi-Assignment يحل أي واجب جامعي في ثوانٍ. مقالات، بروزنتيشن، كود، رياضيات، هندسة، قانون. بالعربي والإنجليزي. مجاني للبدء.',
+    title: 'Mi-Assignment — حل الواجبات الجامعية بدقة | Mi Academic Engine for MENA',
+    description: 'Mi-Assignment يحل أي واجب جامعي في ثوانٍ. مقالات، برزنتيشن، كود، رياضيات، هندسة، قانون. بالعربي والإنجليزي. مجاني للبدء.',
     keywords: 'حل الواجبات, واجبات جامعية, ذكاء اصطناعي, مساعد أكاديمي, AI homework, assignment solver, GUC, AUC, Cairo University',
   },
   '/terminal': {
     title: 'حل واجبك الآن — Mi-Assignment | Submit Your Assignment',
-    description: 'ارفع واجبك واحصل على حل كامل خلال ١٥-٤٠ ثانية. مقالات، كود، رياضيات، قانون، بروزنتيشن.',
-    keywords: 'حل واجب, حل اسايمنت, AI assignment solver, homework help Egypt',
+    description: 'ارفع واجبك واحصل على حل كامل خلال ١٥-٤٠ ثانية. مقالات، كود، رياضيات، قانون، برزنتيشن.',
+    keywords: 'حل واجب, حل اسايمنت, assignment solver, homework help Egypt',
   },
   '/pricing': {
     title: 'أسعار Mi-Assignment | ١٠٠٠ جنيه للترم كامل — Pricing',

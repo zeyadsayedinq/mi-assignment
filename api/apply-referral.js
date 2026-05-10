@@ -33,6 +33,10 @@ async function parseBody(req) {
   });
 }
 
+function setCORS(res) {
+  Object.entries(CORS).forEach(([k, v]) => res.setHeader(k, v));
+}
+
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { setCORS(res); return res.status(200).end(); }
   if (req.method !== 'POST') { setCORS(res); return res.status(405).end('Method Not Allowed'); }

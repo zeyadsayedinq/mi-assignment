@@ -29,7 +29,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end('Method Not Allowed');
 
   try {
-    const { userId, result, files, prompt, university, course, missionType, lang } = await parseBody(req);
+    const { userId, result, files, prompt, university, course, missionType, lang, billingName, billingPhone, billingEmail } = await parseBody(req);
 
     // FIX: braces were missing — this was always returning 401
     if (!userId) {
@@ -54,6 +54,12 @@ export default async function handler(req, res) {
       lang: lang || 'en',
       created_at: new Date().toISOString(),
     };
+    // Store billing info if provided (from checkout form)
+    if (billingName || billingPhone) {
+      missionData.billing_name = billingName || null;
+      missionData.billing_phone = billingPhone || null;
+      missionData.billing_email = billingEmail || null;
+    }
 
     const { error } = await supabase.from('missions').insert(missionData);
 

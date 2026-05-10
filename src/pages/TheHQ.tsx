@@ -278,7 +278,7 @@ export function TheHQ() {
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
             className="text-gray-500 text-base max-w-xl mx-auto leading-relaxed">
             {isAr
-              ? 'المساعد الأكاديمي اللي مش بس بيساعد — بيحل. مقالات، بروزنتيشن، كود، رياضيات — خلاص وجاهز.'
+              ? 'المساعد الأكاديمي اللي مش بس بيساعد — بيحل. مقالات، برزنتيشن، كود، رياضيات — خلاص وجاهز.'
               : "The academic Mi that doesn't just help — it executes. Essays, presentations, code, math — fully solved."}
           </motion.p>
         </motion.div>

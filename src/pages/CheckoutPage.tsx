@@ -296,16 +296,16 @@ export function CheckoutPage() {
             </div>
             <div className="bg-[#050608] rounded-xl p-4 flex items-center justify-between mb-3">
               <div>
-                <p className="text-gray-600 text-[10px] uppercase tracking-wider mb-1">{isAr ? 'رقم InstaPay' : 'InstaPay Handle'}</p>
-                <p className="text-white font-mono font-bold text-lg">zeyadsayedinq</p>
+                <p className="text-gray-600 text-[10px] uppercase tracking-wider mb-1">{isAr ? 'الحساب' : 'InstaPay Handle'}</p>
+                <p className="text-white font-mono font-bold text-lg">mi-assignment@instapay</p>
               </div>
-              <button onClick={() => copyText('zeyadsayedinq', 'instapay')}
+              <button onClick={() => copyText('mi-assignment@instapay', 'instapay')}
                 className="flex items-center gap-1.5 px-3 py-2 bg-[#22D3EE]/10 border border-[#22D3EE]/20 rounded-xl text-[#22D3EE] text-xs font-bold hover:bg-[#22D3EE]/20 transition-all">
                 {copied === 'instapay' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 {copied === 'instapay' ? (isAr ? 'تم!' : 'Copied!') : (isAr ? 'نسخ' : 'Copy')}
               </button>
             </div>
-            <div className="bg-[#050608] rounded-xl p-4 flex items-center justify-between mb-4">
+            <div className="bg-[#050608] rounded-xl p-4 flex items-center justify-between mb-3">
               <div>
                 <p className="text-gray-600 text-[10px] uppercase tracking-wider mb-1">{isAr ? 'المبلغ' : 'Amount'}</p>
                 <p className="text-[#22D3EE] font-mono font-black text-lg">{plan.price} {plan.currency}</p>
@@ -316,6 +316,11 @@ export function CheckoutPage() {
                 {copied === 'amount' ? (isAr ? 'تم!' : 'Copied!') : (isAr ? 'نسخ' : 'Copy')}
               </button>
             </div>
+            <a href="https://ipn.eg/S/mi-assignment/instapay/7xpkwc"
+              target="_blank" rel="noopener noreferrer"
+              className="w-full py-2.5 mb-3 bg-[#22D3EE]/10 border border-[#22D3EE]/30 text-[#22D3EE] font-bold rounded-xl flex items-center justify-center gap-2 text-sm hover:bg-[#22D3EE]/20 transition-all">
+              🔗 {isAr ? 'ادفع مباشرة عبر InstaPay' : 'Pay directly via InstaPay link'}
+            </a>
             <a href={`https://wa.me/201107743984?text=${encodeURIComponent(
               isAr
                 ? `مرحبا، اسمي ${firstName} ${lastName} (${email}) ودفعت ${plan.price} جنيه اشتراك Mi-Assignment ${plan.nameAr} على InstaPay. بانتظار التفعيل.`

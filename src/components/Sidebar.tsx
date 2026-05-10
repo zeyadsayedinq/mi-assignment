@@ -11,7 +11,7 @@ import { GlitchText } from './GlitchText';
 import { useExplosion } from '../contexts/ExplosionContext';
 
 const NAV_ITEMS = [
-  { path: '/app', labelKey: 'nav.hq', icon: Shield, exact: false },
+  { path: '/app', labelKey: 'nav.dashboard', icon: Shield, exact: false },
   { path: '/terminal', labelKey: 'nav.terminal', icon: Terminal },
   { path: '/vault', labelKey: 'nav.vault', icon: Database },
   { path: '/academy', labelKey: 'nav.academy', icon: GraduationCap },

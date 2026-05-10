@@ -169,7 +169,7 @@ const MISSION_TYPES_EN = [
 ];
 const MISSION_TYPES_AR = [
   { value: 'essay', icon: '✍️', label: 'مقال / تقرير' },
-  { value: 'presentation', icon: '📊', label: 'بروزنتيشن' },
+  { value: 'presentation', icon: '📊', label: 'برزنتيشن' },
   { value: 'computer_science', icon: '💻', label: 'كود / مشروع' },
   { value: 'math', icon: '📐', label: 'رياضيات / فيزياء' },
   { value: 'research_paper', icon: '🔬', label: 'بحث' },

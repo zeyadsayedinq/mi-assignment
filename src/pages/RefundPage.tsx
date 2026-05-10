@@ -58,7 +58,7 @@ export function RefundPage() {
             <>
               <section>
                 <h2 className="text-lg font-bold text-white mb-3">1. Nature of Service</h2>
-                <p>Mi-Assignment is a digital educational service that delivers AI-generated academic solutions instantly upon request. Because the service is consumed immediately upon delivery, our refund policy is limited as described below.</p>
+                <p>Mi-Assignment is a digital educational service that delivers Mi-powered academic solutions instantly upon request. Because the service is consumed immediately upon delivery, our refund policy is limited as described below.</p>
               </section>
               <section>
                 <h2 className="text-lg font-bold text-white mb-3">2. Non-Refundable Situations</h2>

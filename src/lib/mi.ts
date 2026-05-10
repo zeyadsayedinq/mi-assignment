@@ -2,7 +2,7 @@ import { generateCustomImage, generatePresentationImage } from './pollinations';
 export { generateCustomImage, generatePresentationImage };
 
 // ── Main export ───────────────────────────────────────────────────────────────
-// The Gemini API key lives ONLY in the Netlify Function (process-mission.mjs).
+// The Mi Engine key lives ONLY in the Vercel serverless function.
 // This file builds the payload and sends it to /api/process-mission.
 // Nothing here gets baked into the browser bundle.
 
@@ -51,7 +51,7 @@ export async function processMission(
     throw new Error(err.error || 'Server busy. Please try again.');
   }
 
-  // 3. Build contents array for Gemini
+  // 3. Build contents array for Mi Engine
   const ctx = [
     universityContext && `University: ${universityContext}`,
     courseContext     && `Course: ${courseContext}`,
@@ -80,7 +80,7 @@ export async function processMission(
 
   contents.push({ text: `[ASSIGNMENT] ${prompt}` });
 
-  // 4. Call Netlify Function (Gemini runs server-side there)
+  // 4. Call Mi Engine serverless function
   const missionResp = await fetch('/api/process-mission', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -110,7 +110,12 @@ export async function processMission(
     await Promise.allSettled(
       result.presentation_slides.map(async (slide: any) => {
         if (slide.image_prompt) {
-          try { slide.image_url = await generatePresentationImage(slide.image_prompt); }
+          try {
+            // Pass major and topic for smarter Pexels queries
+            const major = result.context?.major || '';
+            const topic = result.reconstructed_doc?.title || result.payload_name || '';
+            slide.image_url = await generatePresentationImage(slide.image_prompt, major, topic);
+          }
           catch { slide.image_url = null; }
         }
       })

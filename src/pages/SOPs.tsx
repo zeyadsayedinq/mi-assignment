@@ -39,7 +39,7 @@ const FAQS_EN = [
   {
     category: '⚡ Errors & Troubleshooting',
     items: [
-      { q: 'I\'m getting a "503 / high demand" error — what do I do?', a: 'This is a temporary spike on the AI provider side, not a Mi issue. Wait 30–60 seconds and click "Launch Mission" again. If it persists, refresh the page and retry. These spikes usually resolve within 1–2 minutes.' },
+      { q: 'I\'m getting a "503 / high demand" error — what do I do?', a: 'This is a temporary processing spike on our end, not a Mi issue. Wait 30–60 seconds and click "Launch Mission" again. If it persists, refresh the page and retry. These spikes usually resolve within 1–2 minutes.' },
       { q: 'The Terminal shows "LIMIT REACHED" but I have Pro.', a: 'Sign out and sign back in to refresh your session — your subscription status updates on next login. If the issue persists, tap the chat icon in the app and send us your email, we\'ll fix it instantly.' },
       { q: 'My result is loading but nothing appears.', a: 'This usually means a slow network. Stay on the page — Mi is still working. If the spinner runs for over 90 seconds, refresh and resubmit. Your mission count is only deducted on a successful result.' },
       { q: 'The app is blank or shows a white screen.', a: 'Hard-refresh: press Ctrl+Shift+R (Windows) or Cmd+Shift+R (Mac). If on mobile, clear your browser cache from Settings. If the problem continues, email support@mi-assignment.com with a screenshot.' },
@@ -49,7 +49,7 @@ const FAQS_EN = [
   {
     category: '📚 Assignment Types',
     items: [
-      { q: 'What assignment types does Mi support?', a: 'Essays, reports, case studies, lab reports, presentations (with AI images), research papers, literature reviews, math, physics, engineering calculations, code/programming in any language, SQL databases, business plans, financial models, design briefs, and more — 20+ types total.' },
+      { q: 'What assignment types does Mi support?', a: 'Essays, reports, case studies, lab reports, presentations with visuals, research papers, literature reviews, math, physics, engineering calculations, code/programming in any language, SQL databases, business plans, financial models, design briefs, and more — 20+ types total.' },
       { q: 'How does math/engineering work?', a: 'Upload a photo of your problem sheet or paste the questions. Mi solves every step with full working — formulas, unit analysis, LaTeX notation, and clear final answers.' },
       { q: 'Can it write code in any language?', a: 'Yes — Python, JavaScript, TypeScript, Java, C++, C, R, MATLAB, SQL, HTML/CSS, and more. Paste existing code for debugging, or describe what you need built from scratch.' },
       { q: 'Does it handle Arabic language assignments?', a: 'Yes. Switch to Arabic in the sidebar language toggle. Mi responds in Modern Standard Arabic (فصحى) for all content, properly formatted right-to-left.' },
@@ -58,7 +58,7 @@ const FAQS_EN = [
   {
     category: '🎞️ Presentations',
     items: [
-      { q: 'How do I get a full slide deck?', a: 'Select "Presentation" as the assignment type. Mi generates 8–12 slides with cinematic titles, full content per slide, speaker notes, and AI-generated images for each slide.' },
+      { q: 'How do I get a full slide deck?', a: 'Select "Presentation" as the assignment type. Mi generates 8–12 slides with cinematic titles, full content per slide, speaker notes, and smart visuals for each slide.' },
       { q: 'How do I view the presentation?', a: 'After generation, click "Present" to open full-screen Presentation Mode. Arrow keys to navigate slides, N to toggle speaker notes, ESC to exit.' },
       { q: 'Can I download the PowerPoint file?', a: 'Yes — click "Download All" to get a .zip containing a fully formatted .pptx file, ready to open in PowerPoint or Google Slides.' },
     ],
@@ -116,17 +116,17 @@ const FAQS_AR = [
   {
     category: '📚 أنواع الواجبات',
     items: [
-      { q: 'إيه اللي Mi يقدر يحله؟', a: 'كل حاجة: مقالات، تقارير، دراسات حالة، تقارير معمل، بروزنتيشن مع صور AI، أبحاث علمية، مراجعات أدبية، رياضيات، فيزياء، حسابات هندسية، كود وبرمجة بأي لغة، SQL، خطط أعمال، نماذج مالية، تصميم، وأكتر — ٢٠+ نوع.' },
+      { q: 'إيه اللي Mi يقدر يحله؟', a: 'كل حاجة: مقالات، تقارير، دراسات حالة، تقارير معمل، برزنتيشن مع صور احترافية، أبحاث علمية، مراجعات أدبية، رياضيات، فيزياء، حسابات هندسية، كود وبرمجة بأي لغة، SQL، خطط أعمال، نماذج مالية، تصميم، وأكتر — ٢٠+ نوع.' },
       { q: 'ازاي الرياضيات والهندسة بتشتغل؟', a: 'ارفع صورة ورقة المسائل أو الصق الأسئلة. Mi بيحل كل خطوة بالتفصيل مع الصيغ وتحليل الوحدات وnotation LaTeX والإجابات النهائية الواضحة.' },
       { q: 'يقدر يكتب كود بأي لغة؟', a: 'أيوه — Python، JavaScript، TypeScript، Java، C++، C، R، MATLAB، SQL، HTML/CSS، وأكتر. الصق الكود الموجود للتصحيح أو وصف اللي محتاجه من الصفر.' },
       { q: 'بيشتغل بالعربي؟', a: 'أيوه! اختار العربي من زرار اللغة في الشريط الجانبي. Mi بيجاوب بالعربية الفصحى لكل المحتوى، مع تنسيق RTL صح.' },
     ],
   },
   {
-    category: '🎞️ البروزنتيشن',
+    category: '🎞️ البرزنتيشن',
     items: [
-      { q: 'ازاي أعمل بروزنتيشن كامل؟', a: 'اختار "بروزنتيشن" كنوع الواجب. Mi بيولّد ٨–١٢ شريحة مع عناوين جذابة، محتوى كامل لكل شريحة، نوتس للعرض، وصور AI لكل شريحة.' },
-      { q: 'ازاي أعرض البروزنتيشن؟', a: 'بعد التوليد، اضغط "عرض الشرائح" لتفتح وضع العرض الكامل. أسهم لوحة المفاتيح للتنقل، N للنوتس، ESC للخروج.' },
+      { q: 'ازاي أعمل برزنتيشن كامل؟', a: 'اختار "برزنتيشن" كنوع الواجب. Mi بيولّد ٨–١٢ شريحة مع عناوين جذابة، محتوى كامل لكل شريحة، نوتس للعرض، وصور لكل شريحة.' },
+      { q: 'ازاي أعرض البرزنتيشن؟', a: 'بعد التوليد، اضغط "عرض الشرائح" لتفتح وضع العرض الكامل. أسهم لوحة المفاتيح للتنقل، N للنوتس، ESC للخروج.' },
       { q: 'أقدر أحمّل ملف PowerPoint؟', a: 'أيوه — اضغط "تحميل الكل" وهتاخد .zip فيه ملف .pptx كامل جاهز تفتحه في PowerPoint أو Google Slides.' },
     ],
   },
@@ -265,7 +265,7 @@ export function SOPs() {
             <p className="text-gray-500 text-xs leading-relaxed">
               {isAr
                 ? 'ده ضغط مؤقت على مزود الذكاء الاصطناعي — مش مشكلة في Mi. استنى ٣٠ ثانية واضغط "ابدأ المهمة" تاني. بتتحل في دقيقة.'
-                : 'This is a temporary AI provider spike — not a Mi issue. Wait 30 seconds and press Launch Mission again. Resolves within a minute.'}
+                : 'This is a temporary processing spike — not a Mi issue. Wait 30 seconds and press Launch Mission again. Resolves within a minute.'}
             </p>
           </div>
         </div>
