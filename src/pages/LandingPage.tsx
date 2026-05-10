@@ -431,8 +431,10 @@ export function LandingPage() {
               <Link to="/pricing" className="hover:text-white transition-colors">{isAr ? 'الأسعار' : 'Pricing'}</Link>
               <Link to="/sops" className="hover:text-white transition-colors">{isAr ? 'المساعدة' : 'Help'}</Link>
               <Link to="/intelligence-bureau" className="hover:text-white transition-colors">{isAr ? 'دليل الواجبات' : 'Guide'}</Link>
-              <Link to="/terms" className="hover:text-white transition-colors">{isAr ? 'شروط الاستخدام' : 'Terms'}</Link>
+              <Link to="/terms" className="hover:text-white transition-colors">{isAr ? 'الشروط' : 'Terms'}</Link>
               <Link to="/privacy" className="hover:text-white transition-colors">{isAr ? 'الخصوصية' : 'Privacy'}</Link>
+              <Link to="/refund" className="hover:text-white transition-colors">{isAr ? 'سياسة الاسترداد' : 'Refund'}</Link>
+              <Link to="/contact" className="hover:text-white transition-colors">{isAr ? 'تواصل معنا' : 'Contact'}</Link>
               <a href="mailto:support@mi-assignment.com" className="hover:text-white transition-colors">support@mi-assignment.com</a>
             </div>
             <LanguageSwitcher compact />
