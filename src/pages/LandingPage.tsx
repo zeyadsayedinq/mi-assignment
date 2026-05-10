@@ -75,7 +75,7 @@ const REVIEWS_AR = [
   { text: 'الوضع العربي مذهل. بيكتب زي طالب مش روبوت.', name: 'عبدالله ر.', uni: 'KFUPM', stars: 5 },
 ];
 const FAQS_EN = [
-  { q: 'Will professors know I used Mi?', a: 'Mi writes like a real student — imperfect, authentic, level-calibrated. It avoids every pattern that GPTZero, Turnitin AI, and Copyleaks flag.' },
+  { q: 'Will professors know I used Mi?', a: 'Mi writes like a real student — authentic, calibrated to your university level. Reads like you wrote it yourself.' },
   { q: 'What types does it handle?', a: 'Essays, reports, presentations with AI images, code, math step-by-step, engineering, SQL, business plans, research, lab reports — 20+ types.' },
   { q: 'How fast?', a: 'Most assignments: 15-40 seconds. Complex engineering or long essays: up to 90 seconds.' },
   { q: 'Arabic support?', a: 'Yes — full Arabic interface RTL. Mi responds in Modern Standard Arabic (فصحى).' },
@@ -83,7 +83,7 @@ const FAQS_EN = [
   { q: 'How does referral work?', a: 'Share your link. A friend signs up → you both get 2 bonus missions. No limit.' },
 ];
 const FAQS_AR = [
-  { q: 'الدكتور هيعرف؟', a: 'Mi بيكتب زي طالب حقيقي — مش مثالي، طبيعي. بيتجنب كل الأنماط اللي تكتشفها GPTZero وTurnitin AI.' },
+  { q: 'الدكتور هيعرف؟', a: 'Mi بيكتب زي طالب حقيقي — طبيعي ومكيّف لمستوى جامعتك. بيبان إنك إنت اللي كتبته.' },
   { q: 'إيه الأنواع اللي بيحلها؟', a: 'مقالات، بروزنتيشن مع صور AI، كود، رياضيات، هندسة، SQL، خطط أعمال، أبحاث، تقارير معمل — أكتر من ٢٠ نوع.' },
   { q: 'بيشتغل بسرعة؟', a: 'معظم الواجبات ١٥-٤٠ ثانية. المعقدة حتى ٩٠ ثانية.' },
   { q: 'بيشتغل بالعربي؟', a: 'أيوه — واجهة RTL كاملة. Mi بيرد بالعربية الفصحى.' },
@@ -179,7 +179,7 @@ export function LandingPage() {
                 : 'Essays, presentations, code, math, engineering — solved in 15 seconds, written like a real student.'}
             </p>
             <p className="text-gray-600 text-xs mb-10">
-              {isAr ? 'غير قابل للاكتشاف بواسطة GPTZero و Turnitin AI' : 'Undetectable by GPTZero, Turnitin AI, and Copyleaks'}
+              {isAr ? 'كتابة طبيعية بمستوى طالب حقيقي' : 'Authentic student-level writing, calibrated to your university'}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-5">
               <button onClick={go} className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-[#22D3EE] to-[#A855F7] text-black font-black rounded-2xl hover:opacity-90 transition-all shadow-[0_0_40px_rgba(34,211,238,0.2)]">

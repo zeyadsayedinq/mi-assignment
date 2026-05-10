@@ -25,7 +25,12 @@ export function PrivacyPage() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#A855F7]/10 border border-[#A855F7]/20 text-[#A855F7] text-[10px] font-mono uppercase tracking-widest mb-4">
             <Lock className="w-3 h-3" /> {isAr ? 'بياناتك آمنة' : 'Your data is safe'}
           </div>
-          <h1 className="text-4xl font-black mb-2">{isAr ? 'سياسة الخصوصية' : 'Privacy Policy'}</h1>
+          <div className="mb-8">
+          <a href="/" className="inline-flex items-center gap-2 text-gray-500 hover:text-[#22D3EE] transition-colors text-sm">
+            ← Home
+          </a>
+        </div>
+        <h1 className="text-4xl font-black mb-2">{isAr ? 'سياسة الخصوصية' : 'Privacy Policy'}</h1>
           <p className="text-gray-500 text-sm">{isAr ? `آخر تحديث: ${UPDATED_AR}` : `Last updated: ${UPDATED}`}</p>
         </div>
 
@@ -36,7 +41,7 @@ export function PrivacyPage() {
               <div className="space-y-2">
                 <p><strong className="text-white">بيانات الحساب:</strong> البريد الإلكتروني، الاسم (اختياري)، وتفضيلات اللغة.</p>
                 <p><strong className="text-white">بيانات الاستخدام:</strong> نوع الواجب، عدد الكلمات التقريبي، الجامعة (اختياري)، الطابع الزمني للمهمة. <strong>لا نحتفظ بمحتوى المهام.</strong></p>
-                <p><strong className="text-white">بيانات الدفع:</strong> رقم المرجع ومعرف المعاملة فقط. لا نحتفظ ببيانات البطاقة — هذا يتولاه Tap Payments بشكل كامل.</p>
+                <p><strong className="text-white">بيانات الدفع:</strong> رقم المرجع ومعرف المعاملة فقط. لا نحتفظ ببيانات البطاقة — هذا يتولاه Paymob بشكل كامل.</p>
                 <p><strong className="text-white">بيانات التحليلات:</strong> الصفحات المُشاهدة، المهام المكتملة، معدل الاحتفاظ. لا توجد بيانات تعريفية شخصية.</p>
               </div>
             </section>
@@ -55,7 +60,7 @@ export function PrivacyPage() {
               <div className="grid grid-cols-1 gap-3">
                 {[
                   { name: 'Anthropic', role: 'معالجة الذكاء الاصطناعي — لا يتم تخزين محتوى المهام بعد المعالجة', link: 'https://www.anthropic.com/privacy' },
-                  { name: 'Tap Payments', role: 'معالجة المدفوعات — متوافق مع PCI DSS', link: 'https://tap.company/privacy' },
+                  { name: 'Paymob', role: 'معالجة المدفوعات — متوافق مع PCI DSS', link: 'https://paymob.com/privacy' },
                   { name: 'Supabase', role: 'تخزين قاعدة البيانات — خوادم منطقة الاتحاد الأوروبي', link: 'https://supabase.com/privacy' },
                   { name: 'PostHog', role: 'التحليلات — متوافق مع GDPR، بلا ملفات تتبع إعلانية', link: 'https://posthog.com/privacy' },
                   { name: 'Resend', role: 'إرسال البريد الإلكتروني — إيصالات وتنبيهات فقط', link: 'https://resend.com/privacy' },
@@ -90,7 +95,7 @@ export function PrivacyPage() {
               <div className="space-y-2">
                 <p><strong className="text-white">Account data:</strong> Email address, name (optional), and language preference.</p>
                 <p><strong className="text-white">Usage data:</strong> Assignment type, approximate word count, university (optional), mission timestamps. <strong>We do not store the content of your missions.</strong></p>
-                <p><strong className="text-white">Payment data:</strong> Transaction reference ID only. We never store card data — this is handled entirely by Tap Payments.</p>
+                <p><strong className="text-white">Payment data:</strong> Transaction reference ID only. We never store card data — this is handled entirely by Paymob.</p>
                 <p><strong className="text-white">Analytics data:</strong> Pages viewed, missions completed, retention. No personally identifiable information.</p>
               </div>
             </section>
@@ -109,7 +114,7 @@ export function PrivacyPage() {
               <div className="grid grid-cols-1 gap-3">
                 {[
                   { name: 'Anthropic', role: 'Mi processing — mission content is not stored after processing', link: 'https://www.anthropic.com/privacy' },
-                  { name: 'Tap Payments', role: 'Payment processing — PCI DSS compliant', link: 'https://tap.company/privacy' },
+                  { name: 'Paymob', role: 'Payment processing — PCI DSS compliant', link: 'https://paymob.com/privacy' },
                   { name: 'Supabase', role: 'Database storage — EU region servers', link: 'https://supabase.com/privacy' },
                   { name: 'PostHog', role: 'Analytics — GDPR compliant, no advertising cookies', link: 'https://posthog.com/privacy' },
                   { name: 'Resend', role: 'Email delivery — receipts and alerts only', link: 'https://resend.com/privacy' },

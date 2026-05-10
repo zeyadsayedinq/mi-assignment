@@ -369,28 +369,49 @@ export function PricingPage() {
               ))}
             </ul>
 
-            {error && (
-              <p className="text-red-400 text-xs text-center mb-3 bg-red-500/5 border border-red-500/20 rounded-xl p-2">{error}</p>
+            {isPro ? (
+              <div className="w-full py-3 border border-[#22D3EE]/30 text-[#22D3EE] rounded-xl font-bold text-sm text-center">
+                <Shield className="w-4 h-4 inline me-2" />
+                {isAr ? 'خطتك الحالية ✓' : 'Current Plan ✓'}
+              </div>
+            ) : !session ? (
+              <button onClick={() => navigate('/auth?next=/pricing')}
+                className="w-full py-4 bg-gradient-to-r from-[#22D3EE] to-[#A855F7] text-black font-black rounded-xl hover:opacity-90 transition-all text-sm uppercase tracking-widest">
+                {isAr ? '🚀 ابدأ مجاناً' : '🚀 Get Started Free'}
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <div className="bg-[#050608] border border-[#22D3EE]/20 rounded-xl p-4">
+                  <p className="text-[#22D3EE] font-bold mb-3 text-[10px] uppercase tracking-widest">
+                    {isAr ? '💳 طريقة الدفع' : '💳 How to Pay'}
+                  </p>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center justify-between py-1.5 border-b border-gray-800">
+                      <span className="text-gray-500">InstaPay</span>
+                      <span className="text-white font-mono font-bold">zeyadsayedinq</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1.5 border-b border-gray-800">
+                      <span className="text-gray-500">{isAr ? 'فودافون كاش' : 'Vodafone Cash'}</span>
+                      <span className="text-white font-mono font-bold">01XXXXXXXXX</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1.5">
+                      <span className="text-gray-500">{isAr ? 'المبلغ' : 'Amount'}</span>
+                      <span className="text-[#22D3EE] font-black">{currency.symbol}{getPrice()} {currency.code}</span>
+                    </div>
+                  </div>
+                  <p className="text-gray-600 text-[10px] leading-relaxed mt-3 pt-3 border-t border-gray-800">
+                    {isAr
+                      ? 'بعد الدفع ابعت سكرين شوت على واتساب وهنفعّل اشتراكك خلال ساعة.'
+                      : "After payment, send a screenshot on WhatsApp and we'll activate within 1 hour."}
+                  </p>
+                  <a href="https://wa.me/201107743984?text=مرحبا،%20دفعت%20اشتراك%20Mi-Assignment%20وعايز%20تفعيل%20الحساب"
+                    target="_blank" rel="noopener noreferrer"
+                    className="mt-3 w-full py-3 bg-green-500 text-black font-black rounded-xl hover:bg-green-400 transition-all flex items-center justify-center gap-2 text-sm">
+                    📱 {isAr ? 'ابعت إثبات الدفع على واتساب' : 'Send Payment Proof on WhatsApp'}
+                  </a>
+                </div>
+              </div>
             )}
-
-            <button
-              onClick={handleUpgrade}
-              disabled={isLoading || isPro}
-              className="w-full py-4 bg-gradient-to-r from-[#22D3EE] to-[#A855F7] text-black font-black rounded-xl hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm uppercase tracking-widest"
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-              ) : isPro ? (
-                <><Shield className="w-4 h-4" /> {isAr ? 'خطتك الحالية' : 'Current Plan'}</>
-              ) : (
-                <><Zap className="w-4 h-4" /> {isAr ? 'اشترك الآن' : 'Subscribe Now'}</>
-              )}
-            </button>
-
-            <p className="text-center text-gray-600 text-xs mt-3 flex items-center justify-center gap-1.5">
-              <Lock className="w-3 h-3" />
-              {isAr ? 'دفع آمن عبر Tap Payments — مفيش بيانات بتتحفظ' : 'Secured by Tap Payments · No card stored'}
-            </p>
           </motion.div>
         </div>
 

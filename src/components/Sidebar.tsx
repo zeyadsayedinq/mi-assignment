@@ -142,6 +142,12 @@ export function Sidebar({ isMobileOpen, closeMobile }: SidebarProps) {
           <a href="/terms" className="text-[10px] text-gray-700 hover:text-gray-400 transition-colors font-mono">
             Terms
           </a>
+          <a href="/refund" className="text-[10px] text-gray-700 hover:text-gray-400 transition-colors font-mono">
+            {isAr ? 'الاسترداد' : 'Refund'}
+          </a>
+          <a href="/contact" className="text-[10px] text-gray-700 hover:text-gray-400 transition-colors font-mono">
+            {isAr ? 'تواصل' : 'Contact'}
+          </a>
           <a href="/privacy" className="text-[10px] text-gray-700 hover:text-gray-400 transition-colors font-mono">
             Privacy
           </a>

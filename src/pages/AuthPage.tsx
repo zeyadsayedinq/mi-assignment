@@ -83,6 +83,14 @@ export function AuthPage() {
           options: { emailRedirectTo: `${window.location.origin}${next}` },
         });
         if (error) throw error;
+        // Supabase returns identities:[] when email already registered
+        if (data?.user && data.user.identities?.length === 0) {
+          setError(isAr
+            ? 'الإيميل ده مسجل قبل كده. اضغط على "دخول" وسجّل بكلمة مرورك.'
+            : 'This email is already registered. Click "Sign In" and use your password.');
+          setLoading(false);
+          return;
+        }
         setSuccess(isAr ? 'شوف إيميلك لتأكيد الحساب!' : 'Check your email to confirm your account!');
         Analytics.authCompleted('email_signup');
         // Welcome email
@@ -170,6 +178,10 @@ export function AuthPage() {
           </Link>
           <h1 className="text-2xl font-black text-white tracking-tight">Mi-Assignment</h1>
           <p className="text-gray-500 text-sm mt-1">{isAr ? 'مساعدك الأكاديمي الذكي' : 'Your AI Academic Helper'}</p>
+          <Link to="/" className="inline-flex items-center gap-1.5 mt-3 text-gray-600 hover:text-[#22D3EE] text-xs transition-colors">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            {isAr ? 'الصفحة الرئيسية' : 'Back to Home'}
+          </Link>
         </div>
 
         <div className="bg-[#0A0B0E] border border-gray-800 rounded-2xl p-7">

@@ -1,7 +1,7 @@
 /**
- * /netlify/functions/tap-webhook.mjs
+ * /api/tap-webhook.mjs
  *
- * Receives Tap Payments webhook on payment completion.
+ * Receives Paymob webhook on payment completion.
  * Verifies the charge status and activates the user's Pro subscription in Supabase.
  *
  * Tap sends a POST to this URL after payment completes (success or failure).

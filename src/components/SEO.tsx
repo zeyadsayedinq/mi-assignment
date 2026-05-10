@@ -9,46 +9,59 @@ interface SEOProps {
 }
 
 // Per-page SEO metadata
-const PAGE_META: Record<string, { title: string; description: string }> = {
+const PAGE_META: Record<string, { title: string; description: string; keywords?: string }> = {
   '/': {
-    title: 'Mi-Assignment — AI Homework Helper for MENA Students',
-    description: 'Mi-Assignment solves any university assignment in seconds — essays, presentations, code, math, engineering. Written like a real student. Arabic & English. Free to start.',
-  },
-  '/app': {
-    title: 'Dashboard — Mi-Assignment',
-    description: 'Your Mi-Assignment dashboard. Start a new mission, view your vault, or check Mi-Academy.',
+    title: 'Mi-Assignment — حل الواجبات بالذكاء الاصطناعي | AI Homework Helper MENA',
+    description: 'Mi-Assignment يحل أي واجب جامعي في ثوانٍ. مقالات، بروزنتيشن، كود، رياضيات، هندسة، قانون. بالعربي والإنجليزي. مجاني للبدء.',
+    keywords: 'حل الواجبات, واجبات جامعية, ذكاء اصطناعي, مساعد أكاديمي, AI homework, assignment solver, GUC, AUC, Cairo University',
   },
   '/terminal': {
-    title: 'Submit Assignment — Mi-Assignment',
-    description: 'Upload your assignment and get a complete, AI-powered solution in 15-40 seconds.',
+    title: 'حل واجبك الآن — Mi-Assignment | Submit Your Assignment',
+    description: 'ارفع واجبك واحصل على حل كامل خلال ١٥-٤٠ ثانية. مقالات، كود، رياضيات، قانون، بروزنتيشن.',
+    keywords: 'حل واجب, حل اسايمنت, AI assignment solver, homework help Egypt',
   },
   '/pricing': {
-    title: 'Pricing — Mi-Assignment | 1,000 EGP / Semester',
-    description: 'Mi-Assignment Pro: 40 missions per semester. 1,000 EGP quarterly for Egypt. SAR, AED, KWD, JOD also available.',
+    title: 'أسعار Mi-Assignment | ١٠٠٠ جنيه للترم كامل — Pricing',
+    description: 'اشترك في Mi-Assignment Pro: ٦٠ مهمة في الترم. ١٠٠٠ جنيه ربع سنوي لمصر. متاح بالريال، الدرهم، الدينار.',
+    keywords: 'اشتراك, أسعار, Mi-Assignment Pro, واجبات, subscription Egypt students',
   },
-  '/intelligence-bureau': {
-    title: 'Assignment Type Guide — Mi-Assignment',
-    description: 'Learn how to get the best results from Mi-Assignment for every assignment type: essays, math, code, presentations, and more.',
-  },
-  '/vault': {
-    title: 'Mi-Vault — Your Saved Assignments',
-    description: 'All your completed assignments, saved and searchable. Download, star, and revisit any previous solution.',
+  '/checkout': {
+    title: 'إتمام الاشتراك — Mi-Assignment | Checkout',
+    description: 'أكمل اشتراكك في Mi-Assignment Pro بأمان عبر Paymob.',
   },
   '/academy': {
-    title: 'Mi-Academy — Learn From Every Solution',
-    description: 'Step-by-step breakdowns of every assignment Mi solved for you. Understand the reasoning, not just the answer.',
+    title: 'Mi-Academy — افهم الحل وادافع عنه أمام الدكتور',
+    description: 'شرح تفصيلي لكل واجب: خطوات الحل، المفاهيم الأساسية، أسئلة الدفاع، والأخطاء الشائعة.',
+    keywords: 'شرح الواجبات, فهم الحل, دفاع عن الواجب, Mi-Academy',
+  },
+  '/vault': {
+    title: 'Mi-Vault — أرشيف واجباتك المحفوظة | Your Saved Assignments',
+    description: 'كل واجباتك محفوظة ومرتبة. حمّل، ابحث، وراجع أي حل سابق.',
+  },
+  '/contact': {
+    title: 'تواصل مع Mi-Assignment | Contact Us',
+    description: 'تواصل مع فريق Mi-Assignment عبر واتساب أو البريد الإلكتروني. نرد خلال ساعة.',
+    keywords: 'تواصل, دعم, support, Mi-Assignment contact',
+  },
+  '/refund': {
+    title: 'سياسة الاسترداد — Mi-Assignment | Refund Policy',
+    description: 'سياسة الاسترداد الخاصة بـ Mi-Assignment. اقرأ الشروط والاستثناءات قبل الاشتراك.',
   },
   '/terms': {
-    title: 'Terms of Service — Mi-Assignment',
-    description: 'Mi-Assignment terms of service including academic integrity policy, subscription terms, and refund policy.',
+    title: 'الشروط والأحكام — Mi-Assignment | Terms of Service',
+    description: 'شروط استخدام Mi-Assignment تشمل سياسة النزاعات الأكاديمية وشروط الاشتراك والاسترداد.',
   },
   '/privacy': {
-    title: 'Privacy Policy — Mi-Assignment',
-    description: 'How Mi-Assignment collects, uses, and protects your data. GDPR and Saudi PDPL compliant.',
+    title: 'سياسة الخصوصية — Mi-Assignment | Privacy Policy',
+    description: 'كيف يجمع Mi-Assignment بياناتك ويستخدمها ويحميها. متوافق مع GDPR والقانون السعودي.',
   },
   '/sops': {
-    title: 'Help & FAQ — Mi-Assignment',
-    description: 'Answers to common questions about Mi-Assignment: how it works, assignment types, pricing, and more.',
+    title: 'مساعدة وأسئلة شائعة — Mi-Assignment | Help & FAQ',
+    description: 'إجابات على أكثر الأسئلة شيوعاً عن Mi-Assignment: كيف يعمل، أنواع الواجبات، الأسعار.',
+  },
+  '/app': {
+    title: 'لوحة التحكم — Mi-Assignment',
+    description: 'لوحة تحكم Mi-Assignment. ابدأ مهمة جديدة أو استعرض واجباتك المحفوظة.',
   },
 };
 
@@ -73,6 +86,13 @@ export function SEO({ title, description, canonical, noindex = false }: SEOProps
     setMeta('meta[property="og:url"]', finalCanonical);
     setMeta('meta[name="twitter:title"]', finalTitle);
     setMeta('meta[name="twitter:description"]', finalDesc);
+    // Keywords per page
+    const keywords = (meta as any).keywords;
+    if (keywords) {
+      let kwMeta = document.querySelector('meta[name="keywords"]') as HTMLMetaElement;
+      if (!kwMeta) { kwMeta = document.createElement('meta'); kwMeta.name = 'keywords'; document.head.appendChild(kwMeta); }
+      kwMeta.content = keywords;
+    }
 
     // Canonical link
     let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;

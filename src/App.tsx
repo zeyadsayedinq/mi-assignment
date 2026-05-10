@@ -20,6 +20,9 @@ const PricingPage = lazy(() => import('./pages/PricingPage').then(m => ({ defaul
 const TermsPage = lazy(() => import('./pages/TermsPage').then(m => ({ default: m.TermsPage })));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const RefundPage = lazy(() => import('./pages/RefundPage').then(m => ({ default: m.RefundPage })));
+const ContactPage = lazy(() => import('./pages/ContactPage').then(m => ({ default: m.ContactPage })));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage').then(m => ({ default: m.CheckoutPage })));
 const PaymentSuccessPage = lazy(() => import('./pages/PaymentSuccessPage').then(m => ({ default: m.PaymentSuccessPage })));
 const SOPs = lazy(() => import('./pages/SOPs').then(m => ({ default: m.SOPs })));
 const AssignmentTypeGuide = lazy(() => import('./pages/AssignmentTypeGuide').then(m => ({ default: m.AssignmentTypeGuide })));
@@ -92,10 +95,13 @@ function AppContent() {
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
               <Route path="/" element={<LandingPage />} />
-              <Route path="/auth" element={session ? <Navigate to="/app" replace /> : <AuthPage />} />
+              <Route path="/auth" element={session ? <Navigate to="/terminal" replace /> : <AuthPage />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/refund" element={<Suspense fallback={<LoadingFallback />}><RefundPage /></Suspense>} />
+              <Route path="/contact" element={<Suspense fallback={<LoadingFallback />}><ContactPage /></Suspense>} />
+              <Route path="/checkout" element={<Suspense fallback={<LoadingFallback />}><CheckoutPage /></Suspense>} />
               <Route path="/sops" element={<SOPs />} />
               <Route path="/intelligence-bureau" element={<AssignmentTypeGuide />} />
               

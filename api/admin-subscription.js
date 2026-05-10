@@ -1,5 +1,5 @@
 /**
- * /netlify/functions/admin-subscription.mjs
+ * /api/admin-subscription.mjs
  * GET/POST /api/admin/users/:userId/subscription
  * Only accessible by owner emails.
  */

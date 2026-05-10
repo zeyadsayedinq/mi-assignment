@@ -1,5 +1,5 @@
 /**
- * /netlify/functions/admin-users.mjs
+ * /api/admin-users.mjs
  * GET /api/admin/users-by-email?email=...
  * POST /api/admin/users-by-email  { email, action: 'grant'|'revoke', plan, days }
  * Only accessible by owner emails.

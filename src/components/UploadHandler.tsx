@@ -228,7 +228,7 @@ export function UploadHandler({ onLaunch, isProcessing }: UploadHandlerProps) {
         <div className="flex flex-wrap gap-2">
           {MISSION_TYPES.map(t => (
             <button key={t.value} onClick={() => setMissionType(missionType === t.value ? '' : t.value)}
-              className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all border',
+              className={cn('flex items-center gap-1.5 px-3 py-2.5 sm:py-1.5 rounded-xl text-xs font-medium transition-all border touch-manipulation',
                 missionType === t.value
                   ? 'bg-[#22D3EE]/20 text-[#22D3EE] border-[#22D3EE]/40'
                   : 'bg-[#0A0B0E] text-gray-500 border-gray-800 hover:border-gray-700 hover:text-gray-300')}>
@@ -331,7 +331,7 @@ export function UploadHandler({ onLaunch, isProcessing }: UploadHandlerProps) {
         onDragLeave={() => setDragging(false)}
         onDrop={e => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
         onClick={() => fileInputRef.current?.click()}
-        className={cn('border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition-all',
+        className={cn('border-2 border-dashed rounded-2xl p-6 sm:p-5 text-center cursor-pointer transition-all min-h-[80px] touch-manipulation',
           dragging ? 'border-[#22D3EE]/60 bg-[#22D3EE]/5' : 'border-gray-800 hover:border-gray-700 bg-[#0A0B0E]/50')}>
         <input ref={fileInputRef} type="file" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.webp,.csv" className="hidden"
           onChange={e => handleFiles(e.target.files)} />
@@ -362,7 +362,7 @@ export function UploadHandler({ onLaunch, isProcessing }: UploadHandlerProps) {
         </p>
         <textarea
           value={prompt} onChange={e => setPrompt(e.target.value)}
-          rows={5}
+          rows={4}
           placeholder={isAr
             ? 'الصق الواجب هنا أو اشرح المطلوب بالتفصيل...'
             : 'Paste your assignment here or describe exactly what is needed...'}
@@ -374,7 +374,7 @@ export function UploadHandler({ onLaunch, isProcessing }: UploadHandlerProps) {
       <button
         onClick={handleLaunch}
         disabled={!canLaunch}
-        className={cn('w-full py-4 rounded-2xl font-black text-sm tracking-wide transition-all',
+        className={cn('w-full py-4 min-h-[56px] rounded-2xl font-black text-sm tracking-wide transition-all active:scale-[0.98] touch-manipulation',
           canLaunch
             ? 'bg-gradient-to-r from-[#22D3EE] to-[#A855F7] text-black hover:opacity-90 active:scale-[0.99]'
             : 'bg-gray-900 text-gray-700 cursor-not-allowed')}>

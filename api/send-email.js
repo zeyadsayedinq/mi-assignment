@@ -1,5 +1,5 @@
 /**
- * /netlify/functions/send-email.mjs
+ * /api/send-email.mjs
  *
  * Sends transactional emails via Resend API.
  * Triggered by: signup, mission limit reached, payment success.

@@ -85,10 +85,10 @@ export function OnboardingFlow({ onComplete }: { onComplete: () => void }) {
                 <h2 className="text-2xl font-black text-white mb-2">اختار لغتك / Choose Language</h2>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {[{ code: 'ar', flag: '🇪🇬', label: 'العربية' }, { code: 'en', flag: '🌍', label: 'English' }].map(l => (
+                {[{ code: 'ar', symbol: 'ع', label: 'العربية' }, { code: 'en', symbol: 'EN', label: 'English' }].map(l => (
                   <button key={l.code} onClick={() => { setLanguage(l.code as 'ar'|'en'); setStep(1); }}
                     className="flex flex-col items-center gap-2 p-5 bg-[#0A0B0E] border border-gray-800 rounded-2xl hover:border-[#22D3EE]/40 hover:bg-[#22D3EE]/5 transition-all">
-                    <span className="text-3xl">{l.flag}</span>
+                    <span className="text-2xl font-black text-[#22D3EE]">{l.symbol}</span>
                     <span className="text-white font-bold">{l.label}</span>
                   </button>
                 ))}

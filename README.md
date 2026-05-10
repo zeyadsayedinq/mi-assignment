@@ -1,20 +1,25 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Mi-Assignment
 
-# Run and deploy your AI Studio app
+AI-powered academic assistant for university students in MENA.
 
-This contains everything you need to run your app locally.
+## Stack
+- React + TypeScript + Vite
+- Vercel (hosting + serverless functions)
+- Supabase (auth + database)
+- Tailwind CSS
 
-View your app in AI Studio: https://ai.studio/apps/781ea36f-a67f-4a0e-9f3d-4e297a259b63
+## Development
 
-## Run Locally
+```bash
+npm install --legacy-peer-deps
+npm run dev
+```
 
-**Prerequisites:**  Node.js
+## Deployment
+Push to `main` branch → Vercel auto-deploys.
 
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Required environment variables:
+- `MI_ENGINE_KEY`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`

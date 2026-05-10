@@ -41,7 +41,7 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
               : 'text-gray-500 hover:text-white'
           )}
         >
-          {lang === 'en' ? '🇺🇸 EN' : '🇸🇦 عربي'}
+          {lang === 'en' ? 'EN' : 'ع'}
         </button>
       ))}
     </div>

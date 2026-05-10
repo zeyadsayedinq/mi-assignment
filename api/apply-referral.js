@@ -1,5 +1,5 @@
 /**
- * /netlify/functions/apply-referral.mjs
+ * /api/apply-referral.mjs
  *
  * Called on new user signup when a referral code is present in localStorage.
  * Awards +2 bonus missions to both the new user and the referrer.

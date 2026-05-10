@@ -23,13 +23,7 @@ async function parseBody(req) {
 
 // ─── SUBJECT ROUTER V3.1 ────────────────────────────────────────────────────
 function buildSubjectContext(contents) {
-  const fullText = contents.map(c => c.text || '').join(' ');
-  const text = fullText.toLowerCase();
-  const ctxMatch = fullText.match(/\[CONTEXT\]([^\[]+)/);
-  const ctxLine = ctxMatch ? ctxMatch[1] : '';
-  const detectedUni = (ctxLine.match(/University:\s*([^|\n]+)/i) || [])[1]?.trim() || '';
-  const detectedMajor = (ctxLine.match(/Course[^:]*:\s*([^|\n]+)/i) || [])[1]?.trim() || '';
-  const detectedCountry = (ctxLine.match(/Country:\s*([^|\n]+)/i) || [])[1]?.trim() || '';
+  const text = contents.map(c => c.text || '').join(' ').toLowerCase();
 
   // STEM — Math / Statistics / Calculus (check BEFORE engineering)
   if (/calculus|integral|derivative|differentiat|marginal|optimization|maximiz|minimiz|profit function|cost function|demand function|correlation|standard deviation|regression|statistics|probability|hypothesis|normal distribution|binomial|poisson|variance|covariance|pearson|spearman|t-test|chi.square|anova|forecasting|predictive model|linear model|matrix|eigenvalue|fourier|laplace/.test(text)) {
@@ -73,6 +67,19 @@ OUTPUT REQUIREMENTS FOR MATH/STATS:
     };
   }
 
+  // Business / Management
+  if (/pestel|swot|porter|business plan|marketing strategy|competitive analysis|market analysis|financial model|cash flow|npv|irr|break.even|stakeholder|supply chain|balanced scorecard|خطة أعمال|تحليل|استراتيجية|سوق|تسويق|ربحية|استثمار/.test(text)) {
+    return {
+      domain: 'BUSINESS',
+      rules: `BUSINESS DOMAIN:
+- McKinsey/BCG standard: data-driven, insight-first
+- Every claim needs a number or logical deduction
+- PESTEL/SWOT/Porter in structured table blocks
+- Executive Summary: Context → Finding → Recommendation (3 sentences)
+- Conclude with 3 specific, actionable recommendations`
+    };
+  }
+
   // Law (English + Arabic keywords)
   if (/contract|tort|liability|negligence|jurisdiction|statute|plaintiff|defendant|case law|legal|legislation|breach|damages|constitutional|intellectual property|عقد|مسئولية|قانون|محكمة|دعوى|قضائية|تشريع|عدول|ضمان|تعويض|بند|نزاع|حماية المستهلك|مدني|جنائي|براءة|ملكية فكرية|استئناف|حكم|شريعة/.test(text)) {
     return {
@@ -86,19 +93,6 @@ OUTPUT REQUIREMENTS FOR MATH/STATS:
 - State legal positions directly — never hedge with "it could be argued"
 - For Egyptian law: reference specific laws by number and year
 - Output language follows input language (Arabic in → Arabic out)`
-    };
-  }
-
-  // Business / Management
-  if (/pestel|swot|porter|business plan|marketing strategy|competitive analysis|market analysis|financial model|cash flow|npv|irr|break.even|stakeholder|supply chain|balanced scorecard|خطة أعمال|تحليل|استراتيجية|سوق|تسويق|ربحية|استثمار/.test(text)) {
-    return {
-      domain: 'BUSINESS',
-      rules: `BUSINESS DOMAIN:
-- McKinsey/BCG standard: data-driven, insight-first
-- Every claim needs a number or logical deduction
-- PESTEL/SWOT/Porter in structured table blocks
-- Executive Summary: Context → Finding → Recommendation (3 sentences)
-- Conclude with 3 specific, actionable recommendations`
     };
   }
 
@@ -126,15 +120,9 @@ OUTPUT REQUIREMENTS FOR MATH/STATS:
     };
   }
 
-  const curriculumNote = [
-    detectedUni ? `University: ${detectedUni} — match this institution's academic standards` : '',
-    detectedMajor ? `Major: ${detectedMajor} — use discipline-specific terminology and frameworks` : '',
-    detectedCountry ? `Country: ${detectedCountry} — apply relevant local standards and references` : '',
-  ].filter(Boolean).join('\n');
-
   return {
     domain: 'GENERAL',
-    rules: `Match discipline conventions from context. Academic register. Evidence over assertion.${curriculumNote ? '\n\nCURRICULUM ANCHORS:\n' + curriculumNote : ''}`
+    rules: `Match discipline conventions from context. Academic register. Evidence over assertion.`
   };
 }
 
@@ -254,7 +242,7 @@ export default async function handler(req, res) {
       process.env.GEMINI_KEY;
 
     if (!GEMINI_KEY) {
-      return res.status(500).json({ error: 'GEMINI_API_KEY not configured in Vercel environment variables.' });
+      return res.status(500).json({ error: 'Mi Engine not configured. Contact support@mi-assignment.com' });
     }
 
     const body = await parseBody(req);
@@ -280,7 +268,7 @@ export default async function handler(req, res) {
           generationConfig: {
             temperature: 0.65,
             responseMimeType: 'application/json',
-            maxOutputTokens: 16384,
+            maxOutputTokens: 8192,
           },
         }),
       }
@@ -291,12 +279,12 @@ export default async function handler(req, res) {
     }
     if (geminiRes.status === 403) {
       const e = await geminiRes.json().catch(() => ({}));
-      return res.status(403).json({ error: `API key error: ${e?.error?.message || 'Invalid or revoked key.'}` });
+      return res.status(500).json({ error: 'Mi Engine configuration error. Please contact support.' });
     }
     if (!geminiRes.ok) {
       const t = await geminiRes.text();
-      console.error('Gemini error:', geminiRes.status, t.slice(0, 300));
-      return res.status(500).json({ error: `AI request failed (${geminiRes.status}). Please try again.` });
+      console.error('Mi Engine error:', geminiRes.status, t.slice(0, 300));
+      return res.status(500).json({ error: 'Mi Engine request failed. Please try again.' });
     }
 
     const geminiData = await geminiRes.json();
@@ -308,65 +296,15 @@ export default async function handler(req, res) {
 
     let clean = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
     const first = clean.indexOf('{');
+    const last = clean.lastIndexOf('}');
     if (first === -1) return res.status(500).json({ error: 'AI response was not valid JSON. Please try again.' });
-    
-    // Find the matching closing brace using bracket counting (not lastIndexOf)
-    // This handles cases where Gemini appends text after the JSON object
-    let depth = 0, last = -1;
-    for (let i = first; i < clean.length; i++) {
-      if (clean[i] === '{') depth++;
-      else if (clean[i] === '}') {
-        depth--;
-        if (depth === 0) { last = i; break; }
-      }
-    }
-    if (last === -1) return res.status(500).json({ error: 'Incomplete JSON response. Please try again.' });
     clean = clean.slice(first, last + 1);
 
     let result;
     try { result = JSON.parse(clean); }
     catch {
-      // Fix trailing commas
       try { result = JSON.parse(clean.replace(/,(\s*[}\]])/g, '$1')); }
-      catch {
-        // Gemini hit token limit mid-JSON — reconstruct by closing all open brackets
-        try {
-          let fixed = clean;
-          // Count unclosed brackets
-          let opens = 0, inStr = false, escape = false;
-          for (const ch of fixed) {
-            if (escape) { escape = false; continue; }
-            if (ch === '\\') { escape = true; continue; }
-            if (ch === '"') { inStr = !inStr; continue; }
-            if (!inStr) {
-              if (ch === '{' || ch === '[') opens++;
-              else if (ch === '}' || ch === ']') opens--;
-            }
-          }
-          // Close any unclosed strings and brackets
-          if (inStr) fixed += '"';
-          // Remove trailing comma before we close
-          fixed = fixed.replace(/,\s*$/, '');
-          // Close brackets
-          const stack = [];
-          inStr = false; escape = false;
-          for (const ch of fixed) {
-            if (escape) { escape = false; continue; }
-            if (ch === '\\') { escape = true; continue; }
-            if (ch === '"') { inStr = !inStr; continue; }
-            if (!inStr) {
-              if (ch === '{') stack.push('}');
-              else if (ch === '[') stack.push(']');
-              else if ((ch === '}' || ch === ']') && stack.length) stack.pop();
-            }
-          }
-          fixed += stack.reverse().join('');
-          fixed = fixed.replace(/,(\s*[}\]])/g, '$1');
-          result = JSON.parse(fixed);
-        } catch (e) {
-          return res.status(500).json({ error: `Response parse failed: ${e.message}` });
-        }
-      }
+      catch (e) { return res.status(500).json({ error: `Response parse failed: ${e.message}` }); }
     }
 
     if (!result.solution_text) result.solution_text = '';
@@ -382,7 +320,7 @@ export default async function handler(req, res) {
     return res.status(200).json(result);
 
   } catch (e) {
-    console.error('process-mission FATAL:', e.message);
+    console.error('Mi Engine FATAL:', e.message);
     return res.status(500).json({ error: e.message || 'Mission failed. Please try again.' });
   }
 }

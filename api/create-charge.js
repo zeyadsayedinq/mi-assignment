@@ -1,7 +1,7 @@
 /**
- * /netlify/functions/create-charge.mjs
+ * create-charge.js — Mi-Assignment payment handler
  * 
- * Handles Tap Payments charge creation server-side.
+ * Handles Paymob charge creation server-side.
  * TAP_SECRET_KEY lives only in Netlify environment variables — never in the browser bundle.
  *
  * POST /api/create-charge
@@ -113,7 +113,7 @@ export default async function handler(req, res) {
         url: redirectUrl,
       },
       post: {
-        url: `${baseUrl}/.netlify/functions/tap-webhook`,
+        url: `${baseUrl}/api/tap-webhook`,
       },
     };
 

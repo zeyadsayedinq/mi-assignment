@@ -25,7 +25,12 @@ export function TermsPage() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#22D3EE]/10 border border-[#22D3EE]/20 text-[#22D3EE] text-[10px] font-mono uppercase tracking-widest mb-4">
             <Shield className="w-3 h-3" /> {isAr ? 'وثيقة قانونية' : 'Legal Document'}
           </div>
-          <h1 className="text-4xl font-black mb-2">{isAr ? 'شروط الاستخدام' : 'Terms of Service'}</h1>
+          <div className="mb-8">
+          <a href="/" className="inline-flex items-center gap-2 text-gray-500 hover:text-[#22D3EE] transition-colors text-sm">
+            ← Home
+          </a>
+        </div>
+        <h1 className="text-4xl font-black mb-2">{isAr ? 'شروط الاستخدام' : 'Terms of Service'}</h1>
           <p className="text-gray-500 text-sm">{isAr ? `آخر تحديث: ${UPDATED_AR}` : `Last updated: ${UPDATED}`}</p>
         </div>
 
@@ -93,12 +98,12 @@ export function TermsPage() {
             <section>
               <h2 className="text-white font-bold text-lg mb-3">4. Subscription & Billing</h2>
               <p>Free plan: 3 missions per month, resets on the 1st of each month.</p>
-              <p className="mt-2">Pro plan: Quarterly (90 days) or annual subscriptions renew automatically unless cancelled at least 24 hours before the current period ends. Payments are processed by Tap Payments.</p>
+              <p className="mt-2">Pro plan: Quarterly (90 days) or annual subscriptions renew automatically unless cancelled at least 24 hours before the current period ends. Payments are processed by Paymob.</p>
             </section>
 
             <section>
               <h2 className="text-white font-bold text-lg mb-3">5. Refund Policy</h2>
-              <p>You may request a full refund within 7 days of your payment date. To request a refund, contact <a href="mailto:support@mi-assignment.com" className="text-[#22D3EE]">support@mi-assignment.com</a> with your reference number. No refunds are issued after the 7-day window.</p>
+              <p>Our refund policy is described in detail on our <a href="/refund" className="text-[#22D3EE] hover:underline">Refund Policy page</a>. In summary: because Mi-Assignment delivers digital academic content instantly upon request, refunds are generally not available once a solution has been delivered.</p>
             </section>
 
             <section>

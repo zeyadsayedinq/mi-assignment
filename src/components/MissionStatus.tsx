@@ -37,7 +37,7 @@ export function MissionStatus({ status }: { status: 'analyzing' | 'complete' }) 
       { text: 'Neural network synchronized.', icon: Network },
       { text: 'Academic context analysis in progress...', icon: Key },
       { text: 'Assignment type detected successfully.', icon: ShieldAlert },
-      { text: 'Routing to Mi AI Engine (Claude)...', icon: BrainCircuit },
+      { text: 'Routing to Mi Analytical Engine...', icon: BrainCircuit },
       { text: 'Executing structured output reasoning layer...', icon: Cpu },
       { text: 'Finalization protocol armed.', icon: Radio },
       { text: 'Formulating student-authentic solution...', icon: Terminal },
