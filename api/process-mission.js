@@ -71,7 +71,7 @@ function buildSubjectContext(contents) {
   }
 
   // Country-specific academic standards
-  const getCountryStandards = (country: string, uni: string) => {
+  const getCountryStandards = (country, uni) => {
     const c = country.toLowerCase();
     const u = uni.toLowerCase();
     if (c.includes('egypt') || u.includes('cairo') || u.includes('ain shams') || u.includes('guc') || u.includes('auc') || u.includes('bue') || u.includes('miu')) {
