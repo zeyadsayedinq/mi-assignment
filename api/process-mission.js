@@ -423,10 +423,21 @@ export default async function handler(req, res) {
     const domainContext = buildSubjectContext(contents);
     const systemPrompt = buildSystemPrompt(domainContext);
 
+    // Transform contents into Gemini API format
+    // Frontend sends [{text:"..."}, {inlineData:{...}}]
+    // Gemini needs [{role:"user", parts:[{text:"..."},{inlineData:{...}}]}]
+    const geminiContents = [{
+      role: 'user',
+      parts: contents.map(c => {
+        if (c.inlineData) return { inlineData: c.inlineData };
+        return { text: c.text || '' };
+      })
+    }];
+
     // Build Gemini API request payload
     const geminiPayload = {
       system_instruction: { parts: [{ text: systemPrompt }] },
-      contents,
+      contents: geminiContents,
       generationConfig: {
         temperature: 0.65,
         topP: 0.85,
