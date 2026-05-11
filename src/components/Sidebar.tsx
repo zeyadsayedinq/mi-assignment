@@ -27,7 +27,8 @@ export function Sidebar({ isMobileOpen, closeMobile }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { session, user, signOut } = useAuth();
-  const isAdmin = user?.email === 'zeyadsayedinq@gmail.com';
+  const ADMIN_EMAILS = ['zeyadsayedinq@gmail.com', 'ranafaraj30@gmail.com'];
+  const isAdmin = ADMIN_EMAILS.includes(user?.email || '');
   const { t } = useTranslation();
   const { explode } = useExplosion();
 

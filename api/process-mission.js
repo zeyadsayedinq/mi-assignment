@@ -423,40 +423,33 @@ export default async function handler(req, res) {
     const domainContext = buildSubjectContext(contents);
     const systemPrompt = buildSystemPrompt(domainContext);
 
-    console.log(`Mi V3.1 — Domain: ${domainContext.domain}`);
-
-    // 50s timeout — Vercel kills at 60s, we fail gracefully before that
+      // Single model — gemini-3-flash-preview (most reliable for complex academic tasks)
   const abortCtrl = new AbortController();
-  const abortTimer = setTimeout(() => abortCtrl.abort(), 45000);
+  const abortTimer = setTimeout(() => abortCtrl.abort(), 55000);
 
   let geminiRes;
   try {
     geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`,
       {
         signal: abortCtrl.signal,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ role: 'user', parts: contents }],
-          generationConfig: {
-            temperature: 0.65,
-            topP: 0.85,
-            topK: 40,
-            responseMimeType: 'application/json',
-            maxOutputTokens: 10000,  // gemini-2.0-flash: fast + reliable, 10k is plenty for full outputs
-          },
-        }),
+        body: JSON.stringify(geminiPayload),
       }
     );
-  } finally {
+  } catch (fetchErr) {
     clearTimeout(abortTimer);
-  }
-
-    if (geminiRes.status === 503 || geminiRes.status === 429) {
-      return res.status(503).json({ error: 'AI service busy. Please try again in a moment.' });
+    if (fetchErr.name === 'AbortError') {
+      setCORS(res);
+      return res.status(503).json({ error: 'Request timed out. Please try again or simplify your assignment.' });
     }
+    throw fetchErr;
+  }
+  clearTimeout(abortTimer);
+
+
+
     if (geminiRes.status === 403) {
       const e = await geminiRes.json().catch(() => ({}));
       return res.status(403).json({ error: `API key error: ${e?.error?.message || 'Invalid or revoked key.'}` });
