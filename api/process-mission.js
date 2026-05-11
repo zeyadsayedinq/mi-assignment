@@ -447,30 +447,57 @@ export default async function handler(req, res) {
       },
     };
 
-      // Single model — gemini-3-flash-preview (most reliable for complex academic tasks)
-  const abortCtrl = new AbortController();
-  const abortTimer = setTimeout(() => abortCtrl.abort(), 55000);
+    // Model waterfall — try each model with 28s timeout
+  // If one hangs or 503s, move to the next immediately
+  const MODEL_WATERFALL = [
+    'gemini-3-flash-preview',
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
+  ];
 
-  let geminiRes;
-  try {
-    geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`,
-      {
-        signal: abortCtrl.signal,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(geminiPayload),
+  let geminiRes = null;
+  let lastError = '';
+
+  for (const model of MODEL_WATERFALL) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 28000);
+    try {
+      console.log(`Mi — trying ${model}`);
+      const r = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
+        {
+          signal: ctrl.signal,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(geminiPayload),
+        }
+      );
+      clearTimeout(timer);
+      // Accept any non-5xx response — even 400s we handle below
+      if (r.status < 500) {
+        geminiRes = r;
+        console.log(`Mi — ${model} responded with ${r.status}`);
+        break;
       }
-    );
-  } catch (fetchErr) {
-    clearTimeout(abortTimer);
-    if (fetchErr.name === 'AbortError') {
-      setCORS(res);
-      return res.status(503).json({ error: 'Request timed out. Please try again or simplify your assignment.' });
+      lastError = `${model}: ${r.status}`;
+      console.log(`Mi — ${model} returned ${r.status}, trying next...`);
+    } catch (err) {
+      clearTimeout(timer);
+      if (err.name === 'AbortError') {
+        lastError = `${model}: timeout`;
+        console.log(`Mi — ${model} timed out at 28s, trying next...`);
+        continue;
+      }
+      throw err;
     }
-    throw fetchErr;
   }
-  clearTimeout(abortTimer);
+
+  if (!geminiRes) {
+    setCORS(res);
+    return res.status(503).json({
+      error: `Mi Engine is under heavy load right now. Please try again in 30 seconds. (${lastError})`
+    });
+  }
 
 
 
