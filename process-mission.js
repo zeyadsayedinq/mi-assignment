@@ -423,28 +423,59 @@ export default async function handler(req, res) {
     const domainContext = buildSubjectContext(contents);
     const systemPrompt = buildSystemPrompt(domainContext);
 
-    console.log(`Mi V3.1 — Domain: ${domainContext.domain}`);
+      // ── Domain-Tiered Model Routing ─────────────────────────────────────────
+  // TIER 1 (Premium): Engineering, CS, Medical, Math, Data Science, Multi-domain
+  //   → gemini-3-flash-preview first, fallback gemini-2.5-flash
+  // TIER 2 (Standard): Business, Law, Humanities, Media, General
+  //   → gemini-2.5-flash first, fallback gemini-2.5-flash-lite
+  //
+  // Each model gets 38s timeout. If it hangs/503s, next model is tried.
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ role: 'user', parts: contents }],
-          generationConfig: {
-            temperature: 0.65,
-            responseMimeType: 'application/json',
-            maxOutputTokens: 16384,
-          },
-        }),
+  const detectedDomain = domainContext.domain || 'GENERAL';
+  const isPremiumDomain = /ENGINEERING|CS|MATH|MEDICAL|DATA|MULTI|SCIENCE|ARCHITECTURE|FINANCE/.test(detectedDomain.toUpperCase());
+
+  const MODELS = isPremiumDomain
+    ? ['gemini-3-flash-preview', 'gemini-2.5-flash']      // Tier 1: best quality first
+    : ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];       // Tier 2: fast + reliable
+
+  console.log(`Mi V3.1 — Domain: ${detectedDomain} | Tier: ${isPremiumDomain ? 'PREMIUM' : 'STANDARD'} | Models: ${MODELS.join(' → ')}`);
+
+  let geminiRes = null;
+
+  for (const model of MODELS) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 38000);
+    try {
+      console.log(`Mi V3.1 — trying ${model}`);
+      geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
+        {
+          signal: ctrl.signal,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(geminiPayload),
+        }
+      );
+      clearTimeout(timer);
+      if (geminiRes.status !== 503 && geminiRes.status !== 429 && geminiRes.status !== 404) break;
+      console.log(`Mi V3.1 — ${model} returned ${geminiRes.status}, next model...`);
+    } catch (err) {
+      clearTimeout(timer);
+      if (err.name === 'AbortError') {
+        console.log(`Mi V3.1 — ${model} timed out at 38s, trying next...`);
+        continue;
       }
-    );
-
-    if (geminiRes.status === 503 || geminiRes.status === 429) {
-      return res.status(503).json({ error: 'AI service busy. Please try again in a moment.' });
+      throw err;
     }
+  }
+
+  if (!geminiRes) {
+    setCORS(res);
+    return res.status(503).json({ error: 'Mi Engine timed out. Please try again in a moment.' });
+  }
+
+
+
     if (geminiRes.status === 403) {
       const e = await geminiRes.json().catch(() => ({}));
       return res.status(403).json({ error: `API key error: ${e?.error?.message || 'Invalid or revoked key.'}` });
@@ -538,7 +569,12 @@ export default async function handler(req, res) {
     return res.status(200).json(result);
 
   } catch (e) {
-    console.error('process-mission FATAL:', e.message);
+    if (e && e.name === 'AbortError') {
+      console.error('Mi Engine: 50s timeout');
+      setCORS(res);
+      return res.status(503).json({ error: 'This assignment took too long to process. Please try again or break it into smaller parts.' });
+    }
+    console.error('Mi Engine FATAL:', e.message);
     return res.status(500).json({ error: e.message || 'Mission failed. Please try again.' });
   }
 }
