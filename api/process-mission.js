@@ -67,7 +67,9 @@ function buildSubjectContext(contents) {
   if (/literature|history|philosophy|sociology|psychology|culture|discourse|narrative|theory|critique|analysis|essay|thesis|qualitative/.test(text)) {
     return {
       domain: 'HUMANITIES',
-      rules: `HUMANITIES DOMAIN: Thesis-driven. Specific quotes, dates, names. Critical analysis over description. Counter-arguments required. Confident active academic prose.`
+      rules: `HUMANITIES DOMAIN: Thesis-driven. Specific quotes, dates, names. Critical analysis over description. Counter-arguments required. Confident active academic prose.
+
+CRITICAL — FACTUAL ACCURACY: If the assignment involves a real person, artist, historical figure, or event — ONLY state facts you are certain about. DO NOT fabricate song titles, albums, dates, quotes, or career details. If you are uncertain about a specific fact, write around it using general terms rather than inventing specifics. For niche regional artists or figures with limited online presence, focus on the analytical framework (genre analysis, cultural context, influence) rather than specific biographical details you cannot verify. It is better to write a shorter accurate essay than a longer hallucinated one.`
     };
   }
 
@@ -234,6 +236,7 @@ LANGUAGE: Detect language of [ASSIGNMENT]. English → English output. Arabic �
 NO-FLUFF PROTOCOL — every sentence must pass: "Does this help the student get a grade or understand the concept?"
 If NO → delete it.
 BANNED: "In today's world", "It is widely known", "This essay will explore", "In conclusion it can be said", "It is worth noting", "Delve into", "Multifaceted", "It is evident that"
+FACTUAL INTEGRITY: NEVER invent specific facts — song titles, dates, quotes, statistics, names, events. If uncertain about a specific detail, write around it analytically. Hallucinated facts will fail academically.
 BANNED openers for paragraphs: Any sentence that could apply to any assignment ("In [field], it is important to...", "Understanding X is crucial...")
 
 COMPLETENESS IS MANDATORY:
