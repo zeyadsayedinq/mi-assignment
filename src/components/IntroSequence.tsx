@@ -51,7 +51,7 @@ export function IntroSequence({ onComplete }: { onComplete: () => void }) {
               transition={{ delay: 0.5 }}
               className="text-[#22D3EE]/50 font-mono text-[10px] tracking-[0.4em] uppercase"
             >
-              Initializing...
+              Mi — Academic Engine
             </motion.p>
           </motion.div>
         )}
@@ -70,7 +70,7 @@ export function IntroSequence({ onComplete }: { onComplete: () => void }) {
               Mi-Assignment
             </span>
             <div className="h-px w-48 bg-gradient-to-r from-transparent via-[#22D3EE] to-transparent" />
-            <span className="text-[#22D3EE]/60 font-mono text-[10px] tracking-[0.4em] uppercase">Assignment Intelligence</span>
+            <span className="text-[#22D3EE]/60 font-mono text-[10px] tracking-[0.4em] uppercase">Academic Engine · MENA</span>
           </motion.div>
         )}
       </AnimatePresence>
