@@ -46,8 +46,9 @@ function buildSubjectContext(contents) {
     };
   }
 
-  // Medical
-  if (/patient|diagnosis|treatment|clinical|nursing|pharmacy|drug|dosage|symptom|pathophysiology|anatomy|medical|healthcare|care plan|pharmacology|مريض|تشخيص|علاج|دواء|جرعة|مستشفى|رعاية|تمريض|صيدلة/.test(text)) {
+  // Medical — but NOT if engineering keywords are present
+  const hasEngineeringIntent = /membrane|osmosis|reverse osmosis|desalination|solar pv|photovoltaic|pump|pressure drop|flow rate|kwp|kwh|hydraulic|structural|circuit design|algorithm|database|api endpoint|system design|pid controller|retaining wall|beam design|bbs|bar bending|reinforced concrete|ecp 203|mechanical design|thermodynamic|heat exchanger|chemical reactor|distillation|filtration|permeate|brine|recovery ratio|van.t hoff|osmotic pressure/.test(text);
+  if (!hasEngineeringIntent && /patient|diagnosis|treatment|clinical|nursing|pharmacy|drug|dosage|symptom|pathophysiology|anatomy|medical|healthcare|care plan|pharmacology|مريض|تشخيص|علاج|دواء|جرعة|مستشفى|رعاية|تمريض|صيدلة/.test(text)) {
     return {
       domain: 'MEDICAL',
       rules: `MEDICAL DOMAIN: Clinical terminology. Evidence-based. ADPIE for care plans. Drug: generic name, dose, route, frequency, contraindications.`
@@ -149,7 +150,7 @@ OUTPUT RULE: The reconstructed_doc must have separate headed sections for EACH p
 
 
   // STEM — Engineering (structural/civil/mechanical)
-  if (/reinforced concrete|beam|slab|column|ecp|structural|foundation|steel design|load combination|dead load|live load|kn\/m|mpa|egyptian code|aci 318|eurocode|bs 8110|moment distribution|shear force|bending|bbs|bar bending|rebar|stirrup|bar schedule|retaining wall|pid controller|mechanical|thermodynamic|hydraulic|circuit|electrical|هندسة|خرسانة|حديد|تسليح|عزم|قص|أساس|BBS|جدول الحديد|قفل|كانة/.test(text)) {
+  if (/reinforced concrete|beam|slab|column|ecp|structural|foundation|steel design|load combination|dead load|live load|kn\/m|mpa|egyptian code|aci 318|eurocode|bs 8110|moment distribution|shear force|bending|bbs|bar bending|rebar|stirrup|bar schedule|retaining wall|pid controller|mechanical|thermodynamic|hydraulic|circuit|electrical|هندسة|خرسانة|حديد|تسليح|عزم|قص|أساس|BBS|جدول الحديد|قفل|كانة|reverse osmosis|desalination|membrane|osmotic pressure|van.t hoff|solar pv|photovoltaic|peak sun hours|kWp|kWh\/m|recovery ratio|permeate|brine|feed water|salinity|ppm|high.pressure pump|process flow diagram|pfd|chemical engineering|heat exchanger|distillation|absorption|mass transfer|fluid mechanics|bernoulli|reynolds|darcy|turbine|compressor|reactor design|catalysis|polymer|composite|aerospace|civil engineering|urban planning|water treatment/.test(text)) {
     return {
       domain: 'ENGINEERING',
       rules: `ENGINEERING DOMAIN:
@@ -157,9 +158,15 @@ OUTPUT RULE: The reconstructed_doc must have separate headed sections for EACH p
 - Egypt: cite ECP 203 clauses (e.g. "ECP 203-2018 Section 4.2.1")
 - Saudi: cite SBC 304 (concrete), SBC 301 (loads)
 - UAE/International: BS 8110 or Eurocode 2
-- Always label units: kN, kN/m², m, mm, MPa
+- Always label units: kN, kN/m², m, mm, MPa, bar, kWh, kWp, m³/day
 - Safety factors: sliding ≥ 1.5, overturning ≥ 2.0, bearing capacity ≥ 3.0
-- SVG cross-sections required for structural elements: show bars, stirrups, cover, dimensions
+- SVG diagrams MANDATORY: every engineering assignment must include at least one svg block
+- For process systems (RO, water treatment, chemical): include Process Flow Diagram (PFD) as svg block
+  showing: Intake → Pre-treatment → Pump → Membrane/Reactor → Post-treatment → Output
+- For solar/energy systems: include system schematic showing panels, inverter, battery, load
+- For structural: cross-section with dimensions, reinforcement labels, cover dimensions
+- For fluid systems: pipe schematic with flow rates, pressures, valve positions labeled
+- P-V curves, efficiency curves, load curves: use svg block with plotted data points
 
 BAR BENDING SCHEDULE (BBS) — generate whenever rebar/reinforcement/stirrups/تسليح/حديد/BBS/قفل/كانة appears:
 - Generate a complete table: Bar Mark | Shape | Dia (mm) | A | B | C | D | Cut Length (mm) | No. Bars | Total Length (m) | Weight (kg)
@@ -418,9 +425,16 @@ export default async function handler(req, res) {
 
     console.log(`Mi V3.1 — Domain: ${domainContext.domain}`);
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`,
+    // 50s timeout — Vercel kills at 60s, we fail gracefully before that
+  const abortCtrl = new AbortController();
+  const abortTimer = setTimeout(() => abortCtrl.abort(), 45000);
+
+  let geminiRes;
+  try {
+    geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
       {
+        signal: abortCtrl.signal,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -428,12 +442,17 @@ export default async function handler(req, res) {
           contents: [{ role: 'user', parts: contents }],
           generationConfig: {
             temperature: 0.65,
+            topP: 0.85,
+            topK: 40,
             responseMimeType: 'application/json',
-            maxOutputTokens: 16384,
+            maxOutputTokens: 10000,  // gemini-2.0-flash: fast + reliable, 10k is plenty for full outputs
           },
         }),
       }
     );
+  } finally {
+    clearTimeout(abortTimer);
+  }
 
     if (geminiRes.status === 503 || geminiRes.status === 429) {
       return res.status(503).json({ error: 'AI service busy. Please try again in a moment.' });
@@ -531,7 +550,12 @@ export default async function handler(req, res) {
     return res.status(200).json(result);
 
   } catch (e) {
-    console.error('process-mission FATAL:', e.message);
+    if (e && e.name === 'AbortError') {
+      console.error('Mi Engine: 50s timeout');
+      setCORS(res);
+      return res.status(503).json({ error: 'This assignment took too long to process. Please try again or break it into smaller parts.' });
+    }
+    console.error('Mi Engine FATAL:', e.message);
     return res.status(500).json({ error: e.message || 'Mission failed. Please try again.' });
   }
 }
