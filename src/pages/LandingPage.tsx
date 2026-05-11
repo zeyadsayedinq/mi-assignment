@@ -141,8 +141,8 @@ export function LandingPage() {
             <Link to="/pricing" className="hidden sm:block text-gray-400 hover:text-white text-sm transition-colors px-3">
               {isAr ? 'الأسعار' : 'Pricing'}
             </Link>
-            <button onClick={go} className="flex items-center gap-1.5 px-4 py-2 bg-[#22D3EE] text-black font-bold rounded-xl text-sm hover:bg-white transition-all">
-              {session ? (isAr ? 'الداشبورد' : 'Dashboard') : (isAr ? 'ابدأ مجاناً' : 'Start Free')}
+            <button onClick={go} className="flex items-center gap-1.5 px-3 py-2 bg-[#22D3EE] text-black font-bold rounded-xl text-xs whitespace-nowrap hover:bg-white transition-all">
+              {session ? (isAr ? 'الداشبورد' : 'Dashboard') : (isAr ? 'ابدأ' : 'Start Free')}
               <ChevronRight className={cn('w-3.5 h-3.5', isAr && 'rotate-180')} />
             </button>
           </div>
@@ -184,7 +184,7 @@ export function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-5">
               <button onClick={go} className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-[#22D3EE] to-[#A855F7] text-black font-black rounded-2xl hover:opacity-90 transition-all shadow-[0_0_40px_rgba(34,211,238,0.2)]">
                 <Zap className="w-5 h-5" />
-                {session ? (isAr ? 'الداشبورد' : 'Go to Dashboard') : (isAr ? 'ابدأ مجاناً — ٣ مهام' : 'Start Free — 3 missions')}
+                {session ? (isAr ? 'الداشبورد' : 'Go to Dashboard') : (isAr ? 'ابدأ مجاناً — ٣ مهام' : 'Start Free — 3 Missions')}
               </button>
               <Link to="/intelligence-bureau" className="flex items-center justify-center gap-2 px-8 py-4 bg-white/5 border border-white/10 text-white font-bold rounded-2xl hover:bg-white/10 transition-all">
                 {isAr ? 'شوف أنواع الواجبات' : 'See assignment types'}
@@ -314,14 +314,14 @@ export function LandingPage() {
       <section className="py-20 px-5">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl font-black text-white mb-3">{isAr ? 'سعر عادل لكل طالب' : 'Fair pricing for every student'}</h2>
-          <p className="text-gray-500 mb-10 text-sm">{isAr ? '١٠٠٠ ج.م ربع سنوي — ترم كامل من ٤٠ مهمة' : '1,000 EGP per quarter — a full semester of 40 missions'}</p>
+          <p className="text-gray-500 mb-10 text-sm">{isAr ? '١٠٠٠ ج.م ربع سنوي — ترم كامل من ٤٠ مهمة' : '1,000 EGP per quarter — 60 missions · all domains · instant download'}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
             {(isAr ? [
               { label: 'مجاني', price: '٠', period: '/شهر', features: ['٣ مهام / شهر', 'كل أنواع الواجبات', 'بدون بطاقة'], hi: false },
               { label: 'Pro', price: '١٠٠٠ ج.م', period: '/ترم', features: ['٤٠ مهمة / ترم ♾️', 'معالجة أسرع', 'PDF + PPTX + CSV'], hi: true },
             ] : [
               { label: 'Free', price: '0', period: '/month', features: ['3 missions/month', 'All types', 'No card needed'], hi: false },
-              { label: 'Pro', price: '1,000 EGP', period: '/quarter', features: ['40 missions/semester ♾️', 'Priority processing', 'PDF + PPTX + CSV'], hi: true },
+              { label: 'Pro', price: '1,000 EGP', period: '/quarter', features: ['60 missions/quarter ∞', 'All domains: Engineering · Medical · Law · CS · Business · Math', 'Mi-Academy: step-by-step breakdowns + defense Q&A', 'SVG diagrams · BBS tables · SOAP notes · IRAC · ER diagrams', 'Export: PDF · Word · PowerPoint (10 slides) · Excel · SVG · ZIP', 'Priority AI engine', 'File uploads: PDFs, images, slides', 'Direct WhatsApp support'], hi: true },
             ]).map(p => (
               <div key={p.label} className={cn('rounded-2xl p-6 text-start', p.hi ? 'bg-gradient-to-b from-[#22D3EE]/10 to-[#A855F7]/5 border border-[#22D3EE]/30' : 'bg-[#0A0B0E] border border-gray-800')}>
                 <p className={cn('text-sm font-bold mb-2', p.hi ? 'text-[#22D3EE]' : 'text-gray-400')}>{p.label}</p>

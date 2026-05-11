@@ -104,18 +104,22 @@ const FREE_FEATURES_EN = [
 ];
 
 const PRO_FEATURES_EN = [
-  'Unlimited missions ♾️',
-  'All 20+ assignment types',
-  'Export: PDF · Word (.docx) · PowerPoint (.pptx)',
-  'Export: Excel (.xlsx) · CSV · SQL (.sql)',
+  'Unlimited missions ∞',
+  'All 20+ assignment types (Engineering, Medical, Law, CS, Business, Math)',
+  'Mi-Academy: step-by-step breakdowns + professor defense Q&A',
+  'Engineering: ECP 203 / SBC · SVG diagrams · BBS tables · sizing calculator',
+  'Medical: SOAP notes · MONA protocol · drug interaction matrix · patient leaflet',
+  'Law: IRAC memoranda · Egyptian/Saudi/UAE civil code · CRCICA arbitration',
+  'CS: ER diagrams · SQL schema · 3NF normalization · runnable code + README',
+  'Business: PESTEL + SWOT tables · NPV/DCF · Porter Five Forces · financials',
+  'Math: full LaTeX steps · Lagrange multipliers · boxed final answers',
+  'File uploads: analyze PDFs, images, lecture slides',
+  'Export: PDF · Word (.docx) · PowerPoint (10 slides with real images)',
+  'Export: Excel (.xlsx) · CSV · SQL · SVG diagrams · ZIP packages',
   'Export: Code files (.py .js .cpp .java .c .r .m)',
-  'Export: HTML websites · SVG diagrams · ZIP packages',
-  'Presentations with smart visuals',
-  'Math & engineering with step-by-step LaTeX',
-  'Full Mi-Vault archive + search',
-  'Mi-Academy learning breakdowns',
-  'Priority processing (3x faster)',
-  'Direct support',
+  'Full Mi-Vault archive + search across all your missions',
+  'Priority AI engine (gemini-3-flash — fastest available)',
+  'Direct WhatsApp support',
   'Full Arabic RTL interface',
 ];
 
@@ -383,7 +387,7 @@ export function PricingPage() {
               <button
                 onClick={() => navigate(`/checkout?plan=${billing === 'monthly' ? 'pro_monthly' : 'pro_quarterly'}`)}
                 className="w-full py-4 bg-gradient-to-r from-[#22D3EE] to-[#A855F7] text-black font-black rounded-xl hover:opacity-90 active:scale-[0.99] transition-all text-sm uppercase tracking-widest">
-                {isAr ? '🚀 اشترك الآن' : '🚀 Subscribe Now'}
+                {isAr ? '🚀 اشترك الآن' : '⚡ Subscribe Now'}
               </button>
             )}
           </motion.div>

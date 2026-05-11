@@ -55,10 +55,10 @@ export function TheAcademy() {
       try {
         const { data } = await supabase
           .from('missions')
-          .select('id,payload_name,university,course,assignment_type,created_at,summary,solution_data,lang')
+          .select('*')
           .eq('user_id', user?.id || '')
           .order('created_at', { ascending: false })
-          .limit(100);
+          .limit(50);
         if (data) dbMissions = data;
       } catch {}
       const combined = [...dbMissions, ...vault];

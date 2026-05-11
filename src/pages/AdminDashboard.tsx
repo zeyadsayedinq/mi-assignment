@@ -75,7 +75,7 @@ export function AdminDashboard() {
 
       const { data: s, error: se } = await supabase
         .from('subscriptions')
-        .select('user_id,plan,status,expires_at,started_at,tap_charge_id,notes')
+        .select('user_id,plan,status,expires_at,started_at,tap_charge_id')
         .order('started_at', { ascending: false });
       if (se) throw se;
       setSubs(s || []);
@@ -97,7 +97,7 @@ export function AdminDashboard() {
       if (!grantUserId.trim()) { setGrantMsg('❌ Enter a User ID.'); setGrantLoading(false); return; }
       if (action === 'revoke') {
         const { error } = await supabase.from('subscriptions')
-          .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+          .update({ status: 'cancelled' })
           .eq('user_id', grantUserId.trim());
         if (error) throw error;
         setGrantMsg(`✅ Revoked for ${grantUserId.slice(0, 12)}...`);
@@ -111,7 +111,6 @@ export function AdminDashboard() {
           started_at: new Date().toISOString(),
           expires_at: exp.toISOString(),
           tap_charge_id: `manual_${Date.now()}`,
-          updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id' });
         if (error) throw error;
         setGrantMsg(`✅ ${grantPlan} granted until ${exp.toLocaleDateString()}`);
@@ -134,7 +133,36 @@ export function AdminDashboard() {
 
       if (adminErr || !adminData) {
         // Fallback: search missions for this email pattern
-        setActivateMsg('⚠️ Cannot lookup by email without service role key. Find the User ID in the Missions tab and use Grant Pro above.');
+        // Try to find user_id from missions table where billing_email matches
+        const { data: missionWithEmail } = await supabase
+          .from('missions')
+          .select('user_id')
+          .eq('billing_email', activateEmail.trim())
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+          
+        if (missionWithEmail?.user_id) {
+          // Found user via billing email in missions
+          const uid = missionWithEmail.user_id;
+          const exp2 = new Date();
+          exp2.setDate(exp2.getDate() + grantDays);
+          const { error: e2 } = await supabase.from('subscriptions').upsert({
+            user_id: uid,
+            plan: grantPlan,
+            status: 'active',
+            started_at: new Date().toISOString(),
+            expires_at: exp2.toISOString(),
+            tap_charge_id: `manual_${Date.now()}`,
+          }, { onConflict: 'user_id' });
+          if (e2) throw e2;
+          setActivateMsg(`✅ ${grantPlan} activated via mission history for ${activateEmail}`);
+          setActivateEmail(''); setActivateNote('');
+          fetchAll();
+          setActivateLoading(false);
+          return;
+        }
+        setActivateMsg('⚠️ User not found in mission history. Find their User ID in the Missions tab → click it → use Grant Pro in Overview tab.');
         setActivateLoading(false);
         return;
       }
@@ -151,8 +179,6 @@ export function AdminDashboard() {
         started_at: new Date().toISOString(),
         expires_at: exp.toISOString(),
         tap_charge_id: `manual_${Date.now()}`,
-        notes: activateNote || `Activated by admin for ${activateEmail}`,
-        updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
       if (error) throw error;
       setActivateMsg(`✅ ${grantPlan} activated for ${activateEmail} until ${exp.toLocaleDateString()}`);
