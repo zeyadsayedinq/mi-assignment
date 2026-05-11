@@ -124,7 +124,11 @@ OUTPUT REQUIREMENTS FOR MATH/STATS:
 - WHO guidelines apply when no local guideline specified
 - Drug interactions: always check CYP450, renal/hepatic dose adjustments, contraindications
 - DRUG COMPARISON TABLE: when comparing drugs, use table block with columns [Drug, Mechanism, Dose, SE, Contraindications, Cost]
-- Always follow: Chief Complaint → History → Examination → Investigations → Diagnosis → Management → Follow-up`
+- Always follow: Chief Complaint → History → Examination → Investigations → Diagnosis → Management → Follow-up
+- domain_extras REQUIRED: populate domain_extras.medical with:
+  * soap_note object (subjective/objective/assessment/plan)
+  * drug_interaction_matrix array (at least 3 drug pairs)
+  * patient_leaflet string (plain language instructions)`
     };
   }
 
@@ -358,6 +362,15 @@ export default async function handler(req, res) {
     const last = clean.lastIndexOf('}');
     if (first === -1) return res.status(500).json({ error: 'AI response was not valid JSON. Please try again.' });
     clean = clean.slice(first, last + 1);
+
+    // Fix common JSON issues from Gemini:
+    // 1. Unescaped backslashes in LaTeX (e.g. \frac → \\frac)
+    // 2. Unescaped newlines inside strings
+    // 3. Trailing commas before } or ]
+    clean = clean
+      .replace(/\\(?!["\/bfnrtu])/g, '\\\\')  // escape lone backslashes
+      .replace(/([^\\])"([^"]*?)\n([^"]*?)"/g, '$1"$2 $3"')  // remove newlines in strings
+      .replace(/,(\s*[}\]])/g, '$1');  // trailing commas
 
     let result;
     try { result = JSON.parse(clean); }

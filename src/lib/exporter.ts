@@ -663,100 +663,162 @@ export async function downloadMissionPackage(data: any, payloadName: string = "M
         return hasImg ? (patterns[idx % patterns.length] || 'split') : 'scholar';
       };
 
-      slides.forEach((sd: any, idx: number) => {
-        const imgUrl = sd.image_url?.startsWith('http') || sd.image_url?.startsWith('data:') ? sd.image_url : null;
-        const chosenLayout = assignLayout(sd, idx, !!imgUrl);
-        const isTitleSlide = idx === 0;
+      slides.forEach((sd: any, slideIdx: number) => {
+        const isTitleSlide = slideIdx === 0;
+        const hasImg = !!(sd.image_url?.startsWith('http') || sd.image_url?.startsWith('data:'));
+        const CYAN = '22D3EE';
+        const NAVY = '0F172A';
+        const WHITE = 'FFFFFF';
+        const DARK = '1E293B';
+        const MID = '475569';
+        const LIGHT = '94A3B8';
+        const totalSlides = slides.length;
 
-        // ── Layout A: McKinsey Split ─────────────────────────────────────
-        if (chosenLayout === 'split') {
-          const slide = pres.addSlide({ masterName: 'LIGHT' });
-          // Left panel — image
-          if (imgUrl) {
-            slide.addImage({ path: imgUrl, x: 0, y: 0, w: 4.8, h: '100%', sizing: { type: 'cover', w: 4.8, h: 7.5 } });
-            // Cyan accent bar on image edge
-            slide.addShape(pres.ShapeType.rect, { x: 4.7, y: 0, w: 0.06, h: '100%', fill: { color: BRAND_CYAN } });
-          } else {
-            // No image: left panel with brand gradient fill
-            slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: 4.8, h: '100%', fill: { color: DARK_BG } });
-            slide.addText(sd.slide_type?.toUpperCase() || 'ANALYSIS', { x: 0.3, y: 3.2, w: 4.2, h: 1, fontSize: 13, color: BRAND_CYAN, bold: true, fontFace: 'Helvetica', align: 'center' });
+        // ── TITLE SLIDE (slide 0) — dark, cinematic ──────────────────────
+        if (isTitleSlide) {
+          const slide = pres.addSlide({ masterName: 'CLEAN' });
+          // Dark background
+          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { color: NAVY } });
+          // Background image if available
+          if (hasImg) {
+            slide.addImage({ path: sd.image_url, x: 0, y: 0, w: '100%', h: '100%', sizing: { type: 'cover', w: '100%', h: '100%' } });
+            slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { color: '000000', transparency: 50 } });
           }
-          // Right panel — text
-          const tx = 5.1, tw = 4.6;
-          slide.addText(sd.power_heading || `Slide ${idx + 1}`, { x: tx, y: 0.4, w: tw, h: 1.4, fontSize: 24, bold: true, color: TEXT_DARK, fontFace: 'Helvetica', align: 'left', wrap: true });
-          slide.addShape(pres.ShapeType.rect, { x: tx, y: 1.85, w: 0.5, h: 0.04, fill: { color: BRAND_CYAN } });
-          let ty = 2.0;
+          // Cyan top bar
+          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: 0.08, fill: { color: CYAN } });
+          // Main title
+          slide.addText(sd.power_heading || payloadName, {
+            x: 0.5, y: 1.8, w: 9.0, h: 2.5, fontSize: 40, bold: true, color: WHITE,
+            fontFace: 'Helvetica', align: 'center', valign: 'middle', wrap: true,
+          });
+          // Cyan underline
+          slide.addShape(pres.ShapeType.rect, { x: '30%', y: 4.4, w: '40%', h: 0.05, fill: { color: CYAN } });
+          // Subtitle/narrative
           if (sd.narrative) {
-            slide.addText(sd.narrative, { x: tx, y: ty, w: tw, h: 1.0, fontSize: 11, color: TEXT_MID, fontFace: 'Helvetica', lineSpacing: 18, valign: 'top' });
-            ty += 1.1;
+            slide.addText(sd.narrative, {
+              x: 1.0, y: 4.7, w: 8.0, h: 0.8, fontSize: 16, color: 'CBD5E1',
+              fontFace: 'Helvetica', align: 'center',
+            });
           }
-          if (sd.content_bullets?.length) {
-            const bullets = sd.content_bullets.slice(0, 5).map((b: string) => ({ text: `${b}`, options: { bullet: { code: '25AA', color: BRAND_CYAN }, fontSize: 12, color: TEXT_DARK, fontFace: 'Helvetica', paraSpaceAfter: 6 } }));
-            slide.addText(bullets as any, { x: tx, y: ty, w: tw, h: 3.5, valign: 'top' });
-          }
-          slide.addText(String(idx + 1), { x: '93%', y: '96%', w: '6%', h: '3%', fontSize: 8, color: TEXT_LIGHT, align: 'right' });
-          if (sd.speaker_notes) slide.addNotes(sd.speaker_notes);
-        }
+          // Footer
+          slide.addText(payloadName.slice(0, 50), {
+            x: 0.5, y: 6.9, w: 5.0, h: 0.4, fontSize: 9, color: '64748B', fontFace: 'Helvetica',
+          });
+          slide.addText('Mi-Assignment', {
+            x: 5.5, y: 6.9, w: 4.0, h: 0.4, fontSize: 9, color: '64748B', fontFace: 'Helvetica', align: 'right',
+          });
 
-        // ── Layout B: Cinematic Hero ─────────────────────────────────────
-        else if (chosenLayout === 'hero') {
-          const slide = pres.addSlide({ masterName: 'DARK' });
-          if (imgUrl) {
-            slide.addImage({ path: imgUrl, x: 0, y: 0, w: '100%', h: '100%', sizing: { type: 'cover', w: '100%', h: '100%' } });
-          }
-          // 40% black overlay
-          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { color: '000000', transparency: 40 } });
-          // Gradient bottom fade
-          slide.addShape(pres.ShapeType.rect, { x: 0, y: '60%', w: '100%', h: '40%', fill: { color: '000000', transparency: 10 } });
-          // Slide type label
+        // ── CONTENT SLIDES — clean white design ──────────────────────────
+        } else {
+          const slide = pres.addSlide({ masterName: 'CLEAN' });
+
+          // Pure white background
+          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { color: WHITE } });
+
+          // Top bar — thin cyan line
+          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: 0.06, fill: { color: CYAN } });
+
+          // Slide counter top-left
+          slide.addText(`${String(slideIdx + 1).padStart(2,'0')} / ${String(totalSlides).padStart(2,'0')}`, {
+            x: 0.4, y: 0.15, w: 1.5, h: 0.35, fontSize: 9, color: LIGHT, fontFace: 'Helvetica',
+          });
+
+          // Slide type label top-right
           if (sd.slide_type) {
-            slide.addText(sd.slide_type.toUpperCase(), { x: '5%', y: '18%', w: '90%', h: 0.4, fontSize: 11, color: BRAND_CYAN, bold: true, align: 'center', fontFace: 'Helvetica' });
+            slide.addText(sd.slide_type.toUpperCase(), {
+              x: 7.5, y: 0.15, w: 2.0, h: 0.35, fontSize: 9, color: CYAN, fontFace: 'Helvetica',
+              bold: true, align: 'right',
+            });
           }
-          // Main heading — centered, bold white
-          slide.addText(sd.power_heading || payloadName, { x: '5%', y: '28%', w: '90%', h: isTitleSlide ? 2.0 : 1.6, fontSize: isTitleSlide ? 44 : 34, bold: true, color: 'FFFFFF', align: 'center', fontFace: 'Helvetica', shadow: { type: 'outer', blur: 6, offset: 2, angle: 45, color: '000000', opacity: 0.6 } });
-          if (!isTitleSlide && sd.content_bullets?.length) {
-            const firstBullet = sd.content_bullets[0];
-            slide.addText(firstBullet, { x: '10%', y: '62%', w: '80%', h: 0.8, fontSize: 16, color: 'E2E8F0', align: 'center', fontFace: 'Helvetica' });
+
+          // ── With image: left text, right image ───────────────────────
+          if (hasImg) {
+            // Left panel — text (55% width)
+            const TW = 5.0, TX = 0.4;
+
+            // Heading
+            slide.addText(sd.power_heading || `Slide ${slideIdx + 1}`, {
+              x: TX, y: 0.6, w: TW, h: 1.3, fontSize: 26, bold: true, color: DARK,
+              fontFace: 'Helvetica', align: 'left', valign: 'top', wrap: true,
+            });
+
+            // Cyan accent line under heading
+            slide.addShape(pres.ShapeType.rect, { x: TX, y: 1.95, w: 0.6, h: 0.05, fill: { color: CYAN } });
+
+            // Narrative
+            let ty = 2.1;
+            if (sd.narrative) {
+              slide.addText(sd.narrative, {
+                x: TX, y: ty, w: TW, h: 0.8, fontSize: 12, color: MID,
+                fontFace: 'Helvetica', italic: true,
+              });
+              ty += 0.9;
+            }
+
+            // Bullets
+            if (sd.content_bullets?.length) {
+              const bullets = sd.content_bullets.slice(0, 5).map((b: string) => ({
+                text: String(b),
+                options: {
+                  bullet: { code: '25B6', color: CYAN },
+                  fontSize: 13, color: DARK, fontFace: 'Helvetica', paraSpaceAfter: 10, bold: false,
+                },
+              }));
+              slide.addText(bullets as any, {
+                x: TX, y: ty, w: TW, h: 4.8 - ty, valign: 'top',
+              });
+            }
+
+            // Right panel — image (fills right 40%)
+            slide.addImage({
+              path: sd.image_url, x: 5.6, y: 0.6, w: 3.9, h: 5.2,
+              sizing: { type: 'cover', w: 3.9, h: 5.2 },
+            });
+
+          // ── No image: full-width clean text ─────────────────────────
+          } else {
+            // Heading
+            slide.addText(sd.power_heading || `Slide ${slideIdx + 1}`, {
+              x: 0.5, y: 0.6, w: 9.0, h: 1.4, fontSize: 28, bold: true, color: DARK,
+              fontFace: 'Helvetica', align: 'left', valign: 'top', wrap: true,
+            });
+
+            // Cyan accent
+            slide.addShape(pres.ShapeType.rect, { x: 0.5, y: 2.05, w: 0.8, h: 0.05, fill: { color: CYAN } });
+
+            // Narrative
+            let cy = 2.25;
+            if (sd.narrative) {
+              slide.addText(sd.narrative, {
+                x: 0.5, y: cy, w: 9.0, h: 0.8, fontSize: 13, color: MID,
+                fontFace: 'Helvetica', italic: true,
+              });
+              cy += 0.95;
+            }
+
+            // Bullets — full width, plenty of space
+            if (sd.content_bullets?.length) {
+              const bullets = sd.content_bullets.slice(0, 6).map((b: string) => ({
+                text: String(b),
+                options: {
+                  bullet: { code: '25B6', color: CYAN },
+                  fontSize: 15, color: DARK, fontFace: 'Helvetica', paraSpaceAfter: 12, bold: false,
+                },
+              }));
+              slide.addText(bullets as any, {
+                x: 0.5, y: cy, w: 9.0, h: 7.0 - cy, valign: 'top',
+              });
+            }
           }
-          if (sd.narrative && isTitleSlide) {
-            slide.addText(sd.narrative, { x: '10%', y: '62%', w: '80%', h: 1.0, fontSize: 15, color: 'CBD5E1', align: 'center', fontFace: 'Helvetica' });
-          }
-          // Cyan accent line
-          slide.addShape(pres.ShapeType.rect, { x: '40%', y: '55%', w: '20%', h: 0.03, fill: { color: BRAND_CYAN } });
-          slide.addText(String(idx + 1), { x: '93%', y: '96%', w: '6%', h: '3%', fontSize: 8, color: '64748B', align: 'right' });
-          if (sd.speaker_notes) slide.addNotes(sd.speaker_notes);
+
+          // Footer line
+          slide.addShape(pres.ShapeType.rect, { x: 0, y: 7.3, w: '100%', h: 0.01, fill: { color: 'E2E8F0' } });
+          slide.addText('Mi-Assignment', {
+            x: 0.4, y: 7.35, w: 4.0, h: 0.3, fontSize: 8, color: 'CBD5E1', fontFace: 'Helvetica',
+          });
         }
 
-        // ── Layout C: Minimalist Scholar ─────────────────────────────────
-        else {
-          const slide = pres.addSlide({ masterName: 'LIGHT' });
-          // Top accent bar
-          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: 0.06, fill: { color: BRAND_CYAN } });
-          // Slide number + type label
-          slide.addText(`${String(idx + 1).padStart(2,'0')} / ${slides.length.toString().padStart(2,'0')}`, { x: 0.5, y: 0.2, w: 2, h: 0.4, fontSize: 10, color: TEXT_LIGHT, fontFace: 'Helvetica', bold: false });
-          if (sd.slide_type) slide.addText(sd.slide_type.toUpperCase(), { x: 7.5, y: 0.2, w: 2, h: 0.4, fontSize: 10, color: BRAND_CYAN, fontFace: 'Helvetica', bold: true, align: 'right' });
-          // Heading — large, left-aligned
-          slide.addText(sd.power_heading || `Slide ${idx + 1}`, { x: 0.5, y: 0.7, w: 9.0, h: 1.5, fontSize: 30, bold: true, color: TEXT_DARK, fontFace: 'Helvetica', align: 'left', wrap: true });
-          // Cyan divider
-          slide.addShape(pres.ShapeType.rect, { x: 0.5, y: 2.2, w: 1.2, h: 0.05, fill: { color: BRAND_CYAN } });
-          // Narrative
-          let cy = 2.4;
-          if (sd.narrative) {
-            slide.addText(sd.narrative, { x: 0.5, y: cy, w: 9.0, h: 1.1, fontSize: 13, color: TEXT_MID, fontFace: 'Helvetica', lineSpacing: 20, italic: true });
-            cy += 1.2;
-          }
-          // Bullets — clean, no images competing
-          if (sd.content_bullets?.length) {
-            const bullets = sd.content_bullets.slice(0, 5).map((b: string) => ({
-              text: b,
-              options: { bullet: { code: '25AA', color: BRAND_CYAN }, fontSize: 14, color: TEXT_DARK, fontFace: 'Helvetica', paraSpaceAfter: 8, bold: false }
-            }));
-            slide.addText(bullets as any, { x: 0.5, y: cy, w: 9.0, h: 3.8, valign: 'top' });
-          }
-          // Bottom accent
-          slide.addShape(pres.ShapeType.rect, { x: 0, y: 7.44, w: '100%', h: 0.06, fill: { color: BRAND_PURPLE, transparency: 60 } });
-          if (sd.speaker_notes) slide.addNotes(sd.speaker_notes);
-        }
+        if (sd.speaker_notes) slide.addNotes(sd.speaker_notes);
       });
 
       const pptxBlob = await pres.write({ outputType: 'blob' }) as Blob;
