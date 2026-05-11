@@ -330,7 +330,7 @@ async function buildDocx(data: any, payloadName: string, isPro = false, clean = 
           }
         } else {
           children.push(new Paragraph({
-            children: [new TextRun({ text: "[Diagram/SVG rendering failed. Please refer to the web app for the visual representation]", italics: true, color: "64748B" })],
+            children: [new TextRun({ text: "[Technical Diagram — view full interactive version in the Mi-Assignment web app. The diagram shows the engineering schematic for this section.]", italics: true, color: "64748B" })],
             spacing: { after: 200 }
           }));
         }
@@ -431,10 +431,14 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
       checkPage(10);
       if (block.type === 'heading') {
         y += 3;
-        // Skip if this heading duplicates the document title (already written at top)
-        writeLine(block.content, 13, true, [15, 23, 42]);
+        // Skip heading if it duplicates the document title (already written at top)
+        if (!block.content || block.content.trim() === (payloadName || '').trim()) {
+          // skip - duplicate title
+        } else {
+          writeLine(block.content, 13, true, [15, 23, 42]);
         pdf.setDrawColor(200, 200, 200); pdf.setLineWidth(0.2);
         pdf.line(MARGIN, y, W - MARGIN, y); y += 5;
+        }
       } else if (block.type === 'math') {
         // For PDF, we'll try image rendering if it's not "clean" mode, 
         // fallback to clean text if image fails or in clean mode
@@ -483,7 +487,7 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
              y += 5;
            }
         } else {
-           writeLine("[Diagram/SVG rendering failed. Please refer to the web app for the visual representation]", 10, true, [148, 163, 184]);
+           writeLine("[Technical Diagram — view full interactive version in the Mi-Assignment web app. The diagram shows the engineering schematic for this section.]", 10, true, [148, 163, 184]);
            y += 5;
         }
       } else if (block.type === 'table') {
@@ -549,7 +553,7 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
 
 
 // ─── WATERMARK ──────────────────────────────────────────────────────────────
-const WATERMARK = "Powered by Mi-Assignment · www.mi-assignment.com · Upgrade for unlimited missions";
+const WATERMARK = "Powered by Mi-Assignment · www.mi-assignment.com";
 
 // ─── MAIN EXPORT FUNCTION ────────────────────────────────────────────────────
 export async function downloadMissionPackage(data: any, payloadName: string = "Mission_Intelligence", isPro = false) {
@@ -805,6 +809,30 @@ export async function downloadMissionPackage(data: any, payloadName: string = "M
     // Alternative approaches — add to Full_Breakdown as extra section (handled in PDF/DOCX)
     // They appear as a section at the end of Full_Breakdown automatically via reconstructed_doc blocks
 
+    // ENGINEERING sizing calculator — when data_sheet exists for engineering
+    const isEngDomain = (data.domain || '').toUpperCase().includes('ENGINEERING');
+    if (isEngDomain && extras?.engineering_calculator) {
+      try {
+        const calc = extras.engineering_calculator;
+        const wb5 = XLSX.utils.book_new();
+        const wsCalc = XLSX.utils.aoa_to_sheet([
+          ['Mi-Assignment Sizing Calculator'],
+          ['Project:', data.reconstructed_doc?.title || payloadName],
+          [''],
+          ['INPUT PARAMETERS', 'Value', 'Unit'],
+          ...(calc.inputs || []).map((r: any) => [r.name, r.value, r.unit]),
+          [''],
+          ['CALCULATED OUTPUTS', 'Result', 'Unit'],
+          ...(calc.outputs || []).map((r: any) => [r.name, r.formula || r.value, r.unit]),
+          [''],
+          ['Note: Change input values to recalculate outputs'],
+        ]);
+        XLSX.utils.book_append_sheet(wb5, wsCalc, 'Sizing Calculator');
+        const buf5 = XLSX.write(wb5, { bookType: 'xlsx', type: 'array' });
+        zip.file('Sizing_Calculator.xlsx', buf5);
+      } catch (e) { console.warn('Sizing calc failed:', e); }
+    }
+
     // MEDICAL extras — ONLY for medical domain assignments
     const isMedicalDomain = (data.domain || '').toUpperCase().includes('MEDICAL');
     if (isMedicalDomain && extras.medical) {
@@ -973,6 +1001,19 @@ ${a.description}
   }
 
   // 7. Raw JSON
+  // ── SVG Diagrams — add each svg block as a standalone file ──────────────
+  if (data.reconstructed_doc?.blocks) {
+    let svgCount = 0;
+    data.reconstructed_doc.blocks.forEach((block: any) => {
+      if (block.type === 'svg' && block.content && block.content.trim().startsWith('<svg')) {
+        svgCount++;
+        const svgFilename = `Diagram_${svgCount}_${(block.title || block.description || 'schematic').replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30)}.svg`;
+        zip.file(svgFilename, block.content);
+      }
+    });
+    if (svgCount > 0) console.log(`Mi Exporter: added ${svgCount} SVG diagram(s) to ZIP`);
+  }
+
   // raw_data.json excluded from student package (internal Mi data)
     //zip.file('raw_data.json', JSON.stringify(data, null, 2));
 

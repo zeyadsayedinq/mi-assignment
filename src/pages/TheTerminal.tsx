@@ -73,8 +73,8 @@ export function TheTerminal() {
     Analytics.missionLaunched(missionType || 'unknown', university || 'unknown');
     setMissionMeta({
       name: files.length > 0 ? files[0].name : prompt.substring(0, 40),
-      university: university || (isAr ? 'جامعة دولية' : 'Global Tier'),
-      course: course || (isAr ? 'تخصص عام' : 'General'),
+      university: university || '',
+      course: course || '',
     });
 
     try {

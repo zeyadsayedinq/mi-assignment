@@ -54,7 +54,13 @@ export default async function handler(req, res) {
 
   const TAP_SECRET_KEY = process.env.TAP_SECRET_KEY;
   if (!TAP_SECRET_KEY) {
-    console.error('TAP_SECRET_KEY not set in environment variables');
+    console.warn('TAP_SECRET_KEY not configured — returning manual payment fallback');
+    setCORS(res);
+    return res.status(200).json({ 
+      url: null, 
+      manual: true,
+      message: 'Online payment not configured. Please use InstaPay or Vodafone Cash.'
+    });
     setCORS(res); return res.status(500).send(JSON.stringify({ error: 'Payment service not configured. Contact support.' }),);
   }
 
