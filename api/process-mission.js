@@ -439,6 +439,12 @@ export default async function handler(req, res) {
       system_instruction: { parts: [{ text: systemPrompt }] },
       contents: geminiContents,
       generationConfig: {
+        thinkingConfig: {
+          // Thinking only for domains that need deep reasoning
+          thinkingBudget: /ENGINEERING|MATH|MEDICAL|CS|SCIENCE|DATA/.test(
+            (domainContext.domain || '').toUpperCase()
+          ) ? 8000 : 0,
+        },
         temperature: 0.65,
         topP: 0.85,
         topK: 40,
@@ -451,8 +457,7 @@ export default async function handler(req, res) {
   // If one hangs or 503s, move to the next immediately
   const MODEL_WATERFALL = [
     'gemini-3-flash-preview',
-    'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
+    'gemini-3.1-flash-lite',
   ];
 
   let geminiRes = null;
@@ -521,7 +526,6 @@ export default async function handler(req, res) {
     let clean = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
     const first = clean.indexOf('{');
     if (first === -1) return res.status(500).json({ error: 'AI response was not valid JSON. Please try again.' });
-    
     // Find the matching closing brace using bracket counting (not lastIndexOf)
     // This handles cases where Gemini appends text after the JSON object
     let depth = 0, last = -1;
