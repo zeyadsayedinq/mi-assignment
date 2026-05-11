@@ -423,6 +423,19 @@ export default async function handler(req, res) {
     const domainContext = buildSubjectContext(contents);
     const systemPrompt = buildSystemPrompt(domainContext);
 
+    // Build Gemini API request payload
+    const geminiPayload = {
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents,
+      generationConfig: {
+        temperature: 0.65,
+        topP: 0.85,
+        topK: 40,
+        responseMimeType: 'application/json',
+        maxOutputTokens: 10000,
+      },
+    };
+
       // Single model — gemini-3-flash-preview (most reliable for complex academic tasks)
   const abortCtrl = new AbortController();
   const abortTimer = setTimeout(() => abortCtrl.abort(), 55000);
