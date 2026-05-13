@@ -81,9 +81,11 @@ function AppContent() {
       </AnimatePresence>
 
       <div className="bg-[#020617] min-h-screen text-white font-sans flex flex-col lg:flex-row overflow-hidden relative">
-        {session && <Sidebar isMobileOpen={mobileMenuOpen} closeMobile={() => setMobileMenuOpen(false)} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(c => !c)} />}
+        {session && !['/', '/pricing', '/terms', '/privacy', '/refund', '/contact', '/auth', '/checkout'].includes(location.pathname) && (
+          <Sidebar isMobileOpen={mobileMenuOpen} closeMobile={() => setMobileMenuOpen(false)} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(c => !c)} />
+        )}
         
-        {session && (
+        {session && !['/', '/pricing', '/terms', '/privacy', '/refund', '/contact', '/auth', '/checkout'].includes(location.pathname) && (
           <button 
             onClick={() => setMobileMenuOpen(true)}
             className="lg:hidden fixed top-4 right-4 z-40 p-2 bg-[#22D3EE]/10 border border-[#22D3EE]/20 rounded-xl text-[#22D3EE]"
