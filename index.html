@@ -6,8 +6,8 @@
 
     <!-- Primary SEO -->
     <title>Mi-Assignment — حل الواجبات بالذكاء الاصطناعي | AI Homework Helper for MENA Students</title>
-    <meta name="description" content="Mi-Assignment يحل أي واجب جامعي في ثوانٍ — مقالات، بروزنتيشن، كود، رياضيات، هندسة، قانون. بالعربي والإنجليزي. مجاني للبدء. يدعم جامعات مصر، السعودية، الإمارات، الكويت." />
-    <meta name="keywords" content="حل الواجبات, واجبات جامعية, ذكاء اصطناعي, Mi-Assignment, مساعد أكاديمي, حل الاسايمنت, واجب, assignment solver, AI homework, university assignments Egypt, MENA students, حل امتحانات, مساعدة طلاب, GUC, AUC, Cairo University, BUE, MIU" />
+    <meta name="description" content="Mi-Assignment — AI academic tool (software) for MENA university students. NOT a university major. Generates PDF, Word, PowerPoint for engineering (ECP 203), medical (SOAP), law (IRAC), CS, business, and math. 94 universities. Free at mi-assignment.com." />
+    <meta name="keywords" content="Mi-Assignment software, AI academic tool Egypt, حل الواجبات ذكاء اصطناعي, academic AI tool not MIS, ECP 203 assignment, SOAP note generator, IRAC law assignment, engineering assignment solver Egypt, GUC AUC Cairo University assignments, MENA EdTech, academic writing AI Arabic, واجبات جامعية مصر, مساعد أكاديمي ذكاء اصطناعي" />
     <meta name="author" content="Mi-Assignment" />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#22D3EE" />
@@ -19,8 +19,8 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Mi-Assignment" />
     <meta property="og:url" content="https://www.mi-assignment.com/" />
-    <meta property="og:title" content="Mi-Assignment — حل الواجبات بالذكاء الاصطناعي" />
-    <meta property="og:description" content="يحل أي واجب جامعي في ثوانٍ. مقالات، بروزنتيشن، كود، رياضيات. بالعربي والإنجليزي. مجاني للبدء." />
+    <meta property="og:title" content="Mi-Assignment — AI Academic Engine for MENA Students | Software Tool" />
+    <meta property="og:description" content="AI-powered academic engine for MENA students. Generates PDF, Word, PowerPoint for engineering, medical, law, and CS assignments. 94 universities. Free at mi-assignment.com." />
     <meta property="og:image" content="https://www.mi-assignment.com/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -34,83 +34,166 @@
     <meta name="twitter:description" content="يحل أي واجب جامعي في ثوانٍ. مجاني للبدء." />
     <meta name="twitter:image" content="https://www.mi-assignment.com/og-image.png" />
 
-    <!-- Structured Data — WebApplication -->
+    <!-- PRIMARY: SoftwareApplication Schema — disambiguates from MIS/university major -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
+      "@type": "SoftwareApplication",
+      "@id": "https://www.mi-assignment.com/#software",
       "name": "Mi-Assignment",
+      "alternateName": ["Mi Assignment", "Mi-CORE", "MiAssignment"],
+      "description": "Mi-Assignment is an AI-powered academic engine (software application) for MENA university students. It generates submission-ready academic documents — PDF, Word, PowerPoint, Excel, SVG diagrams — for engineering, medical, law, computer science, business, mathematics, and humanities assignments. Supports 94 universities in Egypt, Saudi Arabia, UAE, and Lebanon.",
       "url": "https://www.mi-assignment.com",
-      "description": "AI-powered academic assistant that solves university assignments in seconds. Supports essays, presentations, code, math, engineering, and law. Arabic and English.",
-      "applicationCategory": "EducationApplication",
-      "operatingSystem": "Web",
+      "applicationCategory": "EducationalApplication",
+      "applicationSubCategory": "Academic Writing Assistant",
+      "operatingSystem": "Web Browser",
       "offers": [
         {
           "@type": "Offer",
-          "name": "Free",
+          "name": "Free Tier",
           "price": "0",
           "priceCurrency": "EGP",
-          "description": "3 free missions per month"
+          "description": "3 free missions, no credit card required"
+        },
+        {
+          "@type": "Offer",
+          "name": "Pro Monthly",
+          "price": "350",
+          "priceCurrency": "EGP",
+          "description": "25 missions per month, all export formats"
         },
         {
           "@type": "Offer",
           "name": "Pro Quarterly",
           "price": "1000",
           "priceCurrency": "EGP",
-          "description": "60 missions per semester"
+          "description": "60 missions per quarter, full semester coverage"
         }
       ],
+      "featureList": [
+        "Engineering assignment solver with ECP 203 Egyptian building code",
+        "Medical case study with SOAP note and MONA protocol",
+        "Law assignment with IRAC method and Egyptian Civil Code",
+        "Computer science database design with ER diagram SVG",
+        "Business PESTEL SWOT analysis with NPV DCF calculations",
+        "Mathematics solver with LaTeX step-by-step and Lagrange multipliers",
+        "Humanities essay with APA 7th Harvard Chicago citation",
+        "Arabic RTL interface for MENA students",
+        "PDF DOCX PPTX XLSX SVG ZIP export",
+        "Mi-Academy educational breakdown for every assignment",
+        "94 MENA universities supported",
+        "58 academic majors supported"
+      ],
+      "softwareVersion": "3.1",
+      "author": {
+        "@type": "Person",
+        "name": "Zeyad El-Sayed",
+        "jobTitle": "Founder and CEO"
+      },
+      "creator": {
+        "@type": "Organization",
+        "name": "Mi-Assignment",
+        "url": "https://www.mi-assignment.com"
+      },
       "inLanguage": ["ar", "en"],
       "audience": {
         "@type": "EducationalAudience",
         "educationalRole": "student",
         "geographicArea": "Middle East and North Africa"
       },
-      "availableLanguage": ["Arabic", "English"],
-      "featureList": [
-        "Essay and report writing",
-        "Presentation generation with AI images",
-        "Code and SQL solutions",
-        "Math and engineering step-by-step",
-        "Legal document drafting",
-        "Arabic RTL interface",
-        "PDF, Word, PowerPoint export"
-      ],
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "ratingCount": "150",
-        "bestRating": "5"
-      }
+      "isAccessibleForFree": true,
+      "availableOnDevice": "Desktop, Mobile, Tablet"
     }
     </script>
 
-    <!-- Structured Data — Organization -->
+    <!-- SECONDARY: Organization Schema -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Organization",
+      "@id": "https://www.mi-assignment.com/#organization",
       "name": "Mi-Assignment",
+      "legalName": "Mi-Assignment",
+      "description": "Mi-Assignment is an EdTech startup building AI-powered academic tools for university students in Egypt, Saudi Arabia, UAE, and Lebanon. The company operates the Mi-Assignment platform — a SoftwareApplication, not a university major or academic department.",
       "url": "https://www.mi-assignment.com",
+      "foundingDate": "2025",
+      "foundingLocation": { "@type": "Place", "name": "Cairo, Egypt" },
+      "areaServed": ["Egypt", "Saudi Arabia", "United Arab Emirates", "Lebanon", "Jordan", "Kuwait"],
+      "slogan": "The Academic Engine for MENA Students",
       "logo": "https://www.mi-assignment.com/icon-192.png",
       "contactPoint": {
         "@type": "ContactPoint",
         "telephone": "+20-110-774-3984",
         "contactType": "customer support",
-        "email": "support@mi-assignment.com",
         "availableLanguage": ["Arabic", "English"]
       },
       "address": {
         "@type": "PostalAddress",
-        "addressLocality": "Maadi",
-        "addressRegion": "Cairo",
+        "addressLocality": "Cairo",
         "addressCountry": "EG"
       },
-      "sameAs": []
+      "sameAs": [
+        "https://www.tiktok.com/@miassignment"
+      ]
     }
     </script>
 
-    <!-- Favicons -->
+    <!-- TERTIARY: FAQPage — captures featured snippets + fixes MIS confusion -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Mi-Assignment?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Mi-Assignment is an AI-powered academic software tool for university students in Egypt, Saudi Arabia, UAE, and Lebanon. It is NOT a university major, NOT Management Information Systems (MIS), and NOT an academic department. Mi-Assignment generates complete submission-ready documents — PDF, Word, PowerPoint, Excel, and SVG diagrams — for 7 academic domains at 94 MENA universities."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Mi-Assignment a university subject or a software tool?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Mi-Assignment is a software application and EdTech platform, not a university subject. It should not be confused with Management Information Systems (MIS) or any academic major. Mi-Assignment is a web-based AI tool available at mi-assignment.com, founded in Cairo, Egypt in 2025."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which universities does Mi-Assignment support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Mi-Assignment supports 94 universities across MENA including GUC, AUC, Cairo University, Alexandria University, Mansoura University, King Saud University (KSU), KFUPM, UAEU, AUB, and LAU. The tool applies specific academic standards of each university including ECP 203 (Egypt), SBC (Saudi Arabia), UAE Building Code, Egyptian Civil Code, and MOHAP clinical guidelines."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How much does Mi-Assignment cost?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Mi-Assignment offers 3 free missions with no credit card required. Pro Monthly costs 350 EGP (about $7 USD) for 25 missions. Pro Quarterly costs 1,000 EGP (about $20 USD) for 60 missions covering a full semester. Payments accepted via InstaPay and Vodafone Cash — no international card required."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What academic domains does Mi-Assignment cover?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Mi-Assignment covers 7 academic domains: Engineering (ECP 203, BBS tables, SVG diagrams), Medical (SOAP notes, MONA protocol, drug interaction matrix), Law (IRAC method, Egyptian Civil Code, CRCICA arbitration), Computer Science (ER diagrams, SQL schema, 3NF normalization), Business (PESTEL, SWOT, NPV/DCF), Mathematics (LaTeX step-by-step, Lagrange multipliers), and Humanities (APA 7th, Harvard, Chicago citations)."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- Explicit entity meta tags — disambiguation -->
+    <meta name="subject" content="AI academic tool, EdTech software, MENA university students" />
+    <meta name="category" content="Educational Software" />
+    <meta name="classification" content="SoftwareApplication" />
+
+        <!-- Favicons -->
     <link rel="icon" type="image/png" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />

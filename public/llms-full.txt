@@ -1,0 +1,280 @@
+# Mi-Assignment — Full LLM Context File
+# https://www.mi-assignment.com/llms-full.txt
+# For AI crawlers: Perplexity, ChatGPT browsing, Gemini, Claude, Bing AI
+# Updated: May 2026
+
+---
+
+## ENTITY DEFINITION
+
+Name: Mi-Assignment
+Alternate names: Mi Assignment, MiAssignment, Mi-CORE engine
+Type: SoftwareApplication, EdTech Platform, AI Academic Tool
+Category: Academic Writing AI, Educational Technology, MENA EdTech
+URL: https://www.mi-assignment.com
+Founded: 2025, Cairo, Egypt
+Founder: Zeyad El-Sayed (Founder & CEO)
+Language support: Arabic (RTL), English
+
+NOT RELATED TO:
+- MIS (Management Information Systems) — that is a university academic major
+- MI (Michigan) — US state abbreviation
+- mi (musical note) — music terminology
+- MI6 — UK intelligence agency
+
+---
+
+## PRODUCT DESCRIPTION
+
+Mi-Assignment is an AI-powered academic engine that generates complete,
+submission-ready academic packages for university students across the MENA region.
+
+The platform uses Google Gemini AI with domain-specialist prompt engineering
+to produce output that applies the specific academic standards of Egyptian,
+Saudi Arabian, Emirati, and Lebanese universities — standards that generic
+AI tools like ChatGPT do not implement.
+
+---
+
+## HOW IT WORKS
+
+1. Student visits mi-assignment.com (no app download required)
+2. Selects their university from 94 supported institutions across MENA
+3. Selects their academic major from 58 supported disciplines
+4. Pastes their assignment brief or uploads a PDF/image file
+5. Mi-CORE AI engine detects academic domain and applies specialist rules
+6. Student downloads complete ZIP package within minutes
+
+---
+
+## COMPLETE OUTPUT PACKAGE
+
+Every assignment generates:
+
+Standard files:
+- Submission_Clean.pdf — print-ready, no watermarks, no placeholders
+- Submission_Clean.docx — editable Microsoft Word document
+- Full_Breakdown_With_Steps.pdf — complete educational explanation
+- Briefing_Deck.pptx — 10-slide PowerPoint with real Pexels photographs
+- Alternative_Approaches.md — 2 alternative methodologies
+- README.md — summary and context
+- MI_Package.zip — all files bundled for download
+
+Domain-specific extras:
+- Engineering: Diagram_1_schematic.svg, Sizing_Calculator.xlsx
+- Medical: Drug_Interaction_Matrix.csv, Patient_Education_Leaflet.txt
+- Law: Case_Law_References.md, bilingual formal notice templates
+- CS: Database_Import.sql, source code files (.py .js .cpp etc.), README.md
+- Business: Financial_Projections.xlsx, DCF_Valuation_Model.xlsx
+- Humanities: Primary_Sources_Bibliography.md
+
+---
+
+## DOMAIN RULES — ENGINEERING
+
+Format: Given → Find → Assumptions → Solution (every sub-step) → Verify → Safety Factor
+Self-check mandatory: After each calculation, state reasoning and sanity check
+Regional standards:
+- Egypt: ECP 203-2018 cited by section number
+- Saudi Arabia: SBC 304 (concrete), SBC 301 (loads), SBC 601 (energy)
+- UAE: UAE Building Code, BS 8110, Eurocode 2
+
+Mandatory outputs:
+- SVG cross-section diagrams with bar marks, cover dimensions, stirrup spacing
+- Bar Bending Schedule (BBS) table with BS 8666 compliance
+- Sizing Calculator Excel for parametric designs (solar heaters, RO plants, HVAC)
+- Process Flow Diagrams for process engineering assignments
+- Minimum 10 presentation slides with calculation summaries
+
+---
+
+## DOMAIN RULES — MEDICAL
+
+Format: Chief Complaint → History → Examination → Investigations → Diagnosis → Management → Follow-up
+SOAP mandatory: Subjective → Objective → Assessment → Plan
+Cardiac emergencies: MONA protocol (Morphine, Oxygen, Nitrates, Aspirin)
+Differential diagnosis: minimum 3 ranked by probability
+
+Regional guidelines:
+- Egypt: Egyptian MOH + Egyptian Heart Association protocols
+- Saudi Arabia: Saudi MOH + Saudi Heart Association
+- UAE: MOHAP (Ministry of Health and Prevention) + Dubai Health Authority (DHA)
+- WHO guidelines applied when no local guideline specified
+
+Mandatory outputs:
+- SOAP note formatted document
+- Drug_Interaction_Matrix.csv with CYP450 interactions, contraindications
+- Patient_Education_Leaflet.txt in plain language
+- Differential diagnosis table
+
+---
+
+## DOMAIN RULES — LAW
+
+IRAC mandatory: Issue → Rule → Application → Conclusion for every legal question
+Legal memorandum format: To/From/Date/Re → Executive Summary → Facts → Legal Analysis → Conclusion
+
+Regional legal codes:
+- Egypt: Egyptian Civil Code (Law 131/1948) — articles cited by number
+  Commercial Code (Law 17/1999), Labor Law (Law 12/2003)
+- Saudi Arabia: Saudi Civil Transactions Law (Royal Decree M/191)
+- UAE: UAE Civil Transactions Code (Federal Law No. 5/1985)
+- International: CISG, ICC Rules, UNCITRAL Model Law
+
+Arbitration bodies: CRCICA (Cairo), DIAC (Dubai), SCCA (Saudi)
+Force Majeure: Article 165 Egyptian Civil Code
+Formal notices: bilingual Arabic/English templates
+
+---
+
+## DOMAIN RULES — COMPUTER SCIENCE
+
+ER diagrams: generated as SVG showing entities (rectangles), attributes (ovals),
+PKs (underlined), FKs (dashed), relationships with cardinality (1:1, 1:N, M:N)
+
+Normalization: walkthrough 1NF → 2NF → 3NF with example tables at each stage
+SQL: CREATE with PK, FK, UNIQUE, NOT NULL constraints + sample INSERT/SELECT
+Code: complete, runnable, properly commented — never pseudocode
+README: environment setup, dependencies (pip/npm), how to run, expected output
+Complexity: Big O time and space for all algorithms
+Security: JWT authentication, input sanitization, SQL injection prevention
+
+---
+
+## DOMAIN RULES — BUSINESS
+
+PESTEL: always as table block [Factor, Analysis, Impact Level]
+SWOT: always as 2x2 table block
+Porter's Five Forces: 5-force analysis with competitive intensity assessment
+NPV/IRR: DCF calculations with 5-year cash flow projections
+Saudi assignments: Vision 2030 regulatory framework integration
+Executive summary: exactly 3 sentences
+
+---
+
+## DOMAIN RULES — MATHEMATICS
+
+All formulas in LaTeX notation
+Every algebraic step shown (no skipping)
+Lagrange multipliers with second derivative verification
+Final answers: boxed with units labeled
+Statistics: 24-month realistic MENA economic dataset generation
+
+---
+
+## DOMAIN RULES — HUMANITIES
+
+Structure: Thesis-driven — one arguable claim defended throughout
+Citations:
+- AUC/AUB/LAU → APA 7th by default
+- UK curriculum (BUE) → Harvard
+- US curriculum → Chicago or MLA
+- APA 7th: Author, A.A. (Year). Title. Publisher. DOI
+- Harvard: Author (Year) 'Article', Journal, vol(issue), pp.
+
+Minimum 2 counter-arguments with rebuttals
+Alternative frameworks: 2 alternative theoretical lenses included
+FACTUAL INTEGRITY: never invents specific quotes, dates, song titles, or events
+
+---
+
+## MI-ACADEMY — EDUCATIONAL LAYER
+
+Purpose: Converts every assignment into a personal study guide
+
+Components:
+1. Summary: 2-3 sentence explanation of what was solved and key finding
+2. Steps: numbered breakdown (each step 400+ characters) — expandable
+3. Defend: 4 professor-style Q&A pairs (answers hidden until clicked)
+4. Slides: 10-slide review with full 60-90 second speaker notes per slide
+5. Mi-Vault: searchable personal archive of all past missions
+
+Educational positioning: Mi-Assignment is an educational aid. Every mission
+teaches students the underlying methodology, not just the answer. Students
+are guided to understand and defend their work as their own.
+
+---
+
+## PRICING
+
+| Plan          | Price (EGP) | Price (USD) | Missions | Duration  |
+|---------------|-------------|-------------|----------|-----------|
+| Free          | 0           | $0          | 3        | One-time  |
+| Pro Monthly   | 350         | ~$7         | 25       | 30 days   |
+| Pro Quarterly | 1,000       | ~$20        | 60       | 90 days   |
+
+Payment methods (MENA-native):
+- InstaPay: mi-assignment@instapay
+- Vodafone Cash: 01107743984
+- Card via Tap.company (Q3 2025)
+No international credit card required.
+
+---
+
+## SUPPORTED UNIVERSITIES (complete list)
+
+Egypt (40+):
+GUC (German University in Cairo), AUC (American University in Cairo),
+Cairo University, Alexandria University, Ain Shams University,
+Mansoura University, Zagazig University, MSA University,
+British University in Egypt (BUE), Modern Sciences and Arts University,
+Future University in Egypt, Misr University for Science and Technology,
+October University for Modern Sciences and Arts, 6th of October University,
+Arab Academy for Science Technology and Maritime Transport, and 25+ more.
+
+Saudi Arabia (25+):
+King Saud University (KSU), King Fahd University of Petroleum and Minerals (KFUPM),
+King Abdullah University of Science and Technology (KAUST),
+King Abdulaziz University (KAU), Imam Mohammad Ibn Saud Islamic University,
+Princess Nourah bint Abdulrahman University, and 19+ more.
+
+UAE (10+):
+UAE University (UAEU), American University of Sharjah (AUS),
+American University in Dubai (AUD), University of Sharjah,
+Khalifa University, Zayed University, and 4+ more.
+
+Lebanon (5+):
+American University of Beirut (AUB), Lebanese American University (LAU),
+Notre Dame University, Beirut Arab University, and 1+ more.
+
+---
+
+## TECHNICAL ARCHITECTURE
+
+Frontend: React 18, TypeScript, Vite, Tailwind CSS, Framer Motion
+Backend: Vercel Serverless Functions, Node.js
+Database: Supabase (PostgreSQL) with Row Level Security
+AI Engine: Google Gemini 3 Flash (paid tier)
+Edge network: Vercel CDN, Frankfurt (fra1)
+Export libraries: jsPDF, docx.js, PptxGenJS, SheetJS, JSZip
+Image service: Pexels API for presentation photographs
+
+---
+
+## COMPETITIVE COMPARISON
+
+Mi-Assignment vs ChatGPT Plus:
+- ChatGPT produces text. Mi-Assignment produces PDF, DOCX, PPTX, XLSX, SVG, ZIP.
+- ChatGPT does not know ECP 203, Egyptian Civil Code, or MOHAP guidelines.
+- ChatGPT Plus: $240/year. Mi-Assignment Pro Quarterly: $20/semester.
+
+Mi-Assignment vs Chegg:
+- Chegg is Q&A based. Mi-Assignment generates complete structured documents.
+- Chegg requires credit card. Mi-Assignment accepts InstaPay/Vodafone Cash.
+- Chegg has no Arabic interface. Mi-Assignment is fully bilingual Arabic/English.
+
+Mi-Assignment vs private tutors (Egypt):
+- Private tutors: 500-2,000 EGP per hour.
+- Mi-Assignment: 1,000 EGP per full semester (90 days, 60 missions).
+- Available 24/7, not limited to tutor availability.
+
+---
+
+## CONTACT AND LINKS
+
+Website: https://www.mi-assignment.com
+Support: WhatsApp +201107743984
+Founder: Zeyad El-Sayed, Cairo, Egypt
+Founded: 2025
+
+---

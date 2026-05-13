@@ -56,6 +56,7 @@ function AppContent() {
   const { session, loading } = useAuth();
   const [showIntro, setShowIntro] = useState(() => !sessionStorage.getItem('mi_intro_done'));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
 
   if (loading) return <LoadingFallback />;
@@ -80,7 +81,7 @@ function AppContent() {
       </AnimatePresence>
 
       <div className="bg-[#020617] min-h-screen text-white font-sans flex flex-col lg:flex-row overflow-hidden relative">
-        {session && <Sidebar isMobileOpen={mobileMenuOpen} closeMobile={() => setMobileMenuOpen(false)} />}
+        {session && <Sidebar isMobileOpen={mobileMenuOpen} closeMobile={() => setMobileMenuOpen(false)} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(c => !c)} />}
         
         {session && (
           <button 

@@ -21,9 +21,11 @@ const NAV_ITEMS = [
 interface SidebarProps {
   isMobileOpen?: boolean;
   closeMobile?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export function Sidebar({ isMobileOpen, closeMobile }: SidebarProps) {
+export function Sidebar({ isMobileOpen, closeMobile, collapsed = false, onToggleCollapse }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { session, user, signOut } = useAuth();
@@ -58,19 +60,39 @@ export function Sidebar({ isMobileOpen, closeMobile }: SidebarProps) {
         )}
       </AnimatePresence>
 
-      <aside className={cn(
-        'fixed lg:relative z-50 h-screen w-64 bg-[#020617] border-r border-[#22D3EE]/10 flex flex-col transition-transform duration-300 shrink-0 top-0',
+      <aside title={collapsed ? t(labelKey) : undefined}
+              className={cn(
+        cn(
+          'fixed lg:relative z-50 h-screen bg-[#020617] border-r border-[#22D3EE]/10 flex flex-col transition-all duration-300 shrink-0 top-0',
+          collapsed ? 'w-[60px]' : 'w-64',
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        ),
         session ? (isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0') : 'hidden'
       )} style={{ left: 0 }}>
         {/* Logo — spinning 3D cube */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-[#22D3EE]/10">
-          <Link to="/" onClick={e => handleNavClick(e, '/')} className="flex items-center gap-3 ml-2 mt-1.5">
-            <MILogo3D size={36} autoSpin={false} />
-            <div>
+          <div className="flex items-center justify-between w-full">
+            <Link to="/" onClick={e => handleNavClick(e, '/')} className={cn("flex items-center gap-3 ml-2 mt-1.5 min-w-0", collapsed && "justify-center ml-0 mt-1.5")}>
+              <MILogo3D size={36} autoSpin={false} />
+              {!collapsed && <div>
               <GlitchText text="Mi-Assignment" className="font-black text-white text-sm tracking-tight block" triggerOnHover speed={30} />
               <p className="text-[9px] text-gray-600 font-mono tracking-widest -mt-0.5">v2.1 MI</p>
-            </div>
+            </div>}
           </Link>
+            {onToggleCollapse && (
+              <button
+                onClick={onToggleCollapse}
+                className="p-1.5 rounded-lg text-gray-600 hover:text-[#22D3EE] hover:bg-[#22D3EE]/10 transition-all mr-2 flex-shrink-0"
+                title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {collapsed ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
+                )}
+              </button>
+            )}
+          </div>
           <button onClick={closeMobile} className="lg:hidden p-1 text-gray-600 hover:text-white">
             <X className="w-4 h-4" />
           </button>
@@ -98,7 +120,7 @@ export function Sidebar({ isMobileOpen, closeMobile }: SidebarProps) {
                   />
                 )}
                 <Icon className="w-4 h-4 shrink-0 relative z-10" />
-                <span className="font-medium relative z-10 truncate">{t(labelKey)}</span>
+                {!collapsed && <span className="font-medium relative z-10 truncate">{t(labelKey)}</span>}
                 {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#22D3EE] shrink-0 relative z-10" />}
               </Link>
             );
@@ -114,7 +136,7 @@ export function Sidebar({ isMobileOpen, closeMobile }: SidebarProps) {
               )}
             >
               <Lock className="w-4 h-4 shrink-0 relative z-10" />
-              <span className="font-bold relative z-10 uppercase tracking-tighter truncate">{t('nav.admin')}</span>
+              {!collapsed && <span className="font-bold relative z-10 uppercase tracking-tighter truncate">{!collapsed && t('nav.admin')}</span>}
             </Link>
           )}
 
@@ -132,7 +154,7 @@ export function Sidebar({ isMobileOpen, closeMobile }: SidebarProps) {
                 className={cn('flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-500 transition-all', item.hoverClass)}
               >
                 <item.icon className="w-4 h-4 shrink-0" />
-                <span className="font-medium">{item.label}</span>
+                {!collapsed && <span className="font-medium">{item.label}</span>}
               </Link>
             ))}
           </div>

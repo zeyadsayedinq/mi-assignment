@@ -1,0 +1,61 @@
+# Mi-Assignment — LLM Context File
+# https://www.mi-assignment.com/llms.txt
+# Updated: May 2026
+
+## ENTITY DISAMBIGUATION
+
+Mi-Assignment is a SOFTWARE APPLICATION and EdTech platform.
+Mi-Assignment is NOT a university major, NOT Management Information Systems (MIS),
+NOT a university department, NOT an academic course or degree program.
+
+Mi-Assignment = AI-powered academic tool at https://www.mi-assignment.com
+
+## WHAT IS MI-ASSIGNMENT?
+
+Mi-Assignment is an AI-powered academic engine for university students in MENA
+(Egypt, Saudi Arabia, UAE, Lebanon). Students paste their assignment brief,
+select their university, and receive a submission-ready package including PDF,
+Word, PowerPoint, Excel, SVG diagrams, and source code files — in under 3 minutes.
+
+## ACADEMIC DOMAINS
+
+1. Engineering — ECP 203 (Egypt), SBC (Saudi), UAE Building Code, SVG diagrams, BBS tables
+2. Medical — SOAP notes, MONA protocol, MOH guidelines (Egypt/Saudi/UAE)
+3. Law — IRAC method, Egyptian Civil Code, CRCICA/DIAC arbitration
+4. Computer Science — ER diagrams SVG, SQL schema, 3NF normalization, runnable code
+5. Business — PESTEL/SWOT tables, NPV/DCF, Porter's Five Forces
+6. Mathematics — LaTeX step-by-step, Lagrange multipliers, boxed final answers
+7. Humanities — APA 7th, Harvard, Chicago citations
+
+## UNIVERSITIES SUPPORTED
+
+94 universities including: GUC, AUC, Cairo University, Alexandria University,
+Ain Shams University, MSA University, BUE, Mansoura University (Egypt);
+King Saud University (KSU), KFUPM, KAUST (Saudi Arabia);
+UAEU, American University of Sharjah (UAE);
+AUB, LAU (Lebanon).
+
+## PRICING
+
+Free: 3 missions, no credit card required
+Pro Monthly: 350 EGP (~$7 USD) / 25 missions / 30 days
+Pro Quarterly: 1,000 EGP (~$20 USD) / 60 missions / 90 days
+Payment: InstaPay, Vodafone Cash (Egypt) — no international card required
+
+## MI-ACADEMY
+
+Educational breakdown included with every assignment:
+- Step-by-step solution explanation
+- 4 professor-style defense Q&A pairs
+- Presentation speaker notes
+- Mi-Vault: searchable mission archive
+
+## FOUNDER
+
+Zeyad El-Sayed, Founder & CEO, Cairo, Egypt
+
+## CONTACT
+
+Website: https://www.mi-assignment.com
+WhatsApp: +201107743984
+Language: Arabic (RTL) and English
