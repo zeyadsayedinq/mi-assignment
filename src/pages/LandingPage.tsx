@@ -141,6 +141,11 @@ export function LandingPage() {
             <Link to="/pricing" className="hidden sm:block text-gray-400 hover:text-white text-sm transition-colors px-3">
               {isAr ? 'الأسعار' : 'Pricing'}
             </Link>
+            {!session && (
+              <Link to="/auth" className="hidden sm:block text-gray-400 hover:text-white text-sm transition-colors px-3">
+                {isAr ? 'تسجيل الدخول' : 'Sign In'}
+              </Link>
+            )}
             <button onClick={go} className="flex items-center gap-1.5 px-3 py-2 bg-[#22D3EE] text-black font-bold rounded-xl text-xs whitespace-nowrap hover:bg-white transition-all">
               {session ? (isAr ? 'داشبورد' : 'Dashboard') : (isAr ? 'ابدأ' : 'Start Free')}
               <ChevronRight className={cn('w-3.5 h-3.5', isAr && 'rotate-180')} />
@@ -192,6 +197,14 @@ export function LandingPage() {
               </Link>
             </div>
             <p className="text-gray-600 text-xs">{isAr ? 'بدون بطاقة · ٣ مهام مجانية' : 'No credit card · 3 free missions included'}</p>
+            {!session && (
+              <p className="text-gray-600 text-xs mt-2">
+                {isAr ? 'عندك حساب؟ ' : 'Already have an account? '}
+                <Link to="/auth" className="text-[#22D3EE] hover:text-white transition-colors underline underline-offset-2">
+                  {isAr ? 'سجّل دخولك' : 'Sign in'}
+                </Link>
+              </p>
+            )}
           </motion.div>
         </div>
       </section>
