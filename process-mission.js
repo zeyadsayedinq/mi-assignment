@@ -22,7 +22,7 @@ async function parseBody(req) {
 }
 
 // ─── SUBJECT ROUTER V3.1 ────────────────────────────────────────────────────
-function buildSubjectContext(contents) {
+function buildSubjectContext(contents, missionType) {
   const text = contents.map(c => c.text || '').join(' ').toLowerCase();
 
   // STEM — Math / Statistics / Calculus (check BEFORE engineering)
@@ -149,6 +149,21 @@ OUTPUT REQUIREMENTS FOR MATH/STATS:
     };
   }
 
+  // ── SPORTS / CLUBS / ORGANIZATIONS ──────────────────────────────────────────
+  if (/نادي|كرة القدم|كرة|football|soccer|club|sport|player|match|league|champion|tournament|stadium|coach|season|trophy|الأهلي|الزمالك|barcelona|real madrid|al ahly|zamalek|نادي رياضي|دوري|بطولة|مباراة|لاعب|مدرب|ملعب|كأس|تشكيل|موسم/.test(text)) {
+    return {
+      domain: 'SPORTS',
+      rules: `SPORTS & ORGANIZATIONS DOMAIN:
+- Write analytically: history, achievements, management strategy, digital transformation, financials, fan base
+- Use business/management frameworks where relevant (SWOT, revenue streams, stakeholder analysis)
+- DO NOT generate SQL or Python code — this is NOT a data science assignment
+- DO NOT add code_snippets, model audits, or technical appendices
+- For presentations: 10 slides minimum. Structure: History → Achievements → Key Figures → Strategy → Digital/Financial → Future Vision
+- Cite real statistics: trophy counts, revenue, social media followers, stadium capacity
+- Tone: authoritative sports journalism meets management consulting`
+    };
+  }
+
   // Humanities
   if (/literature|history|philosophy|sociology|psychology|culture|discourse|narrative|theory|critique|analysis|essay|thesis|qualitative/.test(text)) {
     return {
@@ -169,15 +184,26 @@ OUTPUT REQUIREMENTS FOR MATH/STATS:
 
   return {
     domain: 'GENERAL',
-    rules: `Match discipline conventions from context. Academic register. Evidence over assertion.`
+    rules: `GENERAL ACADEMIC DOMAIN:
+- Match discipline conventions from the assignment context
+- Academic register: confident, evidence-based, no filler phrases
+- DO NOT generate SQL, Python, or code blocks unless the assignment explicitly asks for code
+- DO NOT add technical appendices (model audits, hyperparameter tables) unless asked
+- FOR PRESENTATIONS: presentation_slides (10 slides minimum) is the primary output. No code blocks.
+- FOR ESSAYS/REPORTS: thesis-driven paragraphs, minimum 900 words
+- Conclude with actionable recommendations or clear synthesis`
   };
 }
 
 // ─── SYSTEM PROMPT V3.1 ─────────────────────────────────────────────────────
-function buildSystemPrompt(domainContext) {
+function buildSystemPrompt(domainContext, missionType) {
+  const isPres = missionType === 'presentation';
+  const presentationHint = isPres
+    ? `\n⚠️ PRESENTATION MODE: The student selected Presentation as their assignment type.\n- presentation_slides (10+ slides) is the PRIMARY deliverable.\n- Do NOT put code blocks or SQL in the document unless the topic is explicitly about programming.\n- Do NOT populate code_snippets for non-programming presentations.\n`
+    : '';
   return `You are the Mi-Assignment Expert Engine ("Mi-CORE"). NEVER mention Google, Gemini, AI models. If asked who you are: 'I am Mi-CORE, the Mi-Assignment Expert Engine.'
 
-You are Mi-Assignment V3.1 — an elite academic engine producing submission-ready work at top-student level. You adapt intelligence to the subject domain.
+${presentationHint}You are Mi-Assignment V3.1 — an elite academic engine producing submission-ready work at top-student level. You adapt intelligence to the subject domain.
 
 ACTIVE DOMAIN: ${domainContext.domain}
 
@@ -301,41 +327,54 @@ export default async function handler(req, res) {
     }
 
     const body = await parseBody(req);
-    const { contents, lang } = body;
+    const { contents, lang, missionType } = body;
 
     if (!contents || !Array.isArray(contents) || contents.length === 0) {
       return res.status(400).json({ error: 'Missing contents array' });
     }
 
-    const domainContext = buildSubjectContext(contents);
-    const systemPrompt = buildSystemPrompt(domainContext);
+    const domainContext = buildSubjectContext(contents, missionType);
+    const systemPrompt = buildSystemPrompt(domainContext, missionType);
 
     console.log(`Mi V3.1 — Domain: ${domainContext.domain}`);
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ role: 'user', parts: contents.map(c => c.inlineData ? { inlineData: c.inlineData } : { text: c.text || '' }) }],
-          generationConfig: {
-            thinkingConfig: {
-              thinkingBudget: /ENGINEERING|MATH|MEDICAL|CS|SCIENCE|DATA/.test(
-                (domainContext.domain || '').toUpperCase()
-              ) ? 8000 : 0,
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 55000);
+
+    let geminiRes;
+    try {
+      geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`,
+        {
+          signal: ctrl.signal,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents: [{ role: 'user', parts: contents.map(c => c.inlineData ? { inlineData: c.inlineData } : { text: c.text || '' }) }],
+            generationConfig: {
+              // Only set thinkingBudget for models that support it; omit for standard flash
+              ...((/ENGINEERING|MATH|MEDICAL|CS|SCIENCE|DATA/.test((domainContext.domain || '').toUpperCase()))
+                ? { thinkingConfig: { thinkingBudget: 8000 } }
+                : {}),
+              temperature: 0.65,
+              responseMimeType: 'application/json',
+              // Domain-aware token budget — engineering/math need more for calculations+SVG
+              maxOutputTokens: /ENGINEERING|MATH|MEDICAL|CS|LAW/.test(
+                (domainContext?.domain || '').toUpperCase()
+              ) ? 16000 : 10000,
             },
-            temperature: 0.65,
-            responseMimeType: 'application/json',
-            // Domain-aware token budget — engineering/math need more for calculations+SVG
-            maxOutputTokens: /ENGINEERING|MATH|MEDICAL|CS|LAW/.test(
-              (domainContext?.domain || '').toUpperCase()
-            ) ? 16000 : 10000,
-          },
-        }),
+          }),
+        }
+      );
+      clearTimeout(timer);
+    } catch (fetchErr) {
+      clearTimeout(timer);
+      if (fetchErr.name === 'AbortError') {
+        return res.status(503).json({ error: 'This assignment took too long to process. Please try again or break it into smaller parts.' });
       }
-    );
+      throw fetchErr;
+    }
 
     if (geminiRes.status === 503 || geminiRes.status === 429) {
       return res.status(503).json({ error: 'AI service busy. Please try again in a moment.' });
@@ -359,42 +398,50 @@ export default async function handler(req, res) {
 
     let clean = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
     const first = clean.indexOf('{');
-    const last = clean.lastIndexOf('}');
     if (first === -1) return res.status(500).json({ error: 'AI response was not valid JSON. Please try again.' });
+
+    // Bracket-counting to find the true closing brace (handles text appended after JSON)
+    let depth = 0, last = -1;
+    for (let i = first; i < clean.length; i++) {
+      if (clean[i] === '{') depth++;
+      else if (clean[i] === '}') { depth--; if (depth === 0) { last = i; break; } }
+    }
+    if (last === -1) return res.status(500).json({ error: 'Incomplete JSON response. Please try again.' });
     clean = clean.slice(first, last + 1);
 
-    // Fix common JSON issues from Gemini:
-    // 1. Unescaped backslashes in LaTeX (e.g. \frac → \\frac)
-    // 2. Unescaped newlines inside strings
-    // 3. Trailing commas before } or ]
+    // Fix common JSON issues: trailing commas, unescaped backslashes, newlines in strings
     clean = clean
-      .replace(/\\(?!["\/bfnrtu])/g, '\\\\')  // escape lone backslashes
-      .replace(/([^\\])"([^"]*?)\n([^"]*?)"/g, '$1"$2 $3"')  // remove newlines in strings
-      .replace(/,(\s*[}\]])/g, '$1');  // trailing commas
+      .replace(/\\(?!["\/bfnrtu])/g, '\\\\')
+      .replace(/([^\\])"([^"]*?)\n([^"]*?)"/g, '$1"$2 $3"')
+      .replace(/,(\s*[}\]])/g, '$1');
 
     let result;
     try { result = JSON.parse(clean); }
     catch {
-      try { result = JSON.parse(clean.replace(/,(\s*[}\]])/g, '$1')); }
-      catch (e) {
-      // Last resort: try to recover truncated JSON
+      // Truncation recovery — close all open brackets
       console.warn('Mi: parse failed, attempting truncation recovery...');
       try {
-        // Find last complete top-level key and close the JSON
-        let r = clean;
-        // Remove any trailing incomplete string/array/object
-        const patterns = [/,\s*"[^"]*$/, /,\s*\[[^\]]*$/, /:\s*"[^"]*$/];
-        for (const p of patterns) r = r.replace(p, '');
-        // Count and close unclosed braces/brackets
-        const ob = (r.match(/\{/g)||[]).length - (r.match(/\}/g)||[]).length;
-        const oa = (r.match(/\[/g)||[]).length - (r.match(/\]/g)||[]).length;
-        r += ']'.repeat(Math.max(0,oa)) + '}'.repeat(Math.max(0,ob));
-        result = JSON.parse(r);
+        let fixed = clean;
+        fixed = fixed.replace(/,\s*$/, '');
+        const stack = [];
+        let inStr = false, escape = false;
+        for (const ch of fixed) {
+          if (escape) { escape = false; continue; }
+          if (ch === '\\') { escape = true; continue; }
+          if (ch === '"') { inStr = !inStr; continue; }
+          if (!inStr) {
+            if (ch === '{') stack.push('}');
+            else if (ch === '[') stack.push(']');
+            else if ((ch === '}' || ch === ']') && stack.length) stack.pop();
+          }
+        }
+        fixed += stack.reverse().join('');
+        fixed = fixed.replace(/,(\s*[}\]])/g, '$1');
+        result = JSON.parse(fixed);
         console.log('Mi: truncation recovery succeeded');
-      } catch {
+      } catch (e) {
         return res.status(500).json({ error: `Response parse failed: ${e.message}. Try a simpler assignment or try again.` });
       }
-    }
     }
 
     if (!result.solution_text) result.solution_text = '';

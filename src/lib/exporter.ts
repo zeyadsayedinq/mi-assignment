@@ -374,25 +374,83 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
   const checkPage = (needed = LINE_H) => { if (y + needed > MAX_Y) addPage(); };
 
   const isArabicText = (t: string) => /[؀-ۿ]/.test(t);
+
+  // Render Arabic text via canvas → PNG → embed in PDF (bypasses jsPDF font limitation)
+  const writeArabicLine = async (text: string, size = 11, bold = false, color: [number, number, number] = [30, 30, 30]) => {
+    try {
+      const canvas = document.createElement('canvas');
+      const pxPerMm = 3.78;
+      const canvasW = Math.round((W - MARGIN * 2) * pxPerMm);
+      const fontSize = size * pxPerMm * 0.85;
+      canvas.width = canvasW;
+      canvas.height = Math.round(fontSize * 1.6);
+      const ctx = canvas.getContext('2d')!;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+      ctx.font = `${bold ? 'bold' : 'normal'} ${fontSize}px Cairo, Arial, sans-serif`;
+      ctx.direction = 'rtl';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'top';
+      // Word-wrap manually
+      const words = text.split(' ');
+      let line = '';
+      const lineHeight = fontSize * 1.4;
+      const lines: string[] = [];
+      for (const word of words) {
+        const testLine = line ? word + ' ' + line : word;
+        if (ctx.measureText(testLine).width > canvasW - 10 && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = testLine;
+        }
+      }
+      if (line) lines.push(line);
+      canvas.height = Math.round(lineHeight * lines.length + 4);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+      ctx.font = `${bold ? 'bold' : 'normal'} ${fontSize}px Cairo, Arial, sans-serif`;
+      ctx.direction = 'rtl'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+      lines.forEach((l, i) => ctx.fillText(l, canvasW - 2, i * lineHeight + 2));
+      const dataUrl = canvas.toDataURL('image/png');
+      const imgH = (canvas.height / pxPerMm);
+      const imgW = W - MARGIN * 2;
+      checkPage(imgH + 2);
+      pdf.addImage(dataUrl, 'PNG', MARGIN, y - 2, imgW, imgH);
+      y += imgH;
+    } catch {
+      // Fallback: just skip unrenderable Arabic — DOCX has full Arabic support
+    }
+  };
+
   const writeLine = (text: string, size = 11, bold = false, color: [number, number, number] = [30, 30, 30]) => {
     if (!text || text === 'undefined') return;
     const rawText = cleanLaTeX(text);
+    const isRTL = isArabicText(rawText);
+    if (isRTL) {
+      // Queue async Arabic render — handled below via writeLineAsync
+      return;
+    }
     pdf.setFontSize(size);
     pdf.setFont('helvetica', bold ? 'bold' : 'normal');
     pdf.setTextColor(...color);
-    // For Arabic text: jsPDF helvetica can't render Arabic — render as transliterated or skip
-    // The PDF will show boxes, but DOCX handles Arabic correctly via TextRun
     const lines = pdf.splitTextToSize(rawText, W - MARGIN * 2);
-    const isRTL = isArabicText(rawText);
     lines.forEach((line: string) => {
       checkPage();
-      if (isRTL) {
-        pdf.text(line, W - MARGIN, y, { align: 'right' });
-      } else {
-        pdf.text(line, MARGIN, y);
-      }
+      pdf.text(line, MARGIN, y);
       y += LINE_H;
     });
+  };
+
+  // Async version for Arabic (must be awaited where used)
+  const writeLineAsync = async (text: string, size = 11, bold = false, color: [number, number, number] = [30, 30, 30]) => {
+    if (!text || text === 'undefined') return;
+    const rawText = cleanLaTeX(text);
+    if (isArabicText(rawText)) {
+      await writeArabicLine(rawText, size, bold, color);
+    } else {
+      writeLine(rawText, size, bold, color);
+    }
   };
 
   if (!clean) {
@@ -411,7 +469,7 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
   }
 
   // Mission name
-  writeLine(payloadName, 15, true, [15, 23, 42]);
+  await writeLineAsync(payloadName, 15, true, [15, 23, 42]);
   y += 3;
 
   // Summary
@@ -419,14 +477,14 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
     writeLine('Summary', 11, true, [34, 211, 238]);
     pdf.setDrawColor(34, 211, 238); pdf.setLineWidth(0.4);
     pdf.line(MARGIN, y, W - MARGIN, y); y += 5;
-    writeLine(data.solution_text, 10, false, [71, 85, 105]);
+    await writeLineAsync(data.solution_text, 10, false, [71, 85, 105]);
     y += 4;
   }
 
   // Document blocks
   const doc = data.reconstructed_doc;
   if (doc) {
-    if (doc.title) { writeLine(doc.title, 14, true, [15, 23, 42]); y += 2; }
+    if (doc.title) { await writeLineAsync(doc.title, 14, true, [15, 23, 42]); y += 2; }
     for (const block of (doc.blocks || [])) {
       checkPage(10);
       if (block.type === 'heading') {
@@ -435,7 +493,7 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
         if (!block.content || block.content.trim() === (payloadName || '').trim()) {
           // skip - duplicate title
         } else {
-          writeLine(block.content, 13, true, [15, 23, 42]);
+          await writeLineAsync(block.content, 13, true, [15, 23, 42]);
         pdf.setDrawColor(200, 200, 200); pdf.setLineWidth(0.2);
         pdf.line(MARGIN, y, W - MARGIN, y); y += 5;
         }
@@ -461,7 +519,9 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
         }
         
         if (block.solution_steps && !clean) {
-          block.solution_steps.forEach((s: string, i: number) => writeLine(`  ${i + 1}. ${s}`, 9, false, [71, 85, 105]));
+          for (const [i, s] of (block.solution_steps as string[]).entries()) {
+            await writeLineAsync(`  ${i + 1}. ${s}`, 9, false, [71, 85, 105]);
+          }
         }
         y += 2;
       } else if (block.type === 'code') {
@@ -473,7 +533,9 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
         y += 2;
       } else if (block.type === 'list') {
         const items = Array.isArray(block.content) ? block.content : String(block.content).split('\n').filter(Boolean);
-        items.forEach((item: string) => writeLine(`• ${item.replace(/^[-•]\s*/, '')}`, 10, false, [51, 65, 85]));
+        for (const item of items) {
+          await writeLineAsync(`• ${item.replace(/^[-•]\s*/, '')}`, 10, false, [51, 65, 85]);
+        }
       } else if (block.type === 'svg') {
         const pngData = await svgToPngBuffer(block.content);
         if (pngData) {
@@ -513,11 +575,11 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
           });
           y += 3;
         } else if (block.content && block.content !== 'undefined') {
-          writeLine(String(block.content), 10, false, [51, 65, 85]);
+          await writeLineAsync(String(block.content), 10, false, [51, 65, 85]);
         }
         // else: empty table — skip, render nothing
       } else if (block.content && block.content !== 'undefined') {
-        writeLine(block.content, 10, false, [51, 65, 85]);
+        await writeLineAsync(block.content, 10, false, [51, 65, 85]);
       }
     }
   }
