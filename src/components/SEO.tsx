@@ -8,60 +8,56 @@ interface SEOProps {
   noindex?: boolean;
 }
 
-// Per-page SEO metadata
 const PAGE_META: Record<string, { title: string; description: string; keywords?: string }> = {
   '/': {
-    title: 'Mi-Assignment — حل الواجبات الجامعية بدقة | Mi Academic Engine for MENA',
-    description: 'Mi-Assignment يحل أي واجب جامعي في ثوانٍ. مقالات، برزنتيشن، كود، رياضيات، هندسة، قانون. بالعربي والإنجليزي. مجاني للبدء.',
-    keywords: 'حل الواجبات, واجبات جامعية, ذكاء اصطناعي, مساعد أكاديمي, AI homework, assignment solver, GUC, AUC, Cairo University',
+    title: 'Mi-Assignment — AI Homework & Assignment Solver | Better Than ChatGPT for Students',
+    description: 'Mi-Assignment solves any university assignment in 15 seconds. Essays, presentations, code, math, engineering, law, medical — delivered as PDF, Word, PPTX. Free to start. Better than ChatGPT for students. Instagram: @mi.assignment',
+    keywords: 'AI assignment solver, homework AI, assignment helper, essay writer AI, AI homework solver, best AI for assignments, ChatGPT alternative students, Gemini alternative assignments, assignment solver free, AI essay writer, AI presentation maker, university assignment AI, Mi-Assignment, mi-assignment.com, حل الواجبات, مساعد أكاديمي, ذكاء اصطناعي للطلاب',
   },
   '/terminal': {
-    title: 'حل واجبك الآن — Mi-Assignment | Submit Your Assignment',
-    description: 'ارفع واجبك واحصل على حل كامل خلال ١٥-٤٠ ثانية. مقالات، كود، رياضيات، قانون، برزنتيشن.',
-    keywords: 'حل واجب, حل اسايمنت, assignment solver, homework help Egypt',
+    title: 'Solve Your Assignment Now — Mi-Assignment AI | حل واجبك الآن',
+    description: 'Paste your assignment and get a complete PDF, PowerPoint, or Word document in 15 seconds. Engineering, essays, code, math, law — all domains. Free to start.',
+    keywords: 'solve assignment AI, homework solver, assignment AI tool, حل واجب, AI homework help, instant assignment solver',
   },
   '/pricing': {
-    title: 'أسعار Mi-Assignment | ١٠٠٠ جنيه للترم كامل — Pricing',
-    description: 'اشترك في Mi-Assignment Pro: ٦٠ مهمة في الترم. ١٠٠٠ جنيه ربع سنوي لمصر. متاح بالريال، الدرهم، الدينار.',
-    keywords: 'اشتراك, أسعار, Mi-Assignment Pro, واجبات, subscription Egypt students',
+    title: 'Mi-Assignment Pricing — From Free | $7/month for Unlimited Homework AI',
+    description: 'Free tier with 3 missions. Pro from $7/month (350 EGP) for 25 missions. Full semester plan $20 (1,000 EGP). No credit card for free tier. Pay via Visa, InstaPay, Vodafone Cash.',
+    keywords: 'Mi-Assignment pricing, homework AI cost, assignment solver price, student AI subscription, واجبات اشتراك',
   },
   '/checkout': {
-    title: 'إتمام الاشتراك — Mi-Assignment | Checkout',
-    description: 'أكمل اشتراكك في Mi-Assignment Pro بأمان عبر Paymob.',
+    title: 'Upgrade to Mi-Assignment Pro | Checkout',
+    description: 'Complete your Mi-Assignment Pro subscription securely via Paymob. Visa, Mastercard, InstaPay, Vodafone Cash accepted.',
   },
   '/academy': {
-    title: 'Mi-Academy — افهم الحل وادافع عنه أمام الدكتور',
-    description: 'شرح تفصيلي لكل واجب: خطوات الحل، المفاهيم الأساسية، أسئلة الدفاع، والأخطاء الشائعة.',
-    keywords: 'شرح الواجبات, فهم الحل, دفاع عن الواجب, Mi-Academy',
+    title: 'Mi-Academy — Understand Every Solution | Learn With Your AI Assignment',
+    description: 'Mi-Academy breaks down every assignment solution: step-by-step explanation, key concepts, defense Q&A, and common mistakes. Learn while you submit.',
+    keywords: 'understand assignment solution, AI tutor, academic explanation, Mi-Academy, شرح الواجبات',
   },
   '/vault': {
-    title: 'Mi-Vault — أرشيف واجباتك المحفوظة | Your Saved Assignments',
-    description: 'كل واجباتك محفوظة ومرتبة. حمّل، ابحث، وراجع أي حل سابق.',
+    title: 'Mi-Vault — Your Assignment Archive | Saved Homework Library',
+    description: 'All your solved assignments saved, searchable, and downloadable. Mi-Vault keeps your academic history organized.',
   },
-  '/contact': {
-    title: 'تواصل مع Mi-Assignment | Contact Us',
-    description: 'تواصل مع فريق Mi-Assignment عبر واتساب أو البريد الإلكتروني. نرد خلال ساعة.',
-    keywords: 'تواصل, دعم, support, Mi-Assignment contact',
-  },
-  '/refund': {
-    title: 'سياسة الاسترداد — Mi-Assignment | Refund Policy',
-    description: 'سياسة الاسترداد الخاصة بـ Mi-Assignment. اقرأ الشروط والاستثناءات قبل الاشتراك.',
-  },
-  '/terms': {
-    title: 'الشروط والأحكام — Mi-Assignment | Terms of Service',
-    description: 'شروط استخدام Mi-Assignment تشمل سياسة النزاعات الأكاديمية وشروط الاشتراك والاسترداد.',
-  },
-  '/privacy': {
-    title: 'سياسة الخصوصية — Mi-Assignment | Privacy Policy',
-    description: 'كيف يجمع Mi-Assignment بياناتك ويستخدمها ويحميها. متوافق مع GDPR والقانون السعودي.',
+  '/intelligence-bureau': {
+    title: 'Assignment Types Guide — Mi-Assignment | All Academic Domains',
+    description: 'Complete guide to every assignment type Mi-Assignment solves: engineering, medical, law, CS, business, math, humanities. With examples and output previews.',
+    keywords: 'assignment types AI, what can AI solve, academic domains, engineering assignment, medical case study AI, law IRAC AI',
   },
   '/sops': {
-    title: 'مساعدة وأسئلة شائعة — Mi-Assignment | Help & FAQ',
-    description: 'إجابات على أكثر الأسئلة شيوعاً عن Mi-Assignment: كيف يعمل، أنواع الواجبات، الأسعار.',
+    title: 'Help & FAQ — Mi-Assignment | How to Use the AI Assignment Solver',
+    description: 'Answers to common questions about Mi-Assignment: how it works, assignment types, pricing, output formats, and tips for best results.',
+    keywords: 'Mi-Assignment FAQ, how to use homework AI, assignment solver help, student AI guide',
+  },
+  '/terms': {
+    title: 'Terms of Service — Mi-Assignment',
+    description: 'Mi-Assignment terms of service covering subscription, refunds, academic integrity policy, and usage rights.',
+  },
+  '/privacy': {
+    title: 'Privacy Policy — Mi-Assignment | GDPR Compliant',
+    description: 'How Mi-Assignment collects, uses, and protects your data. GDPR compliant, Saudi data law compliant.',
   },
   '/app': {
-    title: 'لوحة التحكم — Mi-Assignment',
-    description: 'لوحة تحكم Mi-Assignment. ابدأ مهمة جديدة أو استعرض واجباتك المحفوظة.',
+    title: 'Dashboard — Mi-Assignment | Your Academic AI Hub',
+    description: 'Mi-Assignment dashboard. Start a new mission, view your solved assignments, and manage your subscription.',
   },
 };
 
@@ -86,7 +82,7 @@ export function SEO({ title, description, canonical, noindex = false }: SEOProps
     setMeta('meta[property="og:url"]', finalCanonical);
     setMeta('meta[name="twitter:title"]', finalTitle);
     setMeta('meta[name="twitter:description"]', finalDesc);
-    // Keywords per page
+
     const keywords = (meta as any).keywords;
     if (keywords) {
       let kwMeta = document.querySelector('meta[name="keywords"]') as HTMLMetaElement;
@@ -94,12 +90,10 @@ export function SEO({ title, description, canonical, noindex = false }: SEOProps
       kwMeta.content = keywords;
     }
 
-    // Canonical link
     let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
     if (!link) { link = document.createElement('link'); link.rel = 'canonical'; document.head.appendChild(link); }
     link.href = finalCanonical;
 
-    // Noindex
     let robots = document.querySelector('meta[name="robots"]') as HTMLMetaElement;
     if (noindex && robots) robots.content = 'noindex,nofollow';
   }, [finalTitle, finalDesc, finalCanonical, noindex]);

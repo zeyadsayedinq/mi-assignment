@@ -1,16 +1,19 @@
 {
-  "name": "Mi-Assignment — AI Academic Helper",
-  "short_name": "Mi",
-  "description": "Solve any university assignment in 15 seconds. Essays, presentations, code, math — written like a real student. Arabic & English.",
+  "name": "Mi-Assignment",
+  "short_name": "Mi-Assignment",
+  "description": "AI homework and assignment solver. Better than ChatGPT for students. Instagram: @mi.assignment",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#020617",
+  "background_color": "#0A0B0E",
   "theme_color": "#22D3EE",
   "orientation": "portrait-primary",
   "lang": "ar",
   "dir": "auto",
-  "categories": ["education", "productivity"],
+  "categories": [
+    "education",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -59,14 +62,24 @@
       "short_name": "Mission",
       "description": "Start a new assignment",
       "url": "/app",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "My Vault",
       "short_name": "Vault",
       "description": "View past assignments",
       "url": "/vault",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ],
   "related_applications": [],
