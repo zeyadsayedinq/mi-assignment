@@ -798,18 +798,16 @@ export async function downloadMissionPackage(data: any, payloadName: string = "M
             fontSize: 48, bold: true, color: C.stone900,
             fontFace: 'Helvetica', align: 'left', valign: 'top', wrap: true,
           });
-          // Rule before subtitle
-          rule(slide, 0.7, 5.1, 4.0);
-          // Subtitle / narrative
-          if (narrative) {
-            slide.addText(narrative, {
-              x: 0.7, y: 5.25, w: W * 0.46, h: 1.5,
-              fontSize: 13, color: C.stone600, fontFace: 'Helvetica',
-              align: 'left', italic: true, wrap: true,
-            });
-          }
+          // Divider rule
+          slide.addShape(pres.ShapeType.rect, { x: 0.7, y: 5.1, w: W * 0.46, h: 0.04, fill: { color: C.stone200 } });
           // Accent dot
-          accentDot(slide, 0.7, 5.05);
+          accentDot(slide, 0.7, 5.03);
+          // Subtitle / narrative — always show something
+          slide.addText(narrative || 'Prepared with Mi-Assignment', {
+            x: 0.85, y: 5.25, w: W * 0.44, h: 1.5,
+            fontSize: 13, color: C.stone600, fontFace: 'Helvetica',
+            align: 'left', italic: true, wrap: true,
+          });
           // Bottom left year/date label
           label(slide, new Date().getFullYear().toString(), 0.7, H - 0.55, 2.0, C.stone300);
 
@@ -826,14 +824,14 @@ export async function downloadMissionPackage(data: any, payloadName: string = "M
           label(slide, `${String(idx + 1).padStart(2,'0')} / Analysis`, 0.7, 0.7, 3.0);
           // Big heading
           slide.addText(heading, {
-            x: 0.7, y: 1.15, w: W * 0.6, h: 2.2,
-            fontSize: 36, bold: true, color: C.stone900,
+            x: 0.7, y: 1.05, w: W * 0.65, h: 1.9,
+            fontSize: 32, bold: true, color: C.stone900,
             fontFace: 'Helvetica', align: 'left', valign: 'top', wrap: true,
           });
           // Mid rule
-          rule(slide, 0.7, 3.5, W - 1.4);
+          slide.addShape(pres.ShapeType.rect, { x: 0.7, y: 3.05, w: W - 1.4, h: 0.04, fill: { color: C.stone200 } });
           // Narrative italic
-          let ty = 3.65;
+          let ty = 3.2;
           if (narrative) {
             slide.addText(narrative, {
               x: 0.7, y: ty, w: W - 1.4, h: 0.7,
@@ -885,30 +883,33 @@ export async function downloadMissionPackage(data: any, payloadName: string = "M
           // Thin vertical divider
           slide.addShape(pres.ShapeType.rect, { x: splitX - 0.01, y: 0, w: 0.01, h: H, fill: { color: C.stone100 } });
           counter(slide, idx + 1, total);
-          rule(slide, 0.7, 0.6, splitX - 1.0);
-          label(slide, `Section ${String(idx + 1).padStart(2,'0')}`, 0.7, 0.7, 3.0);
+          // Top rule
+          slide.addShape(pres.ShapeType.rect, { x: 0.7, y: 0.55, w: splitX - 1.0, h: 0.04, fill: { color: C.stone200 } });
+          label(slide, `Section ${String(idx + 1).padStart(2,'0')}`, 0.7, 0.65, 3.0);
+          // Heading tighter
           slide.addText(heading, {
-            x: 0.7, y: 1.15, w: splitX - 1.0, h: 2.4,
-            fontSize: 30, bold: true, color: C.stone900,
+            x: 0.7, y: 1.05, w: splitX - 1.0, h: 1.9,
+            fontSize: 28, bold: true, color: C.stone900,
             fontFace: 'Helvetica', align: 'left', valign: 'top', wrap: true,
           });
-          rule(slide, 0.7, 3.7, splitX - 1.0);
-          let ty = 3.85;
-          if (narrative) {
-            slide.addText(narrative, {
-              x: 0.7, y: ty, w: splitX - 1.0, h: 0.65,
-              fontSize: 12, color: C.stone600, fontFace: 'Helvetica', italic: true,
-            });
-            ty += 0.8;
-          }
+          // Divider under heading
+          slide.addShape(pres.ShapeType.rect, { x: 0.7, y: 3.05, w: splitX - 1.0, h: 0.04, fill: { color: C.stone200 } });
+          // Narrative always visible
+          slide.addText(narrative || 'Key findings from this section:', {
+            x: 0.7, y: 3.2, w: splitX - 1.0, h: 0.6,
+            fontSize: 11.5, color: C.stone500, fontFace: 'Helvetica', italic: true,
+          });
+          // Bullets with visible rule lines
           bullets.slice(0, 5).forEach((b: string, bi: number) => {
-            slide.addText(`— ${b}`, {
-              x: 0.7, y: ty + bi * 0.55, w: splitX - 1.0, h: 0.5,
+            const by = 3.95 + bi * 0.62;
+            slide.addText(`${String(bi + 1).padStart(2,'0')}   ${b}`, {
+              x: 0.7, y: by, w: splitX - 1.0, h: 0.5,
               fontSize: 12.5, color: C.stone800, fontFace: 'Helvetica',
             });
+            slide.addShape(pres.ShapeType.rect, { x: 0.7, y: by + 0.5, w: splitX - 1.1, h: 0.025, fill: { color: C.stone100 } });
           });
-          // Bottom rule left panel
-          rule(slide, 0.7, H - 0.35, splitX - 1.0);
+          // Bottom rule
+          slide.addShape(pres.ShapeType.rect, { x: 0.7, y: H - 0.38, w: splitX - 1.0, h: 0.04, fill: { color: C.stone200 } });
 
         // ════════════════════════════════════════════════════════════════════
         // FULLBLEED — image fills entire slide, text overlay bottom-left
@@ -919,33 +920,46 @@ export async function downloadMissionPackage(data: any, payloadName: string = "M
             slide.addImage({ path: sd.image_url, x: 0, y: 0, w: W, h: H,
               sizing: { type: 'cover', w: W, h: H } });
           }
-          // Gradient overlay — bottom half dark
-          slide.addShape(pres.ShapeType.rect, { x: 0, y: H * 0.45, w: W, h: H * 0.55,
-            fill: { color: C.stone900, transparency: 15 } });
-          // White thin rule above text
-          slide.addShape(pres.ShapeType.rect, { x: 0.7, y: H * 0.6, w: 2.5, h: 0.012, fill: { color: C.white } });
-          // Slide label
+          // Layered dark overlays for readability
+          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: W, h: H, fill: { color: C.stone900, transparency: 55 } });
+          slide.addShape(pres.ShapeType.rect, { x: 0, y: H * 0.38, w: W, h: H * 0.62, fill: { color: C.stone900, transparency: 20 } });
+          // Counter top-right
+          counter(slide, idx + 1, total, true);
+          // Slide number top-left + rule
           slide.addText(`${String(idx + 1).padStart(2,'0')}`, {
-            x: 0.7, y: H * 0.6 - 0.4, w: 1.5, h: 0.35,
-            fontSize: 9, color: 'FFFFFF', fontFace: 'Helvetica',
-            charSpacing: 2, bold: true, transparency: 40,
+            x: 0.7, y: 0.4, w: 1.5, h: 0.3,
+            fontSize: 9, color: 'FFFFFF', fontFace: 'Helvetica', charSpacing: 2,
           });
-          // Heading
+          slide.addShape(pres.ShapeType.rect, { x: 0.7, y: 0.76, w: 1.5, h: 0.04, fill: { color: C.white } });
+          // Heading at 42% down
           slide.addText(heading, {
-            x: 0.7, y: H * 0.62, w: W * 0.65, h: 2.0,
-            fontSize: 34, bold: true, color: C.white,
+            x: 0.7, y: H * 0.42, w: W * 0.72, h: 1.8,
+            fontSize: 36, bold: true, color: C.white,
             fontFace: 'Helvetica', align: 'left', valign: 'top', wrap: true,
           });
+          // Divider
+          slide.addShape(pres.ShapeType.rect, { x: 0.7, y: H * 0.42 + 1.92, w: W * 0.68, h: 0.04, fill: { color: C.white } });
           // Narrative
-          if (narrative) {
-            slide.addText(narrative, {
-              x: 0.7, y: H - 1.0, w: W * 0.6, h: 0.6,
-              fontSize: 12, color: 'D6D3D1', fontFace: 'Helvetica', italic: true,
+          slide.addText(narrative || '', {
+            x: 0.7, y: H * 0.42 + 2.06, w: W * 0.68, h: 0.55,
+            fontSize: 12, color: 'D6D3D1', fontFace: 'Helvetica', italic: true,
+          });
+          // Bottom bullets in 3 columns
+          if (bullets.length) {
+            const bCount = Math.min(bullets.length, 3);
+            const bW = (W - 1.4) / bCount;
+            bullets.slice(0, bCount).forEach((b: string, bi: number) => {
+              const bx = 0.7 + bi * bW;
+              slide.addShape(pres.ShapeType.rect, { x: bx, y: H - 1.55, w: bW - 0.25, h: 0.04, fill: { color: C.accent } });
+              slide.addText(b, {
+                x: bx, y: H - 1.38, w: bW - 0.25, h: 0.9,
+                fontSize: 11, color: 'E7E5E4', fontFace: 'Helvetica', wrap: true, valign: 'top',
+              });
             });
           }
           // Mi-Assignment badge
           slide.addText('Mi-Assignment', {
-            x: W - 2.2, y: H - 0.4, w: 2.0, h: 0.25,
+            x: W - 2.2, y: H - 0.32, w: 2.0, h: 0.25,
             fontSize: 7.5, color: 'A8A29E', fontFace: 'Helvetica', align: 'right',
           });
 
@@ -1063,12 +1077,11 @@ export async function downloadMissionPackage(data: any, payloadName: string = "M
             });
           }
           bullets.slice(0, 4).forEach((b: string, bi: number) => {
-            const by = 5.55 + bi * 0.0;
-            slide.addShape(pres.ShapeType.rect, { x: 0.7, y: by + bi * 0.4, w: 0.06, h: 0.06,
-              fill: { color: C.accent } });
+            const by = 5.3 + bi * 0.46;
+            slide.addShape(pres.ShapeType.rect, { x: 0.7, y: by + 0.07, w: 0.07, h: 0.07, fill: { color: C.accent } });
             slide.addText(b, {
-              x: 0.9, y: by + bi * 0.4 - 0.05, w: W * 0.48, h: 0.4,
-              fontSize: 12, color: C.stone400, fontFace: 'Helvetica',
+              x: 0.9, y: by, w: W * 0.5, h: 0.38,
+              fontSize: 12, color: C.stone400, fontFace: 'Helvetica', wrap: true,
             });
           });
           // Mi-Assignment branding

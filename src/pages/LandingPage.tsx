@@ -172,8 +172,8 @@ export function LandingPage() {
             </div>
             <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9] mb-7">
               {isAr ? (
-                <><GlitchText text="ابعتلنا" className="block text-white" />
-                  <GlitchText text="الواجب." className="block text-transparent bg-clip-text bg-gradient-to-r from-[#22D3EE] to-[#A855F7]" /></>
+                <><span className="block text-white">ابعتلنا</span>
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#22D3EE] to-[#A855F7]">الواجب.</span></>
               ) : (
                 <><GlitchText text="SUBMIT ANY" className="block text-white" />
                   <GlitchText text="ASSIGNMENT." className="block text-transparent bg-clip-text bg-gradient-to-r from-[#22D3EE] to-[#A855F7]" /></>
@@ -273,6 +273,65 @@ export function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* WHY NOT CHATGPT */}
+      <section className="py-20 px-5">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] font-mono uppercase tracking-widest mb-5">
+              <span>⚡</span>
+              {isAr ? 'مش زي ChatGPT' : 'Not ChatGPT. Not Gemini.'}
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-white mb-3">
+              {isAr ? 'إيه الفرق؟' : 'Why Mi over ChatGPT?'}
+            </h2>
+            <p className="text-gray-500 text-sm max-w-xl mx-auto">
+              {isAr ? 'ChatGPT بيجاوب. Mi بيسلّم. في فرق كبير.' : 'ChatGPT answers questions. Mi delivers finished assignments. Big difference.'}
+            </p>
+          </div>
+          <div className="overflow-x-auto rounded-2xl border border-white/10">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left px-5 py-4 text-gray-500 font-medium w-1/3">{isAr ? 'الميزة' : 'Feature'}</th>
+                  <th className="px-5 py-4 text-center"><span className="text-gray-600 font-bold text-xs">ChatGPT / Gemini</span></th>
+                  <th className="px-5 py-4 text-center bg-[#22D3EE]/5 border-x border-[#22D3EE]/10"><span className="text-[#22D3EE] font-black text-sm">Mi-Assignment</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {(isAr ? [
+                  ['يولّد PDF + PPTX + Excel جاهز للتسليم', '❌', '✅'],
+                  ['بيعرف أسلوب كتابة الطلاب فعلاً', '❌', '✅'],
+                  ['محتاج تكتب برومبت طويل كل مرة', '✅ دايماً', '❌ مش لازم'],
+                  ['بيعرف متطلبات جامعتك تحديداً', '❌', '✅ AUC، GUC، KFUPM وغيرها'],
+                  ['بيعمل رسومات هندسية SVG', '❌', '✅'],
+                  ['مخصص للطلاب العرب والخليج', '❌ عام', '✅ MENA فقط'],
+                  ['بيحل رياضيات خطوة بخطوة كاملة', '⚠️ أحياناً', '✅ دايماً'],
+                  ['بيكتب زي طالب حقيقي مش زي AI', '❌', '✅'],
+                ] : [
+                  ['Exports PDF, PPTX & Excel ready to submit', '❌', '✅'],
+                  ['Writes in authentic student voice', '❌', '✅'],
+                  ['Needs a long prompt every single time', '✅ Always', '❌ Never'],
+                  ['Knows your specific university standards', '❌', '✅ AUC, GUC, KFUPM & more'],
+                  ['Generates engineering SVG diagrams', '❌', '✅'],
+                  ['Built specifically for MENA students', '❌ Generic', '✅ MENA only'],
+                  ['Solves math step-by-step with full working', '⚠️ Sometimes', '✅ Always'],
+                  ['Writes like a real student not an AI', '❌', '✅'],
+                ]).map(([feature, gpt, mi], i) => (
+                  <tr key={i} className={`border-b border-white/[0.05] last:border-0 ${i % 2 === 0 ? 'bg-white/[0.01]' : ''}`}>
+                    <td className="px-5 py-3.5 text-gray-400">{feature}</td>
+                    <td className="px-5 py-3.5 text-center text-gray-600 font-medium">{gpt}</td>
+                    <td className="px-5 py-3.5 text-center bg-[#22D3EE]/5 border-x border-[#22D3EE]/10 text-[#22D3EE] font-bold">{mi}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-center text-gray-600 text-xs mt-6">
+            {isAr ? 'ChatGPT بيديك نص عشان تتعامل معاه. Mi بيديك ملف جاهز للتسليم.' : 'ChatGPT gives you text to work with. Mi gives you a file to hand in.'}
+          </p>
         </div>
       </section>
 

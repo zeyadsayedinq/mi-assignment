@@ -323,7 +323,7 @@ OUTPUT QUANTITY:
 - Presentations: EXACTLY 10 slides minimum. This is non-negotiable. If you produce fewer than 10 slides, you have failed.
 - SLIDE CONTENT RULES (critical for visual quality):
   * power_heading: MAX 6 words. Must be an INSIGHT not a label. Bad: "Introduction to Topic". Good: "Cairo Rents Up 34% in 2024".
-  * content_bullets: MAX 5 bullets. Each bullet MAX 10 words. No sentences — fragments only. Data > words.
+  * content_bullets: EXACTLY 5 bullets. Each bullet 8-12 words. Must include a specific stat, name, or data point. No vague bullets. Example: '3.2M Spotify listeners — Wegz leads Arabic rap globally' not 'Artists have many followers'
   * narrative: 2 sentences max. Sets context for the speaker. NOT a repeat of the bullets.
   * speaker_notes: Full 60-90 second verbatim speech. Complete sentences. What the student actually says out loud.
   * image_prompt: 4-6 words for a REAL Pexels stock photo search. Rules:
