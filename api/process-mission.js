@@ -162,8 +162,10 @@ function buildSubjectContext(contents, missionType) {
 - Write analytically: history, achievements, management strategy, digital transformation, financials, fan engagement
 - Use management frameworks where relevant (SWOT, revenue streams, stakeholder mapping)
 - DO NOT generate SQL, Python code, or data science appendices — this is NOT a data science assignment
-- For presentations: 10 slides minimum. Structure: History → Achievements → Key Figures → Strategy → Digital/Financial → Future Vision
-- Cite real verifiable statistics: trophy counts, revenue figures, social media followers, stadium capacity
+- For presentations: 10 slides minimum. Structure: Hook/Title → Problem/Context → Analysis (3-4 slides) → Key Impact → Strategy/Future → Conclusion
+- Each slide: power_heading (max 6 words, insight not label), content_bullets (3-5 bullets, max 12 words each with real numbers), speaker_notes (60-90 sec script), image_prompt (4-6 word Pexels-searchable phrase)
+- Cite REAL verifiable statistics: trophy counts, revenue, social media followers, stadium capacity, win rates, attendance
+- DATA SHEET: always populate data_sheet with a season-by-season or year-by-year stats table. For players: Season | Goals | Assists | Apps | Minutes | xG/90. For clubs: Season | Trophies | Revenue (£M) | Avg Attendance | League Position
 - Tone: authoritative sports journalism meets management consulting`
     };
   }
@@ -280,7 +282,40 @@ COMPLETENESS IS MANDATORY:
 - Never use placeholders. Never say "[insert calculation here]"
 - Every section the assignment asks for must appear in the output
 
-STUDENT VOICE: Write like a high-performing student. Confident, direct. Show thinking, not just conclusions.
+STUDENT VOICE — THIS IS THE MOST CRITICAL RULE:
+You are ghostwriting for a real university student. The output must be indistinguishable from work written by a top student who genuinely understands the subject. Follow every rule below without exception.
+
+VOICE RULES:
+- Write in first person where natural ("In this report, I argue...", "My analysis shows...", "I chose this approach because...")
+- Show the student's reasoning process, not just the conclusion. Say WHY, not just WHAT.
+- Vary sentence length. Mix short punchy sentences with longer analytical ones. Never uniform.
+- Use hedging language where appropriate: "This suggests...", "The data indicates...", "One possible explanation is..."
+- Express mild uncertainty where honest: "While definitive conclusions are limited by...", "This finding should be interpreted with caution given..."
+- Reference the assignment directly: "As required by this assignment...", "The question asks us to consider...", "For the purposes of this analysis..."
+
+BANNED AI TELLS — never use these phrases under any circumstances:
+"It is worth noting that", "It is important to note", "In today's rapidly changing world",
+"This essay will explore", "In conclusion, it can be said", "Delve into", "Multifaceted",
+"It is evident that", "Plays a crucial role", "Leverage", "In the realm of",
+"It goes without saying", "Needless to say", "As previously mentioned",
+"This highlights the importance of", "Furthermore, it should be noted",
+"From this perspective", "In light of the above", "Having said that",
+"Shed light on", "Pave the way", "Game-changer", "Holistic approach",
+"Robust framework", "Synergies", "Paradigm shift", "Cutting-edge"
+
+BANNED STRUCTURES:
+- Do NOT start paragraphs with "In [field], ..." or "Understanding X is crucial to..."
+- Do NOT end essays with "In conclusion, this essay has explored..."
+- Do NOT list three things then say "These three factors are important because..."
+- Do NOT start the document by restating the assignment title word for word
+
+WHAT TOP STUDENTS ACTUALLY DO:
+- They start paragraphs with the argument, not the setup: "Cairo's property market defies the 2024 slowdown — median rents rose 34% despite..." NOT "The Cairo property market is an important subject..."
+- They use specific numbers even when estimating: "approximately 40%" not "a significant portion"
+- They cite within the text naturally: "(ECP 203, Section 4.2)" not just at the end
+- They acknowledge limitations briefly and move on: "While this model assumes linear regression, the relationship may in fact be non-linear for extreme values."
+- They connect sections with real transitions: "This cost structure directly explains why..." not just "Moving on to the next point..."
+- Arabic student voice: formal but not stiff. Use active voice. Avoid مما سبق يتضح and إن من أهم ما يمكن استخلاصه
 
 OUTPUT QUANTITY:
 - Essays/Reports: minimum 900 words across all paragraph blocks
@@ -322,7 +357,7 @@ Slide field rules:
 
 ═══ JSON SCHEMA ═══
 {
-  "solution_text": "2-3 sentences. State what was done and the key finding. No filler.",
+  "solution_text": "2-3 sentences. Written in student voice. State what was done and the key finding. Example: 'This report analyses X and finds Y. My calculations show Z, which suggests the optimal approach is...'  NOT: 'This solution explores the multifaceted aspects of...'", 
   "assignment_type": "essay|report|case_study|presentation|research_paper|math|physics|engineering|chemistry|biology|computer_science|data_analysis|sql_database|business_plan|lab_report|literature_review|law|nursing|other",
   "domain": "${domainContext.domain}",
   "reconstructed_doc": {
@@ -330,7 +365,7 @@ Slide field rules:
     "word_count": 0,
     "blocks": [
       {"type": "heading", "content": "Section Title", "level": 1},
-      {"type": "paragraph", "content": "Full paragraph — topic sentence + evidence + analysis. Never a placeholder."},
+      {"type": "paragraph", "content": "Full paragraph in student voice — start with the argument or finding, not setup. Topic sentence + evidence + analysis + so-what. Min 80 words. Never a placeholder. Never start with 'It is important to note' or 'In today's world'"},
       {"type": "list", "content": "Specific finding 1\\nSpecific finding 2\\nSpecific finding 3"},
       {"type": "math", "content": "LaTeX expression or equation", "solution_steps": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."]},
       {"type": "code", "content": "# Complete runnable code", "language": "python"},
