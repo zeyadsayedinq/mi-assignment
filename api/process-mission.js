@@ -31,214 +31,222 @@ function buildSubjectContext(contents, missionType) {
   const detectedMajor = (ctxLine.match(/Course[^:]*:\s*([^|\n]+)/i) || [])[1]?.trim() || '';
   const detectedCountry = (ctxLine.match(/Country:\s*([^|\n]+)/i) || [])[1]?.trim() || '';
 
-  // Business / Management
-  if (/pestel|swot|porter|business plan|marketing strategy|competitive analysis|market analysis|financial model|cash flow|npv|irr|break.even|stakeholder|supply chain|balanced scorecard|خطة أعمال|تحليل|استراتيجية|سوق|تسويق|ربحية|استثمار/.test(text)) {
+  // ── MATH / STATISTICS — check FIRST before engineering (overlapping keywords) ───
+  if (/calculus|integral|derivative|differentiat|marginal|optimization|maximiz|minimiz|profit function|cost function|demand function|correlation|standard deviation|regression|statistics|probability|hypothesis|normal distribution|binomial|poisson|variance|covariance|pearson|spearman|t-test|chi.square|anova|forecasting|predictive model|linear model|matrix|eigenvalue|fourier|laplace|إحصاء|تفاضل|تكامل|احتمالات|انحدار|توزيع طبيعي/.test(text)) {
     return {
-      domain: 'BUSINESS',
-      rules: `BUSINESS DOMAIN ACTIVATED:
-- McKinsey/BCG standard: every claim needs a number or logical deduction
-- PESTEL MUST be a table block: headers=["Factor","Analysis","Impact"] with 6 rows (P,E,S,T,E,L)
-- SWOT MUST be a table block: headers=["Strengths","Weaknesses","Opportunities","Threats"] 1 row with bullet lists
-- NPV/IRR: show full DCF table — one row per year with CF, discount factor, PV
-- Executive Summary: exactly 3 sentences (Context → Finding → Recommendation)
-- Financial figures: always include currency and time period
-- Conclude with 3 specific, actionable, numbered recommendations`
+      domain: 'MATH_STATS',
+      rules: `MATHEMATICS & STATISTICS DOMAIN:
+- Show EVERY algebraic step. Never skip. Never say "it can be shown."
+- Derive, don't state. Box final answers: \\boxed{x = 267}
+- For optimization: Given → Find → Revenue → Cost → Profit → Differentiate → Set to zero → Verify with second derivative test
+- If dataset referenced but not provided: GENERATE realistic synthetic data (24 rows minimum for statistics)
+- Calculate ALL statistics with actual numbers: mean, deviations, squared deviations, sum of squares, Pearson formula with substituted values
+- Standard deviation: show every sub-step — mean → deviations → squared → sum → divide → sqrt
+- Interpret every result in context — what does r=-0.88 mean for THIS specific project/investor?
+- Minimum 15 blocks in reconstructed_doc. Every math block needs solution_steps array (min 5 steps each).
+- Table blocks must contain ACTUAL data rows, never empty shells.`
     };
   }
 
-  // Medical — but NOT if engineering keywords are present
-  const hasEngineeringIntent = /membrane|osmosis|reverse osmosis|desalination|solar pv|photovoltaic|pump|pressure drop|flow rate|kwp|kwh|hydraulic|structural|circuit design|algorithm|database|api endpoint|system design|pid controller|retaining wall|beam design|bbs|bar bending|reinforced concrete|ecp 203|mechanical design|thermodynamic|heat exchanger|chemical reactor|distillation|filtration|permeate|brine|recovery ratio|van.t hoff|osmotic pressure/.test(text);
+  // ── ENGINEERING — structural, civil, mechanical, chemical, solar, process ──────
+  if (/reinforced concrete|beam design|slab design|column design|ecp 203|structural engineering|foundation design|steel design|load combination|dead load|live load|kn\/m²|\\bmpa\\b|egyptian code|aci 318|eurocode|bs 8110|moment distribution|shear force|bending moment|bbs|bar bending|rebar|stirrup|bar schedule|retaining wall|pid controller|mechanical engineering|thermodynamic|hydraulic engineering|electrical engineering|هندسة مدنية|هندسة ميكانيكية|خرسانة مسلحة|حديد تسليح|عزم انعطاف|قص|أساسات|reverse osmosis|desalination plant|membrane filtration|osmotic pressure|solar pv|photovoltaic|peak sun hours|kwp|kwh\/m|recovery ratio|permeate flux|brine discharge|feed water|salinity ppm|high.pressure pump|process flow diagram|pfd|chemical engineering|heat exchanger|distillation column|mass transfer|fluid mechanics|bernoulli equation|reynolds number|darcy.weisbach|turbine design|compressor design|reactor design|aerospace engineering|civil engineering project|water treatment plant/.test(text)) {
+    return {
+      domain: 'ENGINEERING',
+      rules: `ENGINEERING DOMAIN:
+- FORMAT MANDATORY: Given → Find → Assumptions → Solution (every sub-step) → Verify → Safety Factor
+- SELF-CHECK: After each calculation state "✓ Check: [result] is reasonable because [reason]"
+- Egypt: cite ECP 203-2018 by section number (e.g. "ECP 203 Section 4.2.1")
+- Saudi: cite SBC 304 (concrete), SBC 301 (loads), SBC 601 (energy)
+- UAE/International: BS 8110 or Eurocode 2 with clause references
+- Units: always label (kN, kN/m², m, mm, MPa, kWh, kWp, m³/day, °C, kJ/kg·°C)
+- Safety factors: sliding ≥ 1.5, overturning ≥ 2.0, bearing capacity ≥ 3.0
+- SVG DIAGRAMS MANDATORY: every engineering assignment needs at least ONE svg block
+  * Structural: cross-section with bar marks, stirrup spacing, cover, dimension lines
+  * Process systems (RO, solar, HVAC): full schematic showing all components, flow direction, labels
+  * Solar: collector → pipe → tank with height differential (thermosyphon: min 30cm tank above collector)
+  * Fluid: pipe schematic with flow rates, pressures, valve positions labeled
+- BBS TABLE: when rebar/reinforcement/stirrups/تسليح/BBS appears, generate full table:
+  Bar Mark | Shape Code | Dia (mm) | A | B | C | Cut Length (mm) | No. Bars | Total Length (m) | Weight (kg)
+  BS 8666 shape codes: 00=straight, 11=L-bar, 21=U-bar, 51=closed stirrup
+  Weight = (d²/162.2) × total length in metres
+- SIZING CALCULATOR: for parametric designs, populate data_sheet with input variables and calculated outputs
+- PRESENTATIONS: 10 slides minimum. Structure: Title/Hook → Problem + Given Data → Calculations (3 slides) → System Schematic → Results Summary → Recommendations → Conclusion
+- PFD for process engineering assignments showing all unit operations, streams, control points`
+    };
+  }
+
+  // ── BUSINESS / MANAGEMENT ─────────────────────────────────────────────────────
+  // Guard: تحليل is too generic alone — require at least one specific business keyword
+  if (/pestel|swot|porter|business plan|marketing strategy|competitive analysis|market analysis|financial model|cash flow|npv|irr|break.even|stakeholder|supply chain|balanced scorecard|خطة أعمال|(تحليل.*(سوق|استراتيجي|pestel|swot|بيئي))|استراتيجية.*(أعمال|تسويق|نمو)|تسويق|ربحية|استثمار/.test(text)) {
+    return {
+      domain: 'BUSINESS',
+      rules: `BUSINESS DOMAIN:
+- McKinsey/BCG standard: every claim backed by a number or logical deduction
+- PESTEL MANDATORY as table block: headers=["Factor","Analysis","Impact Level"] with 6 rows (P,E,S,T,E,L)
+- SWOT MANDATORY as table block: headers=["Category","Points"] 4 rows (Strengths, Weaknesses, Opportunities, Threats)
+- Porter's Five Forces: use table block with headers=["Force","Intensity","Rationale"]
+- NPV/IRR: show full DCF table — one row per year with CF, discount factor, PV. State WACC assumption.
+- Executive Summary: exactly 3 sentences (Context → Key Finding → Recommendation)
+- Financial figures: always include currency and time period
+- Conclude with 3 specific, numbered, actionable recommendations
+- domain_extras.business REQUIRED: executive_summary_200w + financial_projections + consumer_data`
+    };
+  }
+
+  // ── LAW ───────────────────────────────────────────────────────────────────────
+  if (/contract|tort|liability|negligence|jurisdiction|statute|plaintiff|defendant|case law|legal|legislation|breach|damages|constitutional|intellectual property|arbitration|irac|force majeure|عقد|مسئولية|قانون|محكمة|دعوى|قضائية|تشريع|تعويض|بند|نزاع|حماية المستهلك|مدني|جنائي|براءة|ملكية فكرية|استئناف|حكم|شريعة|قانون مدني|قانون تجاري/.test(text)) {
+    return {
+      domain: 'LAW',
+      rules: `LAW DOMAIN:
+- IRAC STRUCTURE MANDATORY: Issue → Rule → Application → Conclusion for EVERY legal question
+- LEGAL MEMORANDUM FORMAT: To/From/Date/Re header → Executive Summary → Facts → Legal Analysis (IRAC) → Conclusion → Recommendations
+- EGYPTIAN LAW: cite Egyptian Civil Code (Law 131/1948) by article number. Commercial Code (Law 17/1999). Labor Law (Law 12/2003). Consumer Protection (Law 181/2018).
+- SAUDI LAW: cite Saudi Civil Transactions Law (Royal Decree M/191), Saudi Commercial Court Law, Vision 2030 regulatory framework
+- UAE LAW: cite UAE Civil Transactions Code (Federal Law No. 5/1985), DIFC Law, UAE Commercial Companies Law
+- INTERNATIONAL: cite CISG (UN Sales Convention), ICC Rules, UNCITRAL Model Law for arbitration
+- ARBITRATION: reference CRCICA (Cairo), DIAC (Dubai), SCCA (Saudi) by name with applicable rules
+- FORCE MAJEURE: analyze under Article 165 Egyptian Civil Code or equivalent with full elements test
+- FORMAL NOTICES: include bilingual (Arabic/English) formal notice template where relevant
+- CONTRACT ANALYSIS: identify offer, acceptance, consideration, capacity, legality — flag voidable/void clauses
+- Always cite specific article numbers. NEVER write "the law provides" without citing the exact article
+- domain_extras.law REQUIRED: irac object + case_references array + legal_framework string`
+    };
+  }
+
+  // ── MEDICAL / NURSING / PHARMACY ──────────────────────────────────────────────
+  const hasEngineeringIntent = /membrane|osmosis|desalination|solar pv|photovoltaic|pump|kwp|kwh|hydraulic|structural|reinforced concrete|ecp|sbc|pid controller|heat exchanger|thermosyphon|solar collector|thermal|collector area|flat.plate|evacuated tube|circuit design|database|algorithm/.test(text);
   if (!hasEngineeringIntent && /patient|diagnosis|treatment|clinical|nursing|pharmacy|drug|dosage|symptom|pathophysiology|anatomy|medical|healthcare|care plan|pharmacology|مريض|تشخيص|علاج|دواء|جرعة|مستشفى|رعاية|تمريض|صيدلة/.test(text)) {
     return {
       domain: 'MEDICAL',
-      rules: `MEDICAL DOMAIN: Clinical terminology. Evidence-based. ADPIE for care plans. Drug: generic name, dose, route, frequency, contraindications.`
+      rules: `MEDICAL DOMAIN:
+- SOAP FORMAT MANDATORY: Subjective → Objective → Assessment → Plan for every clinical case
+- ADPIE for nursing: Assessment → Diagnosis → Planning → Implementation → Evaluation
+- CARDIAC: MONA protocol (Morphine 2-4mg IV, Oxygen if SpO2<94%, Nitrates sublingual, Aspirin 300mg load) + ECG interpretation + Troponin trend + STEMI vs NSTEMI classification
+- DIFFERENTIAL DIAGNOSIS: minimum 3 differentials ranked by probability with clinical reasoning
+- INVESTIGATIONS: justify every test ordered (ECG, CBC, troponin, echo, CXR, renal function, etc.)
+- Egypt: Egyptian MOH clinical guidelines + Egyptian Heart Association protocols
+- Saudi: Saudi MOH guidelines + Saudi Heart Association + Vision 2030 Health Transformation
+- UAE: MOHAP guidelines + Dubai Health Authority (DHA) clinical protocols
+- WHO guidelines apply when no local guideline specified
+- Drug interactions: check CYP450 pathway, renal/hepatic dose adjustments, contraindications
+- DRUG COMPARISON TABLE: when comparing drugs, use table block: [Drug, Mechanism, Dose, Side Effects, Contraindications, Cost]
+- Always follow: Chief Complaint → History → Examination → Investigations → Diagnosis → Management → Follow-up
+- domain_extras.medical REQUIRED: soap_note object + drug_interaction_matrix (min 3 pairs) + patient_leaflet string`
     };
   }
 
-  // CS
-  if (/algorithm|data structure|database|sql|api|rest api|endpoint|backend|frontend|web app|mobile app|machine learning|neural network|operating system|programming|code|function|class|object|oop|uml|er diagram|entity|relationship|schema|crud|mvc|microservice|docker|authentication|jwt|middleware|subsystem|system design|architecture|component|module|interface|inheritance|polymorphism|encapsulation|قاعدة بيانات|برمجة|خوارزمية|نظام|تطبيق|واجهة|كود/.test(text)) {
+  // ── COMPUTER SCIENCE / SOFTWARE ENGINEERING ───────────────────────────────────
+  // Guard: avoid matching "system design" in non-CS contexts by requiring code-specific terms
+  if (/algorithm|data structure|sql|rest api|endpoint|backend|frontend|web app|mobile app|machine learning|neural network|operating system|programming|oop|uml|er diagram|entity.*relationship|schema|crud|mvc|microservice|docker|authentication|jwt|middleware|قاعدة بيانات|برمجة|خوارزمية|كود|(database(?!.*hospital administration|.*management system(?!.*software)))/.test(text) || /\bcode\b|\bfunction\b|\bclass\b|\bobject\b/.test(text)) {
     return {
       domain: 'CS',
-      rules: `CS DOMAIN: Complete runnable code with comments. Time/space complexity O() for algorithms. SQL includes CREATE TABLE + sample data + query. Error handling required.`
+      rules: `CS DOMAIN:
+- ER DIAGRAM MANDATORY for database assignments: SVG showing entities (rectangles), attributes (ovals), PKs (underlined), FKs (dashed), relationships with cardinality (1:1, 1:N, M:N)
+- NORMALIZATION: walk through 1NF → 2NF → 3NF with example tables at each stage showing the transformation
+- CODE: complete, runnable, properly commented. NEVER pseudocode. Include: imports, main function, sample input/output
+- README: environment setup, all dependencies (pip install / npm install), how to run, expected output, env variables
+- API DOCUMENTATION: table block with columns [Method, Endpoint, Description, Request Body, Response, Status Codes]
+- COMPLEXITY: state time AND space complexity in Big O notation for every algorithm
+- UML: class diagrams for OOP, sequence diagrams for API flows, use case diagrams for system design
+- SECURITY: mention JWT for auth, input sanitization, SQL injection prevention, HTTPS enforcement
+- SQL: CREATE TABLE with all constraints (PK, FK, UNIQUE, NOT NULL, CHECK), sample INSERT, useful SELECT queries with JOINs
+- domain_extras.data_science when ML/AI is involved: model_summary + hyperparameters + environment_setup`
     };
   }
 
-  // ── SPORTS / CLUBS / ORGANIZATIONS ──────────────────────────────────────────
-  if (/نادي|كرة القدم|كرة|football|soccer|club|sport|player|match|league|champion|tournament|stadium|coach|season|trophy|الأهلي|الزمالك|barcelona|real madrid|al ahly|zamalek|نادي رياضي|دوري|بطولة|مباراة|لاعب|مدرب|ملعب|كأس|تشكيل|موسم/.test(text)) {
+  // ── SPORTS / CLUBS / ORGANIZATIONS ───────────────────────────────────────────
+  if (/نادي|كرة القدم|football|soccer|club|sport|player|match|league|champion|tournament|stadium|coach|season|trophy|الأهلي|الزمالك|barcelona|real madrid|al ahly|zamalek|نادي رياضي|دوري|بطولة|مباراة|لاعب|مدرب|ملعب|كأس|تشكيل|موسم/.test(text)) {
     return {
       domain: 'SPORTS',
       rules: `SPORTS & ORGANIZATIONS DOMAIN:
-- Write analytically: history, achievements, management strategy, digital transformation, financials, fan base
-- Use business/management frameworks where relevant (SWOT, revenue streams, stakeholder analysis)
-- DO NOT generate SQL or Python code — this is NOT a data science assignment
-- DO NOT add code_snippets, model audits, or technical appendices
+- Write analytically: history, achievements, management strategy, digital transformation, financials, fan engagement
+- Use management frameworks where relevant (SWOT, revenue streams, stakeholder mapping)
+- DO NOT generate SQL, Python code, or data science appendices — this is NOT a data science assignment
 - For presentations: 10 slides minimum. Structure: History → Achievements → Key Figures → Strategy → Digital/Financial → Future Vision
-- Cite real statistics: trophy counts, revenue, social media followers, stadium capacity
+- Cite real verifiable statistics: trophy counts, revenue figures, social media followers, stadium capacity
 - Tone: authoritative sports journalism meets management consulting`
     };
   }
 
-  // Humanities
-  if (/literature|history|philosophy|sociology|psychology|culture|discourse|narrative|theory|critique|analysis|essay|thesis|qualitative/.test(text)) {
+  // ── HUMANITIES — Literature, History, Philosophy, Sociology ──────────────────
+  // Guard: "analysis" and "theory" alone are too generic — require domain-specific terms
+  if (/literature|literary|philosophy|sociology|anthropology|cultural studies|discourse analysis|narrative theory|postcolonial|feminism|marxism|psychoanalysis|historiography|علم الاجتماع|فلسفة|أدب|نقد أدبي|دراسات ثقافية/.test(text) || (/\b(history|historical|thesis)\b/.test(text) && !/engineering|medical|business|law|computer|sport|marketing|digital/.test(text))) {
     return {
       domain: 'HUMANITIES',
-      rules: `HUMANITIES DOMAIN: Thesis-driven. Specific quotes, dates, names. Critical analysis over description. Counter-arguments required. Confident active academic prose.`
+      rules: `HUMANITIES DOMAIN:
+- THESIS STATEMENT: one clear arguable claim in the introduction — entire paper defends it
+- CITATION STYLES: AUC/AUB/LAU → APA 7th. Egyptian public unis → check brief. BUE → Harvard. US curriculum → Chicago/MLA. Default: APA 7th.
+- APA 7th: Author, A. A. (Year). Title. Publisher. https://doi.org/xxxxx
+- HARVARD: Author (Year) 'Title', Journal, vol(issue), pp. xx-xx.
+- COUNTER-ARGUMENTS: minimum 2 opposing views with rebuttals — demonstrates critical thinking
+- ALTERNATIVE FRAMEWORKS: include 2 alternative theoretical lenses considered
+- FACTUAL ACCURACY: ONLY state verifiable facts. For niche figures/works, focus on frameworks and context — never invent quotes, dates, or titles.
+- WORD COUNT: minimum 900 words in paragraph blocks
+- STRUCTURE: Introduction (hook + context + thesis) → Body (3+ paragraphs: topic sentence + evidence + analysis) → Conclusion (synthesis, not summary)
+- domain_extras.humanities REQUIRED: thesis_statement + counter_arguments + primary_sources`
     };
   }
 
-  // Country-specific academic standards
+  // ── Country/university curriculum anchors for GENERAL ────────────────────────
   const getCountryStandards = (country, uni) => {
-    const c = country.toLowerCase();
-    const u = uni.toLowerCase();
+    const c = country.toLowerCase(), u = uni.toLowerCase();
     if (c.includes('egypt') || u.includes('cairo') || u.includes('ain shams') || u.includes('guc') || u.includes('auc') || u.includes('bue') || u.includes('miu')) {
-      if (u.includes('auc') || u.includes('bue') || u.includes('guc')) return 'International/US standards (AUC=US, GUC=German, BUE=British). Use APA 7th unless specified. English academic register.';
-      return 'Egyptian academic standards. Reference Egyptian codes (ECP 203 for structures, Egyptian Civil Code for law). Arabic or English per assignment language.';
+      if (u.includes('auc') || u.includes('bue') || u.includes('guc')) return 'International standards (AUC=US, GUC=German, BUE=British). APA 7th default. English academic register.';
+      return 'Egyptian academic standards. Reference ECP 203 for structures, Egyptian Civil Code for law. Arabic or English per assignment language.';
     }
-    if (c.includes('saudi') || u.includes('kfupm') || u.includes('king') || u.includes('kaust') || u.includes('alfaisal')) {
-      return 'Saudi Arabian academic standards. Reference Saudi Building Code (SBC), Saudi Green Initiative for sustainability, Vision 2030 frameworks for business. Use SI units.';
-    }
-    if (c.includes('uae') || u.includes('uaeu') || u.includes('aus') || u.includes('zayed') || u.includes('khalifa')) {
-      return 'UAE academic standards. Reference UAE Fire and Life Safety Code, UAE Building Code, and UAE Vision 2031 for business context.';
-    }
-    if (c.includes('kuwait')) return 'Kuwait academic standards. Reference Kuwait Municipal Code and Gulf Cooperation Council (GCC) standards.';
-    if (c.includes('jordan')) return 'Jordanian academic standards. Reference Jordanian Building Code and Arab Engineering standards.';
-    return 'International academic standards. Use internationally recognized codes and frameworks.';
+    if (c.includes('saudi') || u.includes('kfupm') || u.includes('king') || u.includes('kaust') || u.includes('alfaisal'))
+      return 'Saudi academic standards. Reference SBC, Saudi Green Initiative, Vision 2030 frameworks. SI units.';
+    if (c.includes('uae') || u.includes('uaeu') || u.includes('aus') || u.includes('zayed') || u.includes('khalifa'))
+      return 'UAE academic standards. Reference UAE Building Code, UAE Vision 2031 for business context.';
+    if (c.includes('kuwait')) return 'Kuwait academic standards. GCC standards.';
+    if (c.includes('jordan')) return 'Jordanian academic standards. Jordanian Building Code.';
+    return 'International academic standards. Internationally recognized codes and frameworks.';
   };
 
   const curriculumNote = [
     detectedUni ? `University: ${detectedUni} — ${getCountryStandards(detectedCountry, detectedUni)}` : '',
-    detectedMajor ? `Major: ${detectedMajor} — use discipline-specific terminology, frameworks, and assessment criteria for this field` : '',
+    detectedMajor ? `Major: ${detectedMajor} — use discipline-specific terminology and assessment criteria` : '',
     detectedCountry && !detectedUni ? `Country: ${detectedCountry} — ${getCountryStandards(detectedCountry, '')}` : '',
   ].filter(Boolean).join('\n');
 
-  // MULTI-DOMAIN detection: if multiple domains detected, use comprehensive mode
+  // ── MULTI-DOMAIN detection ────────────────────────────────────────────────────
   const domainScores = {
-    MEDICAL: /patient|diagnosis|treatment|clinical|nursing|stroke|hemiparesis|triage|CT scan|tPA|thrombolytic|ischemic|hemorrhagic|FAST assessment|symptom|pathophysiology|anatomy|medical|healthcare|care plan|pharmacology|مريض|تشخيص|علاج|دواء/.test(text) ? 1 : 0,
-    ENGINEERING: /retaining wall|ECP|lateral earth pressure|safety factor|PID controller|reinforced concrete|beam|slab|column|structural|foundation|steel design|load|moment|shear|هندسة مدنية/.test(text) ? 1 : 0,
-    BUSINESS: /PESTEL|SWOT|NPV|IRR|feasibility|logistics|NEOM|Red Sea Global|market analysis|financial model|cash flow|investment/.test(text) ? 1 : 0,
-    MATH_STATS: /correlation|NPV|IRR|calculus|optimization|standard deviation|regression|statistical/.test(text) ? 1 : 0,
+    MEDICAL: /patient|diagnosis|stroke|hemiparesis|triage|ct scan|tpa|thrombolytic|ischemic|hemorrhagic|fast assessment|symptom|pathophysiology|anatomy|medical|healthcare|care plan|pharmacology|مريض|تشخيص|علاج|دواء/.test(text) ? 1 : 0,
+    ENGINEERING: /retaining wall|ecp|lateral earth pressure|safety factor|pid controller|reinforced concrete|beam|slab|column|structural|foundation|steel design|load|moment|shear|هندسة مدنية/.test(text) ? 1 : 0,
+    BUSINESS: /pestel|swot|npv|irr|feasibility|market analysis|financial model|cash flow|investment/.test(text) ? 1 : 0,
+    MATH_STATS: /correlation|calculus|optimization|standard deviation|regression|statistical/.test(text) ? 1 : 0,
   };
-  
   const activeDomainsCount = Object.values(domainScores).filter(v => v > 0).length;
   const activeDomains = Object.entries(domainScores).filter(([,v]) => v > 0).map(([k]) => k);
-  
+
   if (activeDomainsCount >= 2) {
-    // Multi-domain assignment — address ALL parts
     return {
       domain: 'MULTI: ' + activeDomains.join('+'),
-      rules: `MULTI-DOMAIN ASSIGNMENT DETECTED: ${activeDomains.join(' + ')}
-
-CRITICAL INSTRUCTION: This assignment has MULTIPLE PARTS covering different academic domains.
-You MUST address EVERY part completely. Do NOT skip any section.
-Structure the document with clearly labeled sections for each part.
-
-${domainScores.MEDICAL ? `MEDICAL SECTIONS:
-- Use clinical terminology and evidence-based medicine
-- FAST Assessment, stroke protocol, CT scan justification
-- tPA window (4.5 hours), secondary prevention protocols
-- ADPIE nursing framework if care plan required` : ''}
-
-${domainScores.ENGINEERING ? `ENGINEERING SECTIONS:
-- Apply ECP 203 for Egyptian projects, reference specific clauses
-- Show full calculation: Given → Find → Solution → Check
-- Include safety factors (sliding, overturning)
-- PID: define Kp, Ki, Kd with transfer function` : ''}
-
-${domainScores.BUSINESS ? `BUSINESS SECTIONS:
-- PESTEL as structured table block (type: "table")
-- SWOT as 2x2 matrix table
-- NPV/IRR with full DCF calculations shown` : ''}
-
-${domainScores.MATH_STATS ? `QUANTITATIVE SECTIONS:
-- Show every algebraic step
-- LaTeX for all formulas
-- Box final answers` : ''}
-
-${curriculumNote ? 'CURRICULUM ANCHORS:\n' + curriculumNote : ''}
-
-OUTPUT RULE: The reconstructed_doc must have separate headed sections for EACH part of the assignment. A student reading this should have a complete answer to every question asked.`
+      rules: `MULTI-DOMAIN ASSIGNMENT: ${activeDomains.join(' + ')}
+CRITICAL: This assignment covers MULTIPLE domains. Address EVERY part completely with separate headed sections.
+${domainScores.MEDICAL ? 'MEDICAL: SOAP note, FAST protocol, clinical terminology, ADPIE if nursing.' : ''}
+${domainScores.ENGINEERING ? 'ENGINEERING: ECP 203 references, full calculation steps, safety factors.' : ''}
+${domainScores.BUSINESS ? 'BUSINESS: PESTEL/SWOT as table blocks, NPV/IRR with DCF shown.' : ''}
+${domainScores.MATH_STATS ? 'MATH: Show every algebraic step, LaTeX notation, boxed final answers.' : ''}
+${curriculumNote ? 'CURRICULUM: ' + curriculumNote : ''}
+OUTPUT: reconstructed_doc must have separate headed sections for EACH part.`
     };
   }
 
-
-
-
-
-  // STEM — Engineering (structural/civil/mechanical)
-  if (/reinforced concrete|beam|slab|column|ecp|structural|foundation|steel design|load combination|dead load|live load|kn\/m|mpa|egyptian code|aci 318|eurocode|bs 8110|moment distribution|shear force|bending|bbs|bar bending|rebar|stirrup|bar schedule|retaining wall|pid controller|mechanical|thermodynamic|hydraulic|circuit|electrical|هندسة|خرسانة|حديد|تسليح|عزم|قص|أساس|BBS|جدول الحديد|قفل|كانة|reverse osmosis|desalination|membrane|osmotic pressure|van.t hoff|solar pv|photovoltaic|peak sun hours|kWp|kWh\/m|recovery ratio|permeate|brine|feed water|salinity|ppm|high.pressure pump|process flow diagram|pfd|chemical engineering|heat exchanger|distillation|absorption|mass transfer|fluid mechanics|bernoulli|reynolds|darcy|turbine|compressor|reactor design|catalysis|polymer|composite|aerospace|civil engineering|urban planning|water treatment/.test(text)) {
-    return {
-      domain: 'ENGINEERING',
-      rules: `ENGINEERING DOMAIN:
-- Full calculation: Given → Find → Assumptions → Solution (step-by-step) → Verify → Safety Factor
-- Egypt: cite ECP 203 clauses (e.g. "ECP 203-2018 Section 4.2.1")
-- Saudi: cite SBC 304 (concrete), SBC 301 (loads)
-- UAE/International: BS 8110 or Eurocode 2
-- Always label units: kN, kN/m², m, mm, MPa, bar, kWh, kWp, m³/day
-- Safety factors: sliding ≥ 1.5, overturning ≥ 2.0, bearing capacity ≥ 3.0
-- SVG diagrams MANDATORY: every engineering assignment must include at least one svg block
-- For process systems (RO, water treatment, chemical): include Process Flow Diagram (PFD) as svg block
-  showing: Intake → Pre-treatment → Pump → Membrane/Reactor → Post-treatment → Output
-- For solar/energy systems: include system schematic showing panels, inverter, battery, load
-- For structural: cross-section with dimensions, reinforcement labels, cover dimensions
-- For fluid systems: pipe schematic with flow rates, pressures, valve positions labeled
-- P-V curves, efficiency curves, load curves: use svg block with plotted data points
-
-BAR BENDING SCHEDULE (BBS) — generate whenever rebar/reinforcement/stirrups/تسليح/حديد/BBS/قفل/كانة appears:
-- Generate a complete table: Bar Mark | Shape | Dia (mm) | A | B | C | D | Cut Length (mm) | No. Bars | Total Length (m) | Weight (kg)
-- Use BS 8666 shape codes: 00=straight, 11=L-bar, 21=U-bar, 51=closed stirrup/link
-- Cutting lengths: Straight=L | L-bar=A+B−r−2d | U-bar=A+2B−2r | Stirrup=2(A+B)+24d (for 135° hooks)
-- Hook allowance: 9d for 90° hook, 12d for 135° seismic hook
-- Weight per bar (kg) = (d²/162.2) × total length in metres
-- After BBS table, draw SVG reinforcement diagram: show bar positions, spacing, concrete cover (25mm beams, 40mm foundations)
-- Label every bar: e.g. "2T20 top" "R8-150 links"
-- Output language follows input language (Arabic in → Arabic out)`
-    };
-  }
-
-  // STEM — Math / Statistics / Calculus (check BEFORE engineering)
-  // BUT: skip if this is a multi-domain assignment (handle below)
-  const hasNonMathDomain = /patient|diagnosis|stroke|hemiparesis|retaining wall|PID controller|PESTEL|SWOT|feasibility|thrombolytic|clinical|nursing/.test(text);
-  if (!hasNonMathDomain && /calculus|integral|derivative|differentiat|marginal|optimization|maximiz|minimiz|profit function|cost function|demand function|correlation|standard deviation|regression|statistics|probability|hypothesis|normal distribution|binomial|poisson|variance|covariance|pearson|spearman|t-test|chi.square|anova|forecasting|predictive model|linear model|matrix|eigenvalue|fourier|laplace/.test(text)) {
-    return {
-      domain: 'MATH_STATS',
-      rules: `MATHEMATICS & STATISTICS DOMAIN ACTIVATED:
-
-CALCULUS RULES:
-- Show every algebraic step. Never skip. Never say "it can be shown."
-- Derive, don't state. Box final answers: \\boxed{x = 267}
-- For optimization: Given → Find → Revenue → Cost → Profit → Differentiate → Set to zero → Verify with second derivative
-- If a dataset is referenced but not provided, GENERATE realistic synthetic data that fits the problem context
-
-STATISTICS RULES:
-- If 24 months of data is needed but not provided: GENERATE the dataset. Create a realistic table with 24 rows of (Month, Distance_km, Price_per_sqm) data.
-- Calculate ALL statistics with actual numbers shown: mean, deviations, squared deviations, sum of squares
-- Show the Pearson formula with actual substituted values, not just the formula
-- Standard deviation: show every step — mean → deviations → squared deviations → sum → divide → sqrt
-- Interpret every result in context: what does r=-0.88 mean for THIS project, for THIS investor?
-
-OUTPUT REQUIREMENTS FOR MATH/STATS:
-- Minimum 15 blocks in reconstructed_doc
-- Every math block must have full solution_steps array (minimum 5 steps each)
-- The table block must contain ACTUAL data (24 rows for this assignment)
-- The interpretation paragraph must be specific, not generic`
-    };
-  }
-
-
-
+  // ── GENERAL fallback ──────────────────────────────────────────────────────────
   return {
     domain: 'GENERAL',
     rules: `GENERAL ACADEMIC DOMAIN:
 - Match the discipline conventions from the assignment context
 - Academic register: confident, evidence-based, no filler phrases
-- DO NOT generate SQL, Python, or code blocks unless the assignment explicitly asks for code
+- DO NOT generate SQL, Python, or code blocks unless explicitly asked for code
 - DO NOT add technical appendices (model audits, hyperparameter tables) unless asked
-- FOR PRESENTATIONS: the primary output is presentation_slides (10 slides minimum). Do NOT include code blocks or SQL in the document.
-- FOR ESSAYS/REPORTS: thesis-driven, structured paragraphs with specific evidence
-- Minimum 900 words in paragraph blocks for written assignments
-- Conclude with actionable recommendations or clear synthesis${curriculumNote ? '\n\nCURRICULUM ANCHORS:\n' + curriculumNote : ''}`
+- FOR PRESENTATIONS: presentation_slides (10 slides minimum) is the primary deliverable. No code blocks in the document.
+- FOR ESSAYS/REPORTS: thesis-driven paragraphs, minimum 900 words, APA 7th citation default
+- Conclude with specific actionable recommendations or clear synthesis${curriculumNote ? '\n\nCURRICULUM ANCHORS:\n' + curriculumNote : ''}`
   };
 }
+
 
 // ─── SYSTEM PROMPT V3.1 ─────────────────────────────────────────────────────
 function buildSystemPrompt(domainContext, missionType) {
@@ -444,7 +452,7 @@ export default async function handler(req, res) {
     }
 
     const body = await parseBody(req);
-    const { contents, lang } = body;
+    const { contents, lang, missionType = 'other' } = body;
 
     if (!contents || !Array.isArray(contents) || contents.length === 0) {
       return res.status(400).json({ error: 'Missing contents array' });

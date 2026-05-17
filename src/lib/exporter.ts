@@ -736,9 +736,12 @@ export async function downloadMissionPackage(data: any, payloadName: string = "M
         const LIGHT = '94A3B8';
         const totalSlides = slides.length;
 
+        // Declare slide at forEach scope so it's always accessible
+        let slide: any;
+
         // ── TITLE SLIDE (slide 0) — dark, cinematic ──────────────────────
         if (isTitleSlide) {
-          const slide = pres.addSlide({ masterName: 'CLEAN' });
+          slide = pres.addSlide({ masterName: 'CLEAN' });
           // Dark background
           slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { color: NAVY } });
           // Background image if available
@@ -772,7 +775,7 @@ export async function downloadMissionPackage(data: any, payloadName: string = "M
 
         // ── CONTENT SLIDES — clean white design ──────────────────────────
         } else {
-          const slide = pres.addSlide({ masterName: 'CLEAN' });
+          slide = pres.addSlide({ masterName: 'CLEAN' });
 
           // Pure white background
           slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { color: WHITE } });
