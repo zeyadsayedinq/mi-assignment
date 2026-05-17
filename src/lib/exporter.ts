@@ -680,210 +680,402 @@ export async function downloadMissionPackage(data: any, payloadName: string = "M
       const pres = new PptxGen();
       pres.author = 'Mi-Assignment';
       pres.title = payloadName;
-      pres.layout = 'LAYOUT_16x9';
+      pres.layout = 'LAYOUT_WIDE'; // 13.33" × 7.5"
 
-      pres.defineSlideMaster({
-        title: 'DARK',
-        background: { color: '0F172A' },
-        objects: [
-          { rect: { x: 0, y: 0, w: '100%', h: 0.08, fill: { color: '22D3EE' } } },
-          { rect: { x: 0, y: '95%', w: '100%', h: '5%', fill: { color: '1E293B' } } },
-          { text: { text: isPro ? 'Mi-Assignment' : 'Mi-Assignment · www.mi-assignment.com', options: { x: 0.3, y: '96.5%', w: 8, h: 0.18, fontSize: 7, color: '64748B', fontFace: 'Helvetica' } } },
-        ],
-      });
-
-      pres.defineSlideMaster({
-        title: 'LIGHT',
-        background: { color: 'F8FAFC' },
-        objects: [
-          { rect: { x: 0, y: 0, w: '100%', h: 0.08, fill: { color: '0F172A' } } },
-          { rect: { x: 0, y: '95%', w: '100%', h: '5%', fill: { color: 'F1F5F9' } } },
-          { text: { text: isPro ? 'Mi-Assignment' : 'Mi-Assignment · www.mi-assignment.com', options: { x: 0.3, y: '96.5%', w: 8, h: 0.18, fontSize: 7, color: '94A3B8', fontFace: 'Helvetica' } } },
-        ],
-      });
-
-      // ── Dynamic Layout Engine — 3 Professional Layouts ──────────────────
-      // A: McKinsey Split (50/50) — image left, text right
-      // B: Cinematic Hero (full background) — image fills slide, text centered
-      // C: Minimalist Scholar (text only) — no image, typography-first
-      const BRAND_CYAN = '22D3EE';
-      const BRAND_PURPLE = 'A855F7';
-      const DARK_BG = '020617';
-      const TEXT_DARK = '1E293B';
-      const TEXT_MID = '475569';
-      const TEXT_LIGHT = '94A3B8';
-
-      // Force-assign layout per slide for visual variety
-      const assignLayout = (sd: any, idx: number, hasImg: boolean): 'split' | 'hero' | 'scholar' => {
-        if (idx === 0) return hasImg ? 'hero' : 'scholar'; // Title always hero or scholar
-        if (!hasImg) return 'scholar';                       // No image = scholar
-        const sd_type = sd.slide_type || '';
-        if (sd_type === 'hook' || sd_type === 'conclusion') return 'hero';
-        if (sd_type === 'analysis' || sd_type === 'recommendation') return 'scholar';
-        // Alternate: split for odd, scholar for even (with image fallback)
-        const patterns: Array<'split' | 'hero' | 'scholar'> = ['split', 'scholar', 'hero', 'split', 'scholar', 'split', 'hero', 'scholar', 'split', 'hero'];
-        return hasImg ? (patterns[idx % patterns.length] || 'split') : 'scholar';
+      // ── EDITORIAL MINIMAL COLOUR SYSTEM ─────────────────────────────────
+      // Inspired by: clean agency decks, Behance editorial, minimal magazine
+      const C = {
+        white:    'FFFFFF',
+        warm:     'FAFAF9',       // off-white warm
+        stone50:  'F5F5F4',       // very light stone
+        stone100: 'E7E5E4',       // light rule line
+        stone300: 'D6D3D1',       // medium border
+        stone400: 'A8A29E',       // muted text
+        stone600: '57534E',       // body text
+        stone800: '292524',       // heading dark
+        stone900: '1C1917',       // near black
+        black:    '0C0A09',       // true black for impact
+        accent:   '22D3EE',       // Mi brand cyan — used sparingly
+        accentDim:'0E7490',
+        gold:     'D4A853',       // optional warm accent for awards/stats
       };
 
-      slides.forEach((sd: any, slideIdx: number) => {
-        const isTitleSlide = slideIdx === 0;
-        const hasImg = !!(sd.image_url?.startsWith('http') || sd.image_url?.startsWith('data:'));
-        const CYAN = '22D3EE';
-        const NAVY = '0F172A';
-        const WHITE = 'FFFFFF';
-        const DARK = '1E293B';
-        const MID = '475569';
-        const LIGHT = '94A3B8';
-        const totalSlides = slides.length;
+      // ── TYPOGRAPHY SCALE ─────────────────────────────────────────────────
+      // Title: 52pt bold caps / Heading: 36pt bold / Sub: 13pt regular italic
+      // Body: 13pt regular / Label: 8pt tracked caps / Number: 60pt bold
 
-        // Declare slide at forEach scope so it's always accessible
+      // ── MASTER — single clean white master ───────────────────────────────
+      pres.defineSlideMaster({
+        title: 'EDITORIAL',
+        background: { color: C.white },
+        objects: [],  // no master chrome — everything per-slide for full control
+      });
+      pres.defineSlideMaster({
+        title: 'DARK',
+        background: { color: C.stone900 },
+        objects: [],
+      });
+
+      const W = 13.33, H = 7.5;
+
+      // ── HELPERS ───────────────────────────────────────────────────────────
+      const rule = (slide: any, x: number, y: number, w: number, color = C.stone100) =>
+        slide.addShape(pres.ShapeType.rect, { x, y, w, h: 0.012, fill: { color } });
+
+      const label = (slide: any, text: string, x: number, y: number, w: number, color = C.stone400) =>
+        slide.addText(text.toUpperCase(), {
+          x, y, w, h: 0.3, fontSize: 7.5, bold: true, color,
+          fontFace: 'Helvetica', charSpacing: 2.5, align: 'left',
+        });
+
+      const counter = (slide: any, cur: number, total: number, dark = false) =>
+        slide.addText(`${String(cur).padStart(2,'0')} — ${String(total).padStart(2,'0')}`, {
+          x: W - 1.6, y: 0.28, w: 1.4, h: 0.25,
+          fontSize: 8, color: dark ? C.stone400 : C.stone300,
+          fontFace: 'Helvetica', align: 'right', charSpacing: 1,
+        });
+
+      const accentDot = (slide: any, x: number, y: number, dark = false) =>
+        slide.addShape(pres.ShapeType.ellipse, {
+          x, y, w: 0.1, h: 0.1, fill: { color: dark ? C.accent : C.accent },
+        });
+
+      // ── LAYOUT ASSIGNMENT ─────────────────────────────────────────────────
+      // COVER | CHAPTER | SPLIT | GRID | STAT_GRID | FULLBLEED | CLOSER
+      const getLayout = (sd: any, idx: number, total: number, hasImg: boolean): string => {
+        if (idx === 0) return 'COVER';
+        if (idx === total - 1) return 'CLOSER';
+        const bullets: string[] = sd.content_bullets || [];
+        const statCount = bullets.filter((b: string) => /\d+[%+]?/.test(b)).length;
+        if (statCount >= 3 && !hasImg) return 'STAT_GRID';
+        if (hasImg && idx % 3 === 1) return 'FULLBLEED';
+        if (hasImg) return 'SPLIT';
+        if (bullets.length >= 5) return 'GRID';
+        return 'CHAPTER';
+      };
+
+      slides.forEach((sd: any, idx: number) => {
+        const total = slides.length;
+        const hasImg = !!(sd.image_url?.startsWith('http') || sd.image_url?.startsWith('data:'));
+        const layout = getLayout(sd, idx, total, hasImg);
+        const heading = (sd.power_heading || (idx === 0 ? payloadName : `Slide ${idx + 1}`)).toUpperCase();
+        const narrative = sd.narrative || '';
+        const bullets: string[] = sd.content_bullets || [];
         let slide: any;
 
-        // ── TITLE SLIDE (slide 0) — dark, cinematic ──────────────────────
-        if (isTitleSlide) {
-          slide = pres.addSlide({ masterName: 'CLEAN' });
-          // Dark background
-          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { color: NAVY } });
-          // Background image if available
+        // ════════════════════════════════════════════════════════════════════
+        // COVER — editorial magazine title page
+        // Left: large title + subtitle | Right: image or geometric block
+        // ════════════════════════════════════════════════════════════════════
+        if (layout === 'COVER') {
+          slide = pres.addSlide({ masterName: 'EDITORIAL' });
+          // Full white base
+          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: W, h: H, fill: { color: C.white } });
+          // Right panel — image or dark block
+          const panelX = W * 0.52;
           if (hasImg) {
-            slide.addImage({ path: sd.image_url, x: 0, y: 0, w: '100%', h: '100%', sizing: { type: 'cover', w: '100%', h: '100%' } });
-            slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { color: '000000', transparency: 50 } });
-          }
-          // Cyan top bar
-          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: 0.08, fill: { color: CYAN } });
-          // Main title
-          slide.addText(sd.power_heading || payloadName, {
-            x: 0.5, y: 1.8, w: 9.0, h: 2.5, fontSize: 40, bold: true, color: WHITE,
-            fontFace: 'Helvetica', align: 'center', valign: 'middle', wrap: true,
-          });
-          // Cyan underline
-          slide.addShape(pres.ShapeType.rect, { x: '30%', y: 4.4, w: '40%', h: 0.05, fill: { color: CYAN } });
-          // Subtitle/narrative
-          if (sd.narrative) {
-            slide.addText(sd.narrative, {
-              x: 1.0, y: 4.7, w: 8.0, h: 0.8, fontSize: 16, color: 'CBD5E1',
-              fontFace: 'Helvetica', align: 'center',
-            });
-          }
-          // Footer
-          slide.addText(payloadName.slice(0, 50), {
-            x: 0.5, y: 6.9, w: 5.0, h: 0.4, fontSize: 9, color: '64748B', fontFace: 'Helvetica',
-          });
-          slide.addText('Mi-Assignment', {
-            x: 5.5, y: 6.9, w: 4.0, h: 0.4, fontSize: 9, color: '64748B', fontFace: 'Helvetica', align: 'right',
-          });
-
-        // ── CONTENT SLIDES — clean white design ──────────────────────────
-        } else {
-          slide = pres.addSlide({ masterName: 'CLEAN' });
-
-          // Pure white background
-          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { color: WHITE } });
-
-          // Top bar — thin cyan line
-          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: '100%', h: 0.06, fill: { color: CYAN } });
-
-          // Slide counter top-left
-          slide.addText(`${String(slideIdx + 1).padStart(2,'0')} / ${String(totalSlides).padStart(2,'0')}`, {
-            x: 0.4, y: 0.15, w: 1.5, h: 0.35, fontSize: 9, color: LIGHT, fontFace: 'Helvetica',
-          });
-
-          // Slide type label top-right
-          if (sd.slide_type) {
-            slide.addText(sd.slide_type.toUpperCase(), {
-              x: 7.5, y: 0.15, w: 2.0, h: 0.35, fontSize: 9, color: CYAN, fontFace: 'Helvetica',
-              bold: true, align: 'right',
-            });
-          }
-
-          // ── With image: left text, right image ───────────────────────
-          if (hasImg) {
-            // Left panel — text (55% width)
-            const TW = 5.0, TX = 0.4;
-
-            // Heading
-            slide.addText(sd.power_heading || `Slide ${slideIdx + 1}`, {
-              x: TX, y: 0.6, w: TW, h: 1.3, fontSize: 26, bold: true, color: DARK,
-              fontFace: 'Helvetica', align: 'left', valign: 'top', wrap: true,
-            });
-
-            // Cyan accent line under heading
-            slide.addShape(pres.ShapeType.rect, { x: TX, y: 1.95, w: 0.6, h: 0.05, fill: { color: CYAN } });
-
-            // Narrative
-            let ty = 2.1;
-            if (sd.narrative) {
-              slide.addText(sd.narrative, {
-                x: TX, y: ty, w: TW, h: 0.8, fontSize: 12, color: MID,
-                fontFace: 'Helvetica', italic: true,
-              });
-              ty += 0.9;
-            }
-
-            // Bullets
-            if (sd.content_bullets?.length) {
-              const bullets = sd.content_bullets.slice(0, 5).map((b: string) => ({
-                text: String(b),
-                options: {
-                  bullet: { code: '25B6', color: CYAN },
-                  fontSize: 13, color: DARK, fontFace: 'Helvetica', paraSpaceAfter: 10, bold: false,
-                },
-              }));
-              slide.addText(bullets as any, {
-                x: TX, y: ty, w: TW, h: 4.8 - ty, valign: 'top',
-              });
-            }
-
-            // Right panel — image (fills right 40%)
-            slide.addImage({
-              path: sd.image_url, x: 5.6, y: 0.6, w: 3.9, h: 5.2,
-              sizing: { type: 'cover', w: 3.9, h: 5.2 },
-            });
-
-          // ── No image: full-width clean text ─────────────────────────
+            slide.addImage({ path: sd.image_url, x: panelX, y: 0, w: W - panelX, h: H,
+              sizing: { type: 'cover', w: W - panelX, h: H } });
           } else {
-            // Heading
-            slide.addText(sd.power_heading || `Slide ${slideIdx + 1}`, {
-              x: 0.5, y: 0.6, w: 9.0, h: 1.4, fontSize: 28, bold: true, color: DARK,
-              fontFace: 'Helvetica', align: 'left', valign: 'top', wrap: true,
-            });
-
-            // Cyan accent
-            slide.addShape(pres.ShapeType.rect, { x: 0.5, y: 2.05, w: 0.8, h: 0.05, fill: { color: CYAN } });
-
-            // Narrative
-            let cy = 2.25;
-            if (sd.narrative) {
-              slide.addText(sd.narrative, {
-                x: 0.5, y: cy, w: 9.0, h: 0.8, fontSize: 13, color: MID,
-                fontFace: 'Helvetica', italic: true,
-              });
-              cy += 0.95;
-            }
-
-            // Bullets — full width, plenty of space
-            if (sd.content_bullets?.length) {
-              const bullets = sd.content_bullets.slice(0, 6).map((b: string) => ({
-                text: String(b),
-                options: {
-                  bullet: { code: '25B6', color: CYAN },
-                  fontSize: 15, color: DARK, fontFace: 'Helvetica', paraSpaceAfter: 12, bold: false,
-                },
-              }));
-              slide.addText(bullets as any, {
-                x: 0.5, y: cy, w: 9.0, h: 7.0 - cy, valign: 'top',
+            slide.addShape(pres.ShapeType.rect, { x: panelX, y: 0, w: W - panelX, h: H,
+              fill: { color: C.stone800 } });
+            // Subtle grid lines on dark panel
+            for (let i = 1; i < 4; i++) {
+              slide.addShape(pres.ShapeType.rect, {
+                x: panelX, y: H * i / 4, w: W - panelX, h: 0.005,
+                fill: { color: C.stone600 },
               });
             }
           }
-
-          // Footer line
-          slide.addShape(pres.ShapeType.rect, { x: 0, y: 7.3, w: '100%', h: 0.01, fill: { color: 'E2E8F0' } });
-          slide.addText('Mi-Assignment', {
-            x: 0.4, y: 7.35, w: 4.0, h: 0.3, fontSize: 8, color: 'CBD5E1', fontFace: 'Helvetica',
+          // Left text area
+          // Top label
+          label(slide, 'Mi — Assignment', 0.7, 0.4, 4.0);
+          // Rule under label
+          rule(slide, 0.7, 0.78, 4.0);
+          // Main title — large, bold, stacked
+          slide.addText(heading, {
+            x: 0.7, y: 1.1, w: W * 0.48, h: 3.8,
+            fontSize: 48, bold: true, color: C.stone900,
+            fontFace: 'Helvetica', align: 'left', valign: 'top', wrap: true,
           });
+          // Rule before subtitle
+          rule(slide, 0.7, 5.1, 4.0);
+          // Subtitle / narrative
+          if (narrative) {
+            slide.addText(narrative, {
+              x: 0.7, y: 5.25, w: W * 0.46, h: 1.5,
+              fontSize: 13, color: C.stone600, fontFace: 'Helvetica',
+              align: 'left', italic: true, wrap: true,
+            });
+          }
+          // Accent dot
+          accentDot(slide, 0.7, 5.05);
+          // Bottom left year/date label
+          label(slide, new Date().getFullYear().toString(), 0.7, H - 0.55, 2.0, C.stone300);
+
+        // ════════════════════════════════════════════════════════════════════
+        // CHAPTER — clean typography-first, rule lines, left heading
+        // ════════════════════════════════════════════════════════════════════
+        } else if (layout === 'CHAPTER') {
+          slide = pres.addSlide({ masterName: 'EDITORIAL' });
+          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: W, h: H, fill: { color: C.warm } });
+          counter(slide, idx + 1, total);
+          // Top rule
+          rule(slide, 0.7, 0.6, W - 1.4);
+          // Section label
+          label(slide, `${String(idx + 1).padStart(2,'0')} / Analysis`, 0.7, 0.7, 3.0);
+          // Big heading
+          slide.addText(heading, {
+            x: 0.7, y: 1.15, w: W * 0.6, h: 2.2,
+            fontSize: 36, bold: true, color: C.stone900,
+            fontFace: 'Helvetica', align: 'left', valign: 'top', wrap: true,
+          });
+          // Mid rule
+          rule(slide, 0.7, 3.5, W - 1.4);
+          // Narrative italic
+          let ty = 3.65;
+          if (narrative) {
+            slide.addText(narrative, {
+              x: 0.7, y: ty, w: W - 1.4, h: 0.7,
+              fontSize: 13, color: C.stone600, fontFace: 'Helvetica', italic: true,
+            });
+            ty += 0.85;
+          }
+          // Bullets — 2 columns for 4+
+          if (bullets.length >= 4) {
+            const half = Math.ceil(bullets.length / 2);
+            const colW = (W - 1.6) / 2 - 0.3;
+            [bullets.slice(0, half), bullets.slice(half)].forEach((col, ci) => {
+              const cx = 0.7 + ci * (colW + 0.6);
+              col.forEach((b: string, bi: number) => {
+                slide.addText(`${String(bi + 1 + ci * half).padStart(2,'0')}  ${b}`, {
+                  x: cx, y: ty + bi * 0.52, w: colW, h: 0.5,
+                  fontSize: 12.5, color: C.stone800, fontFace: 'Helvetica',
+                });
+                rule(slide, cx, ty + bi * 0.52 + 0.45, colW, C.stone100);
+              });
+            });
+          } else {
+            bullets.forEach((b: string, bi: number) => {
+              slide.addText(`${String(bi + 1).padStart(2,'0')}  ${b}`, {
+                x: 0.7, y: ty + bi * 0.6, w: W - 1.4, h: 0.55,
+                fontSize: 13, color: C.stone800, fontFace: 'Helvetica',
+              });
+              rule(slide, 0.7, ty + bi * 0.6 + 0.5, W - 1.4, C.stone100);
+            });
+          }
+          // Bottom rule
+          rule(slide, 0.7, H - 0.35, W - 1.4);
+
+        // ════════════════════════════════════════════════════════════════════
+        // SPLIT — text left, image right with editorial caption zone
+        // ════════════════════════════════════════════════════════════════════
+        } else if (layout === 'SPLIT') {
+          slide = pres.addSlide({ masterName: 'EDITORIAL' });
+          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: W, h: H, fill: { color: C.white } });
+          const splitX = W * 0.5;
+          // Right image
+          if (hasImg) {
+            slide.addImage({ path: sd.image_url, x: splitX, y: 0, w: W - splitX, h: H,
+              sizing: { type: 'cover', w: W - splitX, h: H } });
+          } else {
+            slide.addShape(pres.ShapeType.rect, { x: splitX, y: 0, w: W - splitX, h: H,
+              fill: { color: C.stone50 } });
+          }
+          // Thin vertical divider
+          slide.addShape(pres.ShapeType.rect, { x: splitX - 0.01, y: 0, w: 0.01, h: H, fill: { color: C.stone100 } });
+          counter(slide, idx + 1, total);
+          rule(slide, 0.7, 0.6, splitX - 1.0);
+          label(slide, `Section ${String(idx + 1).padStart(2,'0')}`, 0.7, 0.7, 3.0);
+          slide.addText(heading, {
+            x: 0.7, y: 1.15, w: splitX - 1.0, h: 2.4,
+            fontSize: 30, bold: true, color: C.stone900,
+            fontFace: 'Helvetica', align: 'left', valign: 'top', wrap: true,
+          });
+          rule(slide, 0.7, 3.7, splitX - 1.0);
+          let ty = 3.85;
+          if (narrative) {
+            slide.addText(narrative, {
+              x: 0.7, y: ty, w: splitX - 1.0, h: 0.65,
+              fontSize: 12, color: C.stone600, fontFace: 'Helvetica', italic: true,
+            });
+            ty += 0.8;
+          }
+          bullets.slice(0, 5).forEach((b: string, bi: number) => {
+            slide.addText(`— ${b}`, {
+              x: 0.7, y: ty + bi * 0.55, w: splitX - 1.0, h: 0.5,
+              fontSize: 12.5, color: C.stone800, fontFace: 'Helvetica',
+            });
+          });
+          // Bottom rule left panel
+          rule(slide, 0.7, H - 0.35, splitX - 1.0);
+
+        // ════════════════════════════════════════════════════════════════════
+        // FULLBLEED — image fills entire slide, text overlay bottom-left
+        // ════════════════════════════════════════════════════════════════════
+        } else if (layout === 'FULLBLEED') {
+          slide = pres.addSlide({ masterName: 'DARK' });
+          if (hasImg) {
+            slide.addImage({ path: sd.image_url, x: 0, y: 0, w: W, h: H,
+              sizing: { type: 'cover', w: W, h: H } });
+          }
+          // Gradient overlay — bottom half dark
+          slide.addShape(pres.ShapeType.rect, { x: 0, y: H * 0.45, w: W, h: H * 0.55,
+            fill: { color: C.stone900, transparency: 15 } });
+          // White thin rule above text
+          slide.addShape(pres.ShapeType.rect, { x: 0.7, y: H * 0.6, w: 2.5, h: 0.012, fill: { color: C.white } });
+          // Slide label
+          slide.addText(`${String(idx + 1).padStart(2,'0')}`, {
+            x: 0.7, y: H * 0.6 - 0.4, w: 1.5, h: 0.35,
+            fontSize: 9, color: 'FFFFFF', fontFace: 'Helvetica',
+            charSpacing: 2, bold: true, transparency: 40,
+          });
+          // Heading
+          slide.addText(heading, {
+            x: 0.7, y: H * 0.62, w: W * 0.65, h: 2.0,
+            fontSize: 34, bold: true, color: C.white,
+            fontFace: 'Helvetica', align: 'left', valign: 'top', wrap: true,
+          });
+          // Narrative
+          if (narrative) {
+            slide.addText(narrative, {
+              x: 0.7, y: H - 1.0, w: W * 0.6, h: 0.6,
+              fontSize: 12, color: 'D6D3D1', fontFace: 'Helvetica', italic: true,
+            });
+          }
+          // Mi-Assignment badge
+          slide.addText('Mi-Assignment', {
+            x: W - 2.2, y: H - 0.4, w: 2.0, h: 0.25,
+            fontSize: 7.5, color: 'A8A29E', fontFace: 'Helvetica', align: 'right',
+          });
+
+        // ════════════════════════════════════════════════════════════════════
+        // STAT_GRID — 2×2 or 1×3 big number cards, ultra minimal
+        // ════════════════════════════════════════════════════════════════════
+        } else if (layout === 'STAT_GRID') {
+          slide = pres.addSlide({ masterName: 'EDITORIAL' });
+          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: W, h: H, fill: { color: C.white } });
+          counter(slide, idx + 1, total);
+          rule(slide, 0.7, 0.6, W - 1.4);
+          label(slide, `Key Figures`, 0.7, 0.7, 3.0);
+          slide.addText(heading, {
+            x: 0.7, y: 1.0, w: W - 1.4, h: 1.1,
+            fontSize: 30, bold: true, color: C.stone900,
+            fontFace: 'Helvetica', align: 'left', wrap: true,
+          });
+          rule(slide, 0.7, 2.2, W - 1.4);
+          // Cards
+          const stats = bullets.slice(0, 4);
+          const cols = stats.length <= 3 ? stats.length : 2;
+          const rows = Math.ceil(stats.length / cols);
+          const cW = (W - 1.4) / cols;
+          const cH = (H - 2.8) / rows;
+          stats.forEach((b: string, bi: number) => {
+            const col = bi % cols, row = Math.floor(bi / cols);
+            const cx = 0.7 + col * cW, cy = 2.5 + row * cH;
+            // Card border
+            rule(slide, cx, cy, cW - 0.3, C.stone100);
+            // Extract number
+            const numMatch = b.match(/([\d,\.]+[%+×x]?)/);
+            const num = numMatch ? numMatch[1] : '—';
+            const lbl = b.replace(/([\d,\.]+[%+×x]?\s*)/, '').trim();
+            // Big number
+            slide.addText(num, {
+              x: cx, y: cy + 0.15, w: cW - 0.3, h: cH * 0.55,
+              fontSize: cols === 2 ? 52 : 44, bold: true, color: C.stone900,
+              fontFace: 'Helvetica', align: 'left', valign: 'middle',
+            });
+            // Accent dot next to number
+            accentDot(slide, cx + (num.length * (cols === 2 ? 0.35 : 0.28)), cy + 0.2);
+            // Label
+            slide.addText(lbl, {
+              x: cx, y: cy + cH * 0.62, w: cW - 0.3, h: cH * 0.35,
+              fontSize: 12, color: C.stone400,
+              fontFace: 'Helvetica', align: 'left', wrap: true,
+            });
+            // Bottom rule per card
+            rule(slide, cx, cy + cH - 0.1, cW - 0.3);
+          });
+
+        // ════════════════════════════════════════════════════════════════════
+        // GRID — 3 or 4 content cards in a clean grid layout
+        // ════════════════════════════════════════════════════════════════════
+        } else if (layout === 'GRID') {
+          slide = pres.addSlide({ masterName: 'EDITORIAL' });
+          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: W, h: H, fill: { color: C.stone50 } });
+          // Dark header bar
+          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: W, h: 1.9, fill: { color: C.stone900 } });
+          counter(slide, idx + 1, total, true);
+          slide.addText(heading, {
+            x: 0.7, y: 0.3, w: W - 1.4, h: 1.3,
+            fontSize: 28, bold: true, color: C.white,
+            fontFace: 'Helvetica', align: 'left', valign: 'middle', wrap: true,
+          });
+          // Accent line in header
+          slide.addShape(pres.ShapeType.rect, { x: 0, y: 1.9, w: W, h: 0.035, fill: { color: C.accent } });
+          // Bullet cards
+          const cols = bullets.length <= 3 ? bullets.length : bullets.length <= 4 ? 2 : 3;
+          const cardW = (W - 0.7 * 2 - 0.25 * (cols - 1)) / cols;
+          const cardH = H - 2.35 - 0.35;
+          bullets.slice(0, cols <= 2 ? 4 : 6).forEach((b: string, bi: number) => {
+            const col = bi % cols, row = Math.floor(bi / cols);
+            const cx = 0.7 + col * (cardW + 0.25);
+            const cy = 2.1 + row * (cardH / Math.ceil(bullets.length / cols) + 0.15);
+            // Card bg
+            slide.addShape(pres.ShapeType.rect, { x: cx, y: cy, w: cardW, h: cardH / Math.ceil(bullets.length / cols),
+              fill: { color: C.white }, line: { color: C.stone100, width: 0.5 } });
+            // Card number
+            label(slide, String(bi + 1).padStart(2,'0'), cx + 0.2, cy + 0.18, 0.6, C.stone300);
+            // Card content
+            slide.addText(b, {
+              x: cx + 0.2, y: cy + 0.48, w: cardW - 0.4, h: cardH / Math.ceil(bullets.length / cols) - 0.65,
+              fontSize: 12, color: C.stone800, fontFace: 'Helvetica', wrap: true, valign: 'top',
+            });
+          });
+
+        // ════════════════════════════════════════════════════════════════════
+        // CLOSER — clean dark conclusion
+        // ════════════════════════════════════════════════════════════════════
+        } else {
+          slide = pres.addSlide({ masterName: 'DARK' });
+          slide.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: W, h: H, fill: { color: C.stone900 } });
+          if (hasImg) {
+            slide.addImage({ path: sd.image_url, x: W * 0.55, y: 0, w: W * 0.45, h: H,
+              sizing: { type: 'cover', w: W * 0.45, h: H } });
+            slide.addShape(pres.ShapeType.rect, { x: W * 0.55, y: 0, w: W * 0.45, h: H,
+              fill: { color: C.stone900, transparency: 40 } });
+            // Vertical divider
+            slide.addShape(pres.ShapeType.rect, { x: W * 0.55, y: 0, w: 0.012, h: H, fill: { color: C.stone600 } });
+          }
+          counter(slide, idx + 1, total, true);
+          // White rule
+          slide.addShape(pres.ShapeType.rect, { x: 0.7, y: 1.8, w: 2.0, h: 0.012, fill: { color: C.white } });
+          label(slide, 'Conclusion', 0.7, 1.35, 4.0, C.stone400);
+          slide.addText(heading, {
+            x: 0.7, y: 2.0, w: W * 0.5, h: 2.5,
+            fontSize: 36, bold: true, color: C.white,
+            fontFace: 'Helvetica', align: 'left', valign: 'top', wrap: true,
+          });
+          if (narrative) {
+            slide.addText(narrative, {
+              x: 0.7, y: 4.7, w: W * 0.5, h: 0.7,
+              fontSize: 13, color: C.stone400, fontFace: 'Helvetica', italic: true,
+            });
+          }
+          bullets.slice(0, 4).forEach((b: string, bi: number) => {
+            const by = 5.55 + bi * 0.0;
+            slide.addShape(pres.ShapeType.rect, { x: 0.7, y: by + bi * 0.4, w: 0.06, h: 0.06,
+              fill: { color: C.accent } });
+            slide.addText(b, {
+              x: 0.9, y: by + bi * 0.4 - 0.05, w: W * 0.48, h: 0.4,
+              fontSize: 12, color: C.stone400, fontFace: 'Helvetica',
+            });
+          });
+          // Mi-Assignment branding
+          label(slide, 'Mi — Assignment', 0.7, H - 0.5, 4.0, C.stone600);
         }
 
-        if (sd.speaker_notes) slide.addNotes(sd.speaker_notes);
+        if (sd.speaker_notes && slide) slide.addNotes(sd.speaker_notes);
       });
 
       const pptxBlob = await pres.write({ outputType: 'blob' }) as Blob;
