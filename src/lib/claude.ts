@@ -1,37 +1,8 @@
 // claude.ts — MI-CORE Frontend AI Library
 // Calls the local Express server proxy which calls Claude API securely server-side.
 
-export async function generatePresentationImage(prompt: string): Promise<string> {
-  const encoded = encodeURIComponent(`${prompt}, cinematic lighting, highly detailed, 8K quality, professional photography`);
-  const url = `https://image.pollinations.ai/prompt/${encoded}?width=1280&height=720&nologo=true&enhance=true&model=flux&seed=${Math.floor(Math.random() * 99999)}`;
-  try {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    return await new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return url; // fallback to direct URL
-  }
-}
-
-export async function generateCustomImage(prompt: string, style: string, width = 1280, height = 720): Promise<string> {
-  const styleMap: Record<string, string> = {
-    photorealistic: 'photorealistic, DSLR quality, cinematic, highly detailed',
-    illustration: 'digital illustration, vibrant colors, clean lines, professional design',
-    infographic: 'clean infographic style, flat design, professional, data visualization',
-    technical: 'technical diagram, blueprint style, precise, schematic, professional',
-    abstract: 'abstract art, fluid shapes, gradient colors, modern, artistic',
-    cinematic: 'cinematic still, film grain, dramatic lighting, movie quality',
-    watercolor: 'watercolor painting, soft colors, artistic brushstrokes, beautiful',
-    '3d': '3D render, octane render, studio lighting, photorealistic materials',
-  };
-  const styleStr = styleMap[style] || styleMap.photorealistic;
-  const encoded = encodeURIComponent(`${prompt}, ${styleStr}`);
-  return `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&nologo=true&enhance=true&model=flux&seed=${Math.floor(Math.random() * 99999)}`;
-}
+import { generatePresentationImage as fetchImage } from './pollinations';
+export { generateCustomImage } from './pollinations';
 
 export async function processMission(
   files: File[],
@@ -96,10 +67,12 @@ export async function processMission(
 
   // Generate images for all presentation slides in parallel
   if (data.presentation_slides?.length) {
+    const topic = data.reconstructed_doc?.title || data.payload_name || '';
+    const domain = data.domain || '';
     await Promise.allSettled(
       data.presentation_slides.map(async (slide: any) => {
         if (slide.image_prompt) {
-          try { slide.image_url = await generatePresentationImage(slide.image_prompt); }
+          try { slide.image_url = await fetchImage(slide.image_prompt, domain, topic); }
           catch { slide.image_url = null; }
         }
       })

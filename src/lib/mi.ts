@@ -1,4 +1,4 @@
-import { generateCustomImage, generatePresentationImage } from './pollinations';
+import { generateCustomImage, generatePresentationImage, resetImageSession } from './pollinations';
 export { generateCustomImage, generatePresentationImage };
 
 // ── Main export ───────────────────────────────────────────────────────────────
@@ -107,13 +107,14 @@ export async function processMission(
 
   // 6. Generate presentation images
   if (result.presentation_slides?.length) {
+    // Reset deduplication tracker for this new mission
+    resetImageSession();
+    const major = result.domain || result.context?.major || '';
+    const topic = result.reconstructed_doc?.title || result.payload_name || '';
     await Promise.allSettled(
       result.presentation_slides.map(async (slide: any) => {
         if (slide.image_prompt) {
           try {
-            // Pass major and topic for smarter Pexels queries
-            const major = result.context?.major || '';
-            const topic = result.reconstructed_doc?.title || result.payload_name || '';
             slide.image_url = await generatePresentationImage(slide.image_prompt, major, topic);
           }
           catch { slide.image_url = null; }
