@@ -347,14 +347,14 @@ Real transitions: "That cost structure is exactly why..." not "Moving on to the 
 Arabic student voice: formal فصحى but not textbook-stiff. Use active voice (بدلاً من المجهول). Avoid مما سبق يتضح and إن من أهم ما يمكن استخلاصه.
 
 OUTPUT QUANTITY:
-- Essays/Reports: minimum 900 words across all paragraph blocks
+- Essays/Reports: minimum 500 words across all paragraph blocks
 - Math assignments: minimum 5 solution_steps per math block
 - Presentations: EXACTLY 10 slides minimum. This is non-negotiable. If you produce fewer than 10 slides, you have failed.
 - SLIDE CONTENT RULES (critical for visual quality):
   * power_heading: MAX 6 words. Must be an INSIGHT not a label. Bad: "Introduction to Topic". Good: "Cairo Rents Up 34% in 2024".
   * content_bullets: EXACTLY 5 bullets. Each bullet 8-12 words. Must include a specific stat, name, or data point. No vague bullets. Example: '3.2M Spotify listeners — Wegz leads Arabic rap globally' not 'Artists have many followers'
   * narrative: 2 sentences max. Sets context for the speaker. NOT a repeat of the bullets.
-  * speaker_notes: Full 60-90 second verbatim speech. Complete sentences. What the student actually says out loud.
+  * speaker_notes: 2-3 sentences max. Key talking points only.
   * image_prompt: 4-6 words for a REAL Pexels stock photo search. Rules:
     - MUST include the actual subject: "Mohamed Salah Liverpool stadium", "Cairo skyline aerial night", "Egyptian judge courtroom"
     - NEVER use abstract academic words: "analysis", "methodology", "statistics", "data", "framework", "concept"
@@ -368,12 +368,12 @@ OUTPUT QUANTITY:
     - Each slide MUST have a DIFFERENT image_prompt — never repeat the same query across slides
   * visual_directive: One sentence describing exactly what the slide image should show and why.
 - Tables: must contain actual data rows, never empty
-- Steps: every step in the "steps" array MUST be minimum 400 characters. Show every sub-step, formula substitution, intermediate result, and interpretation. NEVER write placeholders.
-- Defense QA: ALWAYS provide exactly 4 Q&A pairs. Pick the 4 questions a professor is most likely to ask in a viva or oral exam. Answers must be specific — include numbers, clause references, or named frameworks.
+- Steps: every step minimum 100 characters. Show sub-steps and intermediate results.
+- Defense QA: Provide 2-3 Q&A pairs. Answers must be specific.
 - PESTEL: ALWAYS render as a table block with headers ["Factor","Pillar","Analysis","Impact Level"] — never as a list or paragraph.
 - SWOT: ALWAYS render as a table block with headers ["Category","Points"] and 4 rows (Strengths, Weaknesses, Opportunities, Threats) — never as a flat list.
 - alternative_approaches: ALWAYS include 2 alternatives in domain_extras.alternative_approaches — this is the Anti-Tunneling requirement.
-- DOMAIN EXTRAS: Populate domain_extras with the relevant sub-object for the detected domain. NEVER leave it empty. Medical → soap_note + drug_interaction_matrix + patient_leaflet. Law → irac + case_references. Business → executive_summary_200w + financial_projections + consumer_data. Finance → dcf_model + sensitivity_table. Data Science → model_summary + hyperparameters + environment_setup. Media → content_calendar + sentiment_analysis. Humanities → thesis_statement + counter_arguments + primary_sources.
+- DOMAIN EXTRAS: Populate domain_extras ONLY for Medical (soap_note), Law (irac), Business (executive_summary_200w). Skip for all other domains.
 
 ═══ PRESENTATION RULES (McKinsey/BCG) ═══
 Narrative arc mandatory:
@@ -392,7 +392,7 @@ Slide field rules:
   power_heading: MAX 6 words. A FINDING, not a label. ("Proximity Drives 43% Price Premium" not "Statistical Analysis")
   content_bullets: 5 bullets. Each = one specific insight with data
   visual_directive: EXACTLY what visual goes here. Specific. ("Scatter plot: Distance vs Price/sqm with r=-0.88 trendline" not "a graph")
-  speaker_notes: Full speech. 60-90 seconds. Complete sentences.
+  speaker_notes: 2-3 key talking points only.
 
 ═══ JSON SCHEMA ═══
 {
@@ -404,7 +404,7 @@ Slide field rules:
     "word_count": 0,
     "blocks": [
       {"type": "heading", "content": "Section Title", "level": 1},
-      {"type": "paragraph", "content": "Full paragraph in student voice — start with the argument or finding, not setup. Topic sentence + evidence + analysis + so-what. Min 80 words. Never a placeholder. Never start with 'It is important to note' or 'In today's world'"},
+      {"type": "paragraph", "content": "Full paragraph in student voice — start with the argument or finding, not setup. Topic sentence + evidence + analysis + so-what. Min 60 words. Never a placeholder. Never start with 'It is important to note' or 'In today's world'"},
       {"type": "list", "content": "Specific finding 1\\nSpecific finding 2\\nSpecific finding 3"},
       {"type": "math", "content": "LaTeX expression or equation", "solution_steps": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."]},
       {"type": "code", "content": "# Complete runnable code", "language": "python"},
@@ -421,7 +421,7 @@ Slide field rules:
       "visual_directive": "Exact description of what visual to insert and what it shows",
       "image_prompt": "4-6 word photo description e.g. 'modern office team meeting' or 'cairo skyline aerial view'",
       "image_layout": "left|right|background|full",
-      "speaker_notes": "Full 60-90 second verbatim script. What the student says while this slide is shown. Complete sentences. Include transition to next slide."
+      "speaker_notes": "2-3 key talking points for this slide."
     }
   ],
   "data_sheet": {
@@ -653,10 +653,14 @@ export default async function handler(req, res) {
     }
 
     let clean = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+
+    // DIAGNOSTIC: log response size and structure
+    console.log(`Mi — rawText length: ${rawText.length} chars, starts: ${rawText.slice(0,50)}, ends: ${rawText.slice(-50)}`);
+
     const first = clean.indexOf('{');
     if (first === -1) return res.status(500).json({ error: 'AI response was not valid JSON. Please try again.' });
-    // Find the matching closing brace using bracket counting (not lastIndexOf)
-    // This handles cases where Gemini appends text after the JSON object
+
+    // Find the matching closing brace using bracket counting
     let depth = 0, last = -1;
     for (let i = first; i < clean.length; i++) {
       if (clean[i] === '{') depth++;
@@ -665,7 +669,15 @@ export default async function handler(req, res) {
         if (depth === 0) { last = i; break; }
       }
     }
-    if (last === -1) return res.status(500).json({ error: 'Incomplete JSON response. Please try again.' });
+
+    console.log(`Mi — first: ${first}, last: ${last}, depth after scan: ${depth}, clean length: ${clean.length}`);
+
+    if (last === -1) {
+      // Log what we got to diagnose
+      console.error(`Mi — JSON incomplete. First 200: ${clean.slice(0,200)}`);
+      console.error(`Mi — JSON last 200: ${clean.slice(-200)}`);
+      return res.status(500).json({ error: 'Incomplete JSON response. Please try again.' });
+    }
     clean = clean.slice(first, last + 1);
 
     let result;
