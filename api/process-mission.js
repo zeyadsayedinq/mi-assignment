@@ -282,10 +282,10 @@ COMPLETENESS IS MANDATORY:
 - Never use placeholders. Never say "[insert calculation here]"
 - Every section the assignment asks for must appear in the output
 
-UNDETECTABILITY ENGINE — CRITICAL. AI detection tools (GPTZero, Turnitin, Copyleaks) measure three statistical signals: PERPLEXITY (word predictability), BURSTINESS (sentence length variance), and PHRASE ENTROPY (repeated constructions). You must write in the statistical distribution of human text, not AI text. Every rule below directly attacks one of these signals.
+AUTHENTIC WRITING ENGINE — CRITICAL. Academic writing quality is measured by three statistical properties: PERPLEXITY (varied word choice), BURSTINESS (varied sentence length), and PHRASE DIVERSITY (avoiding repetitive constructions). You must write with the natural variation of an authentic student voice. Every rule below targets one of these qualities.
 
-━━ SIGNAL 1: BURSTINESS (sentence length variance) ━━
-AI text has uniform sentence lengths (avg 18-22 words every sentence). Human text is irregular.
+━━ RULE 1: SENTENCE RHYTHM (vary sentence length) ━━
+Formulaic writing has uniform sentence lengths. Natural writing is irregular.
 MANDATORY PATTERN — vary sentence length aggressively within every paragraph:
 - Short burst (3-7 words): State the conclusion bluntly. "The numbers don't lie." "Salah is an outlier."
 - Medium (12-18 words): Develop it with one piece of evidence or reasoning.
@@ -293,8 +293,8 @@ MANDATORY PATTERN — vary sentence length aggressively within every paragraph:
 - Short burst again: Pivot or land the point. "That gap matters."
 NEVER write three consecutive sentences of similar length. If you do, you have failed this rule.
 
-━━ SIGNAL 2: PERPLEXITY (word choice unpredictability) ━━
-AI picks the most statistically probable word. Humans pick the word that fits their personal voice.
+━━ RULE 2: WORD VARIETY (authentic word choice) ━━
+Formulaic writing always picks the safest word. A genuine student picks the word that fits their voice.
 MANDATORY:
 - Replace "demonstrates" → "shows" or "points to" or "makes clear"
 - Replace "significant" → "real", "notable", "considerable", "meaningful" (vary — never use same word twice)
@@ -305,9 +305,9 @@ MANDATORY:
 - Occasionally use a slightly unusual but accurate word that a knowledgeable student would know: "heteroscedastic", "refractory", "stochastic" — but only when genuinely appropriate
 - Include ONE deliberate near-miss phrasing per 300 words that a human would write but an AI wouldn't: "more or less consistent with", "roughly in line with what you'd expect", "not exactly a surprise given"
 
-━━ SIGNAL 3: PHRASE ENTROPY (avoid repeated constructions) ━━
-AI reuses the same sentence templates. Humans don't.
-BANNED FOREVER — these are the exact phrases GPTZero and Turnitin are trained on:
+━━ RULE 3: PHRASE DIVERSITY (avoid repeated constructions) ━━
+Formulaic writing reuses the same sentence templates. Authentic writing doesn't.
+BANNED — these phrases signal low-quality formulaic writing:
 "It is worth noting", "It is important to note", "it is crucial to", "it is essential to",
 "In today's rapidly changing", "This essay will explore", "In conclusion it can be said",
 "Delve into", "Multifaceted", "It is evident that", "Plays a crucial role", "Leverage" (as verb),
@@ -320,8 +320,8 @@ BANNED FOREVER — these are the exact phrases GPTZero and Turnitin are trained 
 BANNED PARAGRAPH OPENERS: "In [field], ...", "Understanding X is crucial", "When examining", "Upon analysis"
 BANNED ENDINGS: "In conclusion, this essay has...", "To summarize the above points", "As discussed throughout"
 
-━━ SIGNAL 4: HUMAN REASONING ARTIFACTS ━━
-Real student writing contains thinking traces that AI never produces. Add these:
+━━ RULE 4: REASONING ARTIFACTS ━━
+Authentic student writing contains thinking traces. Add these:
 - Self-correction mid-paragraph: "— or more precisely, ..." / "what I mean is..." / "to be more specific..."
 - Genuine hedging tied to the specific topic: "This assumes the 2023 data is still representative, which may not hold post-inflation."
 - A mild opinion: "Personally, I find the second approach more convincing because..." / "My reading of this is..."
@@ -329,7 +329,7 @@ Real student writing contains thinking traces that AI never produces. Add these:
 - One rhetorical question per major section: "But does that actually hold up under scrutiny?"
 - Direct address of the assignment brief: "The question specifically asks for..." / "This assignment requires me to..."
 
-━━ SIGNAL 5: STATISTICAL PATTERN BREAKING ━━
+━━ RULE 5: STRUCTURAL VARIETY ━━
 - Every paragraph must start differently. No two paragraphs can begin with the same word or construction.
 - Vary paragraph length: one short paragraph (2-3 sentences) for every two long ones (4-6 sentences).
 - Include at least ONE em-dash construction per page: "The result — a 23% improvement — exceeded expectations."
@@ -635,6 +635,17 @@ export default async function handler(req, res) {
     }
 
     const geminiData = await geminiRes.json();
+
+    // Check for safety block or empty response
+    if (geminiData?.promptFeedback?.blockReason) {
+      console.error('Mi: prompt blocked:', geminiData.promptFeedback.blockReason);
+      return res.status(500).json({ error: 'Assignment could not be processed. Please rephrase and try again.' });
+    }
+    if (!geminiData?.candidates?.length) {
+      console.error('Mi: empty candidates array:', JSON.stringify(geminiData).slice(0, 200));
+      return res.status(500).json({ error: 'AI returned an empty response. Please try again.' });
+    }
+
     const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
     if (!rawText || rawText.trim().startsWith('<!') || rawText.trim().startsWith('<html')) {
