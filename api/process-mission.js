@@ -585,10 +585,11 @@ export default async function handler(req, res) {
         topP: 0.85,
         topK: 40,
         responseMimeType: 'application/json',
-        // Keep tokens LOW — prevents 45s hangs (16k was causing 247MB responses)
+        // Token budget: enough for complete JSON, low enough to avoid timeouts
+        // 5000 was truncating JSON. 16000 was causing 45s hangs. 7000 is the sweet spot.
         maxOutputTokens: /ENGINEERING|MATH|MEDICAL|CS|LAW/.test(
           (domainContext?.domain || '').toUpperCase()
-        ) ? 5000 : 4000,
+        ) ? 7000 : 6000,
       },
     };
 
