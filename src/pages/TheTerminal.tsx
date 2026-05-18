@@ -61,6 +61,23 @@ export function TheTerminal() {
     if (!user) return;
     (async () => {
       try {
+        // Check localStorage first — if dismissed once, never show again
+        const localDone = localStorage.getItem(`mi_onboarding_${user.id}`);
+        if (localDone === 'done') {
+          // Still try to load profile for pre-fill, but don't show modal
+          const { data } = await supabase
+            .from('profiles')
+            .select('country, university, major')
+            .eq('id', user.id)
+            .single();
+          if (data?.university && data?.major) {
+            setUserProfile({ country: data.country || '', university: data.university, major: data.major });
+          }
+          setShowOnboarding(false);
+          setProfileLoaded(true);
+          return;
+        }
+
         const { data, error } = await supabase
           .from('profiles')
           .select('country, university, major, onboarding_complete')
@@ -71,21 +88,24 @@ export function TheTerminal() {
           // Profile complete — pre-fill silently
           setUserProfile({ country: data.country || '', university: data.university, major: data.major });
           setShowOnboarding(false);
-        } else if (data && (!data.university || !data.major)) {
-          // Profile exists but incomplete — show onboarding
-          setShowOnboarding(true);
+          // Also set localStorage so future loads are instant
+          try { localStorage.setItem(`mi_onboarding_${user.id}`, 'done'); } catch {}
+        } else if (data?.onboarding_complete) {
+          // Completed but cleared — respect that, no modal
+          setShowOnboarding(false);
+          try { localStorage.setItem(`mi_onboarding_${user.id}`, 'done'); } catch {}
         } else if (!data && error?.code === 'PGRST116') {
-          // No row found (new user) — show onboarding
+          // No row found — genuine new user, show onboarding once
           setShowOnboarding(true);
         } else if (error) {
-          // RLS error or table missing — skip onboarding silently, don't block the user
-          console.warn('Mi: profiles fetch error:', error.code, error.message);
+          // RLS or table error — skip silently, never block the user
+          console.warn('Mi: profiles fetch error:', error.code);
           setShowOnboarding(false);
         } else {
+          // Row exists but onboarding not complete — show once
           setShowOnboarding(true);
         }
       } catch {
-        // Any unexpected error — skip onboarding, don't block
         setShowOnboarding(false);
       } finally {
         setProfileLoaded(true);

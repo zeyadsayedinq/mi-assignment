@@ -125,10 +125,29 @@ export function OnboardingModal({ userId, onComplete }: OnboardingModalProps) {
   const MAJORS = isAr ? MAJORS_AR : MAJORS_EN;
   const unis = country ? (UNIVERSITIES[country] || []) : [];
 
+  // Mark onboarding done in localStorage immediately — Supabase is secondary
+  const markDone = () => {
+    try { localStorage.setItem(`mi_onboarding_${userId}`, 'done'); } catch {}
+  };
+
+  const handleSkip = async () => {
+    markDone();
+    // Still upsert to Supabase so Settings page knows onboarding was shown
+    try {
+      await supabase.from('profiles').upsert({
+        id: userId,
+        onboarding_complete: true,
+        updated_at: new Date().toISOString(),
+      });
+    } catch {}
+    onComplete({ country: '', university: '', major: '' });
+  };
+
   const handleSave = async () => {
     const finalUni = showCustom ? customUni : university;
     if (!finalUni || !major) return;
     setSaving(true);
+    markDone();
     try {
       await supabase.from('profiles').upsert({
         id: userId,
@@ -157,7 +176,7 @@ export function OnboardingModal({ userId, onComplete }: OnboardingModalProps) {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#22D3EE] to-[#A855F7] flex items-center justify-center">
               <GraduationCap className="w-5 h-5 text-black" />
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="text-white font-black text-lg">
                 {isAr ? 'أهلاً بيك في Mi 👋' : 'Welcome to Mi 👋'}
               </h2>
@@ -165,6 +184,13 @@ export function OnboardingModal({ userId, onComplete }: OnboardingModalProps) {
                 {isAr ? 'عشان نحل واجباتك صح من أول مرة' : 'So we can solve your assignments right, first time'}
               </p>
             </div>
+            {/* Skip — one time only, always visible */}
+            <button
+              onClick={handleSkip}
+              className="text-xs text-gray-600 hover:text-gray-400 transition-colors px-2 py-1 rounded-lg hover:bg-white/5 shrink-0"
+            >
+              {isAr ? 'تخطي' : 'Skip'}
+            </button>
           </div>
           {/* Step indicator */}
           <div className="flex gap-1.5 mt-4">
@@ -241,7 +267,7 @@ export function OnboardingModal({ userId, onComplete }: OnboardingModalProps) {
 
                 <button
                   onClick={() => setStep(2)}
-                  disabled={!country || (!university && !customUni)}
+                  disabled={!country}
                   className="w-full mt-5 py-3 bg-[#22D3EE] text-black font-black rounded-xl hover:bg-white transition-all text-sm disabled:opacity-30 flex items-center justify-center gap-2"
                 >
                   {isAr ? 'التالي' : 'Next'}

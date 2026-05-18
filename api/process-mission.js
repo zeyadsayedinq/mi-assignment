@@ -567,7 +567,7 @@ export default async function handler(req, res) {
     // If one hangs or 503s, move to the next immediately
     const MODEL_WATERFALL = [
       'gemini-3-flash-preview',
-      'gemini-2.0-flash',
+      'gemini-2.5-flash-preview-04-17',
     ];
 
   let geminiRes = null;
@@ -600,7 +600,7 @@ export default async function handler(req, res) {
       clearTimeout(timer);
       if (err.name === 'AbortError') {
         lastError = `${model}: timeout`;
-        console.log(`Mi — ${model} timed out at 28s, trying next...`);
+        console.log(`Mi — ${model} timed out at 45s, trying next...`);
         continue;
       }
       throw err;
