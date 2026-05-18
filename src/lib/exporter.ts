@@ -10,10 +10,26 @@ import * as XLSX from 'xlsx';
 
 // ─── LATEX TO UNICODE UTILITY ──────────────────────────────────────────────
 // This helper makes math/chem readable in text-only environments like PDF/Docx
+// Strip hidden AI watermark / invisible unicode characters from all output text
+function sanitizeText(text: string): string {
+  if (!text || typeof text !== 'string') return text || '';
+  return text
+    .replace(/[\u200B\u200C\u200D\u200E\u200F]/g, '')  // Zero-width chars (ZWSP, ZWNJ, ZWJ, LRM, RLM)
+    .replace(/[\u2060\u2061\u2062\u2063\u2064]/g, '')  // Invisible joiners / math chars
+    .replace(/\uFEFF/g, '')                             // BOM / ZWNBSP
+    .replace(/[\u202A-\u202E]/g, '')                   // Directional formatting overrides
+    .replace(/[\u2028\u2029]/g, ' ')                   // Line/paragraph separators
+    .replace(/\u00AD/g, '')                            // Soft hyphen (SHY)
+    .replace(/\u00A0/g, ' ')                           // Non-breaking space → regular space
+    .replace(/\u202F/g, ' ')                           // Narrow non-breaking space → regular space
+    .trim();
+}
+
 function cleanLaTeX(text: string): string {
   if (!text) return "";
   
-  let cleaned = text;
+  // Strip hidden chars first
+  let cleaned = sanitizeText(text);
 
   // 1. Remove delimiters
   cleaned = cleaned.replace(/(\$\$?|\\\[|\\\]|\\\(|\\\))/g, '');
