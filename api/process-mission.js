@@ -575,7 +575,7 @@ export default async function handler(req, res) {
 
   for (const model of MODEL_WATERFALL) {
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 55000);
+    const timer = setTimeout(() => ctrl.abort(), 45000);
     try {
       console.log(`Mi — trying ${model}`);
       const r = await fetch(

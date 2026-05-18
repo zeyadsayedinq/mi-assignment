@@ -61,20 +61,32 @@ export function TheTerminal() {
     if (!user) return;
     (async () => {
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('profiles')
           .select('country, university, major, onboarding_complete')
           .eq('id', user.id)
           .single();
+
         if (data?.onboarding_complete && data.university && data.major) {
+          // Profile complete — pre-fill silently
           setUserProfile({ country: data.country || '', university: data.university, major: data.major });
+          setShowOnboarding(false);
+        } else if (data && (!data.university || !data.major)) {
+          // Profile exists but incomplete — show onboarding
+          setShowOnboarding(true);
+        } else if (!data && error?.code === 'PGRST116') {
+          // No row found (new user) — show onboarding
+          setShowOnboarding(true);
+        } else if (error) {
+          // RLS error or table missing — skip onboarding silently, don't block the user
+          console.warn('Mi: profiles fetch error:', error.code, error.message);
+          setShowOnboarding(false);
         } else {
-          // First time — show onboarding
           setShowOnboarding(true);
         }
       } catch {
-        // profiles table may not exist yet — show onboarding
-        setShowOnboarding(true);
+        // Any unexpected error — skip onboarding, don't block
+        setShowOnboarding(false);
       } finally {
         setProfileLoaded(true);
       }
