@@ -14,6 +14,7 @@ import { useExplosion } from '../contexts/ExplosionContext';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { Analytics } from '../lib/analytics';
+import { UsageBanner } from '../components/UsageBanner';
 
 const PROCESSING_EN = [
   'Parsing assignment payload...', 'Running neural analysis...',
@@ -264,6 +265,7 @@ export function TheTerminal() {
                         : 'Upload your assignment files, fill in the context, and let Mi handle the rest.'}
                     </p>
                   </div>
+                  <UsageBanner />
                   <UploadHandler onLaunch={handleMissionLaunch} userProfile={userProfile} />
                 </motion.div>
               )}

@@ -31,25 +31,35 @@ export async function processMission(
     throw new Error(lang === 'ar' ? 'لازم تسجل دخول الأول.' : 'Please sign in first.');
   }
 
-  // 2. Check Quota
-  const quotaResp = await fetch('/api/check-quota', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, email: userEmail, lang }),
-  });
+  // 2. Check Quota — cached for 60s to avoid a round-trip on every mission
+  const cacheKey = `mi_quota_${userId}`;
+  const cached = (() => { try { const c = sessionStorage.getItem(cacheKey); if (!c) return null; const p = JSON.parse(c); if (Date.now() - p.ts < 60000) return p; } catch {} return null; })();
 
-  if (!quotaResp.ok) {
-    const err = await quotaResp.json().catch(() => ({}));
-    if (quotaResp.status === 402) {
-      const e = new Error(err.message || 'Limit reached');
-      (e as any).code = 'LIMIT_REACHED';
-      (e as any).plan = err.plan;
-      (e as any).limit = err.limit;
-      (e as any).missionsUsed = err.missionsUsed;
-      throw e;
+  let quotaData: any = cached;
+  if (!quotaData) {
+    const quotaResp = await fetch('/api/check-quota', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, email: userEmail, lang }),
+    });
+    if (!quotaResp.ok) {
+      const err = await quotaResp.json().catch(() => ({}));
+      if (quotaResp.status === 402) {
+        const e = new Error(err.message || 'Limit reached');
+        (e as any).code = 'LIMIT_REACHED';
+        (e as any).plan = err.plan;
+        (e as any).limit = err.limit;
+        (e as any).missionsUsed = err.missionsUsed;
+        throw e;
+      }
+      throw new Error(err.error || 'Server busy. Please try again.');
     }
-    throw new Error(err.error || 'Server busy. Please try again.');
+    quotaData = await quotaResp.json();
+    try { sessionStorage.setItem(cacheKey, JSON.stringify({ ...quotaData, ts: Date.now() })); } catch {}
   }
+
+  // Bust cache after a mission is consumed
+  const bustQuotaCache = () => { try { sessionStorage.removeItem(cacheKey); } catch {} };
 
   // 3. Build contents array for Mi Engine
   const ctx = [
@@ -98,7 +108,8 @@ export async function processMission(
 
   const result = await missionResp.json();
 
-  // 5. Record mission (fire-and-forget)
+  // 5. Record mission (fire-and-forget) + bust quota cache
+  bustQuotaCache();
   fetch('/api/record-mission', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

@@ -636,6 +636,9 @@ const WATERMARK = "Powered by Mi-Assignment · www.mi-assignment.com";
 // ─── MAIN EXPORT FUNCTION ────────────────────────────────────────────────────
 export async function downloadMissionPackage(data: any, payloadName: string = "Mission_Intelligence", isPro = false) {
   const zip = new JSZip();
+  // RTL detection for Arabic assignments
+  const _hasArabic = (t: string) => /[؀-ۿ]/.test(t || '');
+  const isRTLDoc = _hasArabic(payloadName) || _hasArabic(data?.solution_text || '');
   const safeName = payloadName.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_') || 'Mission';
 
   // 1. README

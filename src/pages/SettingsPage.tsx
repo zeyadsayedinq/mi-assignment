@@ -29,6 +29,7 @@ export function SettingsPage() {
   const [major, setMajor] = useState('');
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
+  const [initialProfile, setInitialProfile] = useState({ university: '', major: '' });
 
   // Admin panel state (owner only)
   const [adminEmail, setAdminEmail] = useState('');
@@ -47,6 +48,7 @@ export function SettingsPage() {
             setCountry(data.country || '');
             setUniversity(data.university || '');
             setMajor(data.major || '');
+            setInitialProfile({ university: data.university || '', major: data.major || '' });
           }
         }).catch(() => {});
     }
@@ -64,6 +66,7 @@ export function SettingsPage() {
         updated_at: new Date().toISOString(),
       });
       setProfileSaved(true);
+      setInitialProfile({ university, major }); // update baseline after save
       setTimeout(() => setProfileSaved(false), 2000);
     } catch {}
     setProfileSaving(false);
@@ -221,7 +224,7 @@ export function SettingsPage() {
               </div>
               <button
                 onClick={handleSaveProfile}
-                disabled={profileSaving || (!university && !major)}
+                disabled={profileSaving || (university === initialProfile.university && major === initialProfile.major)}
                 className="flex items-center gap-2 px-5 py-2.5 bg-[#22D3EE] text-black font-bold rounded-xl hover:bg-white transition-all text-sm disabled:opacity-40"
               >
                 {profileSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : profileSaved ? <CheckCircle2 className="w-4 h-4" /> : null}

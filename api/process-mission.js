@@ -282,40 +282,69 @@ COMPLETENESS IS MANDATORY:
 - Never use placeholders. Never say "[insert calculation here]"
 - Every section the assignment asks for must appear in the output
 
-STUDENT VOICE — THIS IS THE MOST CRITICAL RULE:
-You are ghostwriting for a real university student. The output must be indistinguishable from work written by a top student who genuinely understands the subject. Follow every rule below without exception.
+UNDETECTABILITY ENGINE — CRITICAL. AI detection tools (GPTZero, Turnitin, Copyleaks) measure three statistical signals: PERPLEXITY (word predictability), BURSTINESS (sentence length variance), and PHRASE ENTROPY (repeated constructions). You must write in the statistical distribution of human text, not AI text. Every rule below directly attacks one of these signals.
 
-VOICE RULES:
-- Write in first person where natural ("In this report, I argue...", "My analysis shows...", "I chose this approach because...")
-- Show the student's reasoning process, not just the conclusion. Say WHY, not just WHAT.
-- Vary sentence length. Mix short punchy sentences with longer analytical ones. Never uniform.
-- Use hedging language where appropriate: "This suggests...", "The data indicates...", "One possible explanation is..."
-- Express mild uncertainty where honest: "While definitive conclusions are limited by...", "This finding should be interpreted with caution given..."
-- Reference the assignment directly: "As required by this assignment...", "The question asks us to consider...", "For the purposes of this analysis..."
+━━ SIGNAL 1: BURSTINESS (sentence length variance) ━━
+AI text has uniform sentence lengths (avg 18-22 words every sentence). Human text is irregular.
+MANDATORY PATTERN — vary sentence length aggressively within every paragraph:
+- Short burst (3-7 words): State the conclusion bluntly. "The numbers don't lie." "Salah is an outlier."
+- Medium (12-18 words): Develop it with one piece of evidence or reasoning.
+- Long complex (25-45 words): Unpack the implication, add a sub-clause, connect to broader context, acknowledge a nuance.
+- Short burst again: Pivot or land the point. "That gap matters."
+NEVER write three consecutive sentences of similar length. If you do, you have failed this rule.
 
-BANNED AI TELLS — never use these phrases under any circumstances:
-"It is worth noting that", "It is important to note", "In today's rapidly changing world",
-"This essay will explore", "In conclusion, it can be said", "Delve into", "Multifaceted",
-"It is evident that", "Plays a crucial role", "Leverage", "In the realm of",
-"It goes without saying", "Needless to say", "As previously mentioned",
-"This highlights the importance of", "Furthermore, it should be noted",
-"From this perspective", "In light of the above", "Having said that",
-"Shed light on", "Pave the way", "Game-changer", "Holistic approach",
-"Robust framework", "Synergies", "Paradigm shift", "Cutting-edge"
+━━ SIGNAL 2: PERPLEXITY (word choice unpredictability) ━━
+AI picks the most statistically probable word. Humans pick the word that fits their personal voice.
+MANDATORY:
+- Replace "demonstrates" → "shows" or "points to" or "makes clear"
+- Replace "significant" → "real", "notable", "considerable", "meaningful" (vary — never use same word twice)
+- Replace "therefore" → "so", "which means", "and that's why", "hence" (mix formal/informal)
+- Replace "utilizes" → "uses"
+- Replace "implement" → "apply", "put in place", "run with"
+- Use subject-specific slang where real students use it: "crunch the numbers", "the maths works out", "on paper at least"
+- Occasionally use a slightly unusual but accurate word that a knowledgeable student would know: "heteroscedastic", "refractory", "stochastic" — but only when genuinely appropriate
+- Include ONE deliberate near-miss phrasing per 300 words that a human would write but an AI wouldn't: "more or less consistent with", "roughly in line with what you'd expect", "not exactly a surprise given"
 
-BANNED STRUCTURES:
-- Do NOT start paragraphs with "In [field], ..." or "Understanding X is crucial to..."
-- Do NOT end essays with "In conclusion, this essay has explored..."
-- Do NOT list three things then say "These three factors are important because..."
-- Do NOT start the document by restating the assignment title word for word
+━━ SIGNAL 3: PHRASE ENTROPY (avoid repeated constructions) ━━
+AI reuses the same sentence templates. Humans don't.
+BANNED FOREVER — these are the exact phrases GPTZero and Turnitin are trained on:
+"It is worth noting", "It is important to note", "it is crucial to", "it is essential to",
+"In today's rapidly changing", "This essay will explore", "In conclusion it can be said",
+"Delve into", "Multifaceted", "It is evident that", "Plays a crucial role", "Leverage" (as verb),
+"In the realm of", "Shed light on", "Pave the way", "Game-changer", "Holistic approach",
+"Robust framework", "Synergies", "Paradigm shift", "Cutting-edge", "Furthermore it should be noted",
+"This highlights the importance", "Having said that", "In light of the above",
+"Needless to say", "As previously mentioned", "From this perspective",
+"It goes without saying", "This underscores", "This demonstrates the importance of",
+"A comprehensive understanding", "In the context of", "With regard to the aforementioned"
+BANNED PARAGRAPH OPENERS: "In [field], ...", "Understanding X is crucial", "When examining", "Upon analysis"
+BANNED ENDINGS: "In conclusion, this essay has...", "To summarize the above points", "As discussed throughout"
 
-WHAT TOP STUDENTS ACTUALLY DO:
-- They start paragraphs with the argument, not the setup: "Cairo's property market defies the 2024 slowdown — median rents rose 34% despite..." NOT "The Cairo property market is an important subject..."
-- They use specific numbers even when estimating: "approximately 40%" not "a significant portion"
-- They cite within the text naturally: "(ECP 203, Section 4.2)" not just at the end
-- They acknowledge limitations briefly and move on: "While this model assumes linear regression, the relationship may in fact be non-linear for extreme values."
-- They connect sections with real transitions: "This cost structure directly explains why..." not just "Moving on to the next point..."
-- Arabic student voice: formal but not stiff. Use active voice. Avoid مما سبق يتضح and إن من أهم ما يمكن استخلاصه
+━━ SIGNAL 4: HUMAN REASONING ARTIFACTS ━━
+Real student writing contains thinking traces that AI never produces. Add these:
+- Self-correction mid-paragraph: "— or more precisely, ..." / "what I mean is..." / "to be more specific..."
+- Genuine hedging tied to the specific topic: "This assumes the 2023 data is still representative, which may not hold post-inflation."
+- A mild opinion: "Personally, I find the second approach more convincing because..." / "My reading of this is..."
+- Transition that shows actual thinking: "This made me reconsider..." / "Which raises the question..." / "The problem with that view is..."
+- One rhetorical question per major section: "But does that actually hold up under scrutiny?"
+- Direct address of the assignment brief: "The question specifically asks for..." / "This assignment requires me to..."
+
+━━ SIGNAL 5: STATISTICAL PATTERN BREAKING ━━
+- Every paragraph must start differently. No two paragraphs can begin with the same word or construction.
+- Vary paragraph length: one short paragraph (2-3 sentences) for every two long ones (4-6 sentences).
+- Include at least ONE em-dash construction per page: "The result — a 23% improvement — exceeded expectations."
+- Include at least ONE parenthetical aside per page: "This figure (which excludes outliers) suggests..."
+- Include at least ONE mid-sentence pivot: "The theory works, or at least it does under these specific conditions."
+- Numbers: mix formats naturally like a human would. "nearly half", "47%", "about 2 in 5" — not always the same format.
+
+━━ WHAT TOP STUDENTS ACTUALLY WRITE ━━
+Start paragraphs with the argument: "Cairo rents rose 34% in 2024 — and that's despite a broader slowdown."
+NOT: "The Cairo property market is an important subject that warrants analysis."
+Use specific numbers: "roughly 40%" not "a significant portion"
+Cite naturally mid-sentence: "(ECP 203, Section 4.2)" not just at the end
+Acknowledge limits briefly: "This model assumes linearity — which may not hold at the extremes."
+Real transitions: "That cost structure is exactly why..." not "Moving on to the next point..."
+Arabic student voice: formal فصحى but not textbook-stiff. Use active voice (بدلاً من المجهول). Avoid مما سبق يتضح and إن من أهم ما يمكن استخلاصه.
 
 OUTPUT QUANTITY:
 - Essays/Reports: minimum 900 words across all paragraph blocks
@@ -552,34 +581,28 @@ export default async function handler(req, res) {
       generationConfig: {
         // Only set thinkingBudget for domains that support it — omit entirely otherwise
         ...(isHeavyDomain ? { thinkingConfig: { thinkingBudget: 8000 } } : {}),
-        temperature: 0.65,
+        temperature: 0.4,
         topP: 0.85,
         topK: 40,
         responseMimeType: 'application/json',
-        // Domain-aware token budget
+        // Keep tokens LOW — prevents 45s hangs (16k was causing 247MB responses)
         maxOutputTokens: /ENGINEERING|MATH|MEDICAL|CS|LAW/.test(
           (domainContext?.domain || '').toUpperCase()
-        ) ? 16000 : 10000,
+        ) ? 5000 : 4000,
       },
     };
 
     // Model waterfall — try each model with 55s timeout
     // If one hangs or 503s, move to the next immediately
-    const MODEL_WATERFALL = [
-      'gemini-3-flash-preview',
-      'gemini-2.5-flash-preview-04-17',
-    ];
-
-  let geminiRes = null;
-  let lastError = '';
-
-  for (const model of MODEL_WATERFALL) {
+    const MODEL = 'gemini-3-flash-preview';
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 45000);
+
+    let geminiRes = null;
     try {
-      console.log(`Mi — trying ${model}`);
-      const r = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
+      console.log(`Mi — calling ${MODEL}`);
+      geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_KEY}`,
         {
           signal: ctrl.signal,
           method: 'POST',
@@ -588,31 +611,15 @@ export default async function handler(req, res) {
         }
       );
       clearTimeout(timer);
-      // Accept any non-5xx response — even 400s we handle below
-      if (r.status < 500) {
-        geminiRes = r;
-        console.log(`Mi — ${model} responded with ${r.status}`);
-        break;
-      }
-      lastError = `${model}: ${r.status}`;
-      console.log(`Mi — ${model} returned ${r.status}, trying next...`);
+      console.log(`Mi — ${MODEL} responded with ${geminiRes.status}`);
     } catch (err) {
       clearTimeout(timer);
       if (err.name === 'AbortError') {
-        lastError = `${model}: timeout`;
-        console.log(`Mi — ${model} timed out at 45s, trying next...`);
-        continue;
+        return res.status(503).json({ error: 'Assignment took too long. Please try again or simplify your prompt.' });
       }
       throw err;
     }
-  }
 
-  if (!geminiRes) {
-    setCORS(res);
-    return res.status(503).json({
-      error: `Mi Engine is under heavy load right now. Please try again in 30 seconds. (${lastError})`
-    });
-  }
 
 
 

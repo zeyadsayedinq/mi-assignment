@@ -6,6 +6,7 @@ import { ExplosionProvider } from './contexts/ExplosionContext';
 import { Sidebar } from './components/Sidebar';
 import { IntroSequence } from './components/IntroSequence';
 import { SEO } from './components/SEO';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Menu } from 'lucide-react';
 
 // Lazy load pages for performance
@@ -36,8 +37,13 @@ function ScrollToTop() {
 
 function LoadingFallback() {
   return (
-    <div className="h-screen w-screen bg-[#020617] flex items-center justify-center">
-      <div className="w-12 h-12 border-4 border-[#22D3EE]/20 border-t-[#22D3EE] rounded-full animate-spin" />
+    <div className="h-screen w-screen bg-[#020617] flex flex-col items-center justify-center gap-4">
+      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#22D3EE] to-[#A855F7] flex items-center justify-center animate-pulse">
+        <span className="font-black text-black text-lg">Mi</span>
+      </div>
+      <div className="w-32 h-1 bg-[#0A0B0E] rounded-full overflow-hidden">
+        <div className="h-full bg-gradient-to-r from-[#22D3EE] to-[#A855F7] rounded-full animate-[loading_1.2s_ease-in-out_infinite]" style={{width:'60%',animation:'slideRight 1.2s ease-in-out infinite'}} />
+      </div>
     </div>
   );
 }
@@ -54,7 +60,7 @@ function RefCodeHandler() {
 
 function AppContent() {
   const { session, loading } = useAuth();
-  const [showIntro, setShowIntro] = useState(() => !sessionStorage.getItem('mi_intro_done'));
+  const [showIntro, setShowIntro] = useState(() => !localStorage.getItem('mi_intro_done'));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
@@ -66,7 +72,7 @@ function AppContent() {
 
   const handleIntroComplete = () => {
     setShowIntro(false);
-    sessionStorage.setItem('mi_intro_done', 'true');
+    localStorage.setItem('mi_intro_done', 'true');
   };
 
   return (
@@ -108,12 +114,12 @@ function AppContent() {
               <Route path="/sops" element={<SOPs />} />
               <Route path="/intelligence-bureau" element={<AssignmentTypeGuide />} />
               
-              {/* Protected Routes */}
-              <Route path="/app" element={session ? <TheHQ /> : <Navigate to="/auth" replace />} />
-              <Route path="/terminal" element={session ? <TheTerminal /> : <Navigate to="/auth" replace />} />
-              <Route path="/vault" element={session ? <TheVault /> : <Navigate to="/auth" replace />} />
-              <Route path="/academy" element={session ? <TheAcademy /> : <Navigate to="/auth" replace />} />
-              <Route path="/settings" element={session ? <SettingsPage /> : <Navigate to="/auth" replace />} />
+              {/* Protected Routes — wrapped in ErrorBoundary so crashes don't white-screen */}
+              <Route path="/app" element={session ? <ErrorBoundary><TheHQ /></ErrorBoundary> : <Navigate to="/auth" replace />} />
+              <Route path="/terminal" element={session ? <ErrorBoundary><TheTerminal /></ErrorBoundary> : <Navigate to="/auth" replace />} />
+              <Route path="/vault" element={session ? <ErrorBoundary><TheVault /></ErrorBoundary> : <Navigate to="/auth" replace />} />
+              <Route path="/academy" element={session ? <ErrorBoundary><TheAcademy /></ErrorBoundary> : <Navigate to="/auth" replace />} />
+              <Route path="/settings" element={session ? <ErrorBoundary><SettingsPage /></ErrorBoundary> : <Navigate to="/auth" replace />} />
               <Route path="/admin" element={session ? <AdminDashboard /> : <Navigate to="/auth" replace />} />
               
               {/* Fallback */}

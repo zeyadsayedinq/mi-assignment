@@ -348,28 +348,6 @@ export function TheHQ() {
           <WeeklyActivity />
         </motion.div>
 
-        {/* ─── SEO / BRANDING FOOTER ─── */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="mt-24 border-t border-gray-900 pt-12 pb-8 text-center px-4">
-          <h2 className="text-lg md:text-xl font-bold text-gray-300 mb-4">{isAr ? 'Mi-Assignment - مساعدك الأكاديمي' : 'Mi-Assignment: Your Online Assignment Helper'}</h2>
-          <p className="text-gray-500 text-xs md:text-sm max-w-4xl mx-auto leading-relaxed mb-6">
-            {isAr 
-              ? 'أنا Mi-Student وصديقك المفضل. ارفع صور أو ملفات PDF لواجباتك وأنا هنا أساعدك كـ Mi-Friend لحلول الرياضيات والعلوم والمقالات. ادرس بذكاء ووفّر وقتك مع أفضل مساعد للواجبات Mi-Assignment.'
-              : 'I am Mi-Student and your best Mi-Friend. Upload pictures or PDFs of your homework and get instant solutions via Mi-Assignment for math, essays, and more. Use our free Mi-Friend helper to get step-by-step solutions for any subject.'
-            }
-          </p>
-          <div className="flex flex-wrap justify-center gap-2 mb-8">
-            {['Mi-Assignment', 'Mi-Student', 'Mi-Friend', 'Math Solver Mi', 'Assignment Writer', 'OCR Technology', 'MENA Students', 'حل الواجبات', 'مساعد للطلاب'].map(tag => (
-              <span key={tag} className="px-3 py-1 bg-[#0A0B0E] border border-gray-800 rounded-lg text-gray-600 text-[10px] font-mono tracking-wider">{tag}</span>
-            ))}
-          </div>
-          
-          <div className="max-w-2xl mx-auto text-[10px] md:text-xs text-gray-600 border border-gray-800/60 bg-[#050608]/50 rounded-xl p-4">
-            <strong>{isAr ? 'تنويه: ' : 'Disclaimer: '}</strong> 
-            {isAr 
-              ? 'مُصمم Mi-Assignment كمساعد تعليمي لتسريع الدراسة والتعلم. يتحمل المستخدمون مسؤولية الالتزام بسياسات النزاهة الأكاديمية الخاصة بمؤسساتهم. قد يحتوي المحتوى المُولد أحياناً على أخطاء؛ يُرجى دائماً مراجعة المعلومات المهمة واستخدام الحلول بمسؤولية.'
-              : 'Mi-Assignment is designed as an educational aid to accelerate studying and learning. Users are responsible for complying with their institution\'s academic integrity policies. Mi-generated output may occasionally contain errors or inaccuracies; always verify critical information and use the solutions responsibly.'}
-          </div>
-        </motion.div>
       </div>
     </div>
   );
