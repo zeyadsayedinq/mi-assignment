@@ -32,7 +32,7 @@ function buildSubjectContext(contents, missionType) {
   const detectedCountry = (ctxLine.match(/Country:\s*([^|\n]+)/i) || [])[1]?.trim() || '';
 
   // ── MATH / STATISTICS — check FIRST before engineering (overlapping keywords) ───
-  if (/calculus|integral|derivative|differentiat|marginal|optimization|maximiz|minimiz|profit function|cost function|demand function|correlation|standard deviation|regression|statistics|probability|hypothesis|normal distribution|binomial|poisson|variance|covariance|pearson|spearman|t-test|chi.square|anova|forecasting|predictive model|linear model|matrix|eigenvalue|fourier|laplace|إحصاء|تفاضل|تكامل|احتمالات|انحدار|توزيع طبيعي/.test(text)) {
+  if (/calculus|integral|derivative|differentiat|marginal|optimization|maximiz|minimiz|profit function|cost function|demand function|correlation|standard deviation|regression|statistics|probability|hypothesis|normal distribution|binomial|poisson|variance|covariance|pearson|spearman|t-test|chi.square|anova|forecasting|predictive model|linear model|matrix|eigenvalue|fourier|laplace|\u0625\u062D\u0635\u0627\u0621|\u062A\u0641\u0627\u0636\u0644|\u062A\u0643\u0627\u0645\u0644|\u0627\u062D\u062A\u0645\u0627\u0644\u0627\u062A|\u0627\u0646\u062D\u062F\u0627\u0631|\u062A\u0648\u0632\u064A\u0639 \u0637\u0628\u064A\u0639\u064A/.test(text)) {
     return {
       domain: 'MATH_STATS',
       rules: `MATHEMATICS & STATISTICS DOMAIN:
@@ -49,7 +49,7 @@ function buildSubjectContext(contents, missionType) {
   }
 
   // ── ENGINEERING — structural, civil, mechanical, chemical, solar, process ──────
-  if (/reinforced concrete|beam design|slab design|column design|ecp 203|structural engineering|foundation design|steel design|load combination|dead load|live load|kn\/m²|\\bmpa\\b|egyptian code|aci 318|eurocode|bs 8110|moment distribution|shear force|bending moment|bbs|bar bending|rebar|stirrup|bar schedule|retaining wall|pid controller|mechanical engineering|thermodynamic|hydraulic engineering|electrical engineering|هندسة مدنية|هندسة ميكانيكية|خرسانة مسلحة|حديد تسليح|عزم انعطاف|قص|أساسات|reverse osmosis|desalination plant|membrane filtration|osmotic pressure|solar pv|photovoltaic|peak sun hours|kwp|kwh\/m|recovery ratio|permeate flux|brine discharge|feed water|salinity ppm|high.pressure pump|process flow diagram|pfd|chemical engineering|heat exchanger|distillation column|mass transfer|fluid mechanics|bernoulli equation|reynolds number|darcy.weisbach|turbine design|compressor design|reactor design|aerospace engineering|civil engineering project|water treatment plant/.test(text)) {
+  if (/reinforced concrete|beam design|slab design|column design|ecp 203|structural engineering|foundation design|steel design|load combination|dead load|live load|kn\/m\u00B2|\\bmpa\\b|egyptian code|aci 318|eurocode|bs 8110|moment distribution|shear force|bending moment|bbs|bar bending|rebar|stirrup|bar schedule|retaining wall|pid controller|mechanical engineering|thermodynamic|hydraulic engineering|electrical engineering|\u0647\u0646\u062F\u0633\u0629 \u0645\u062F\u0646\u064A\u0629|\u0647\u0646\u062F\u0633\u0629 \u0645\u064A\u0643\u0627\u0646\u064A\u0643\u064A\u0629|\u062E\u0631\u0633\u0627\u0646\u0629 \u0645\u0633\u0644\u062D\u0629|\u062D\u062F\u064A\u062F \u062A\u0633\u0644\u064A\u062D|\u0639\u0632\u0645 \u0627\u0646\u0639\u0637\u0627\u0641|\u0642\u0635|\u0623\u0633\u0627\u0633\u0627\u062A|reverse osmosis|desalination plant|membrane filtration|osmotic pressure|solar pv|photovoltaic|peak sun hours|kwp|kwh\/m|recovery ratio|permeate flux|brine discharge|feed water|salinity ppm|high.pressure pump|process flow diagram|pfd|chemical engineering|heat exchanger|distillation column|mass transfer|fluid mechanics|bernoulli equation|reynolds number|darcy.weisbach|turbine design|compressor design|reactor design|aerospace engineering|civil engineering project|water treatment plant/.test(text)) {
     return {
       domain: 'ENGINEERING',
       rules: `ENGINEERING DOMAIN:
@@ -58,14 +58,14 @@ function buildSubjectContext(contents, missionType) {
 - Egypt: cite ECP 203-2018 by section number (e.g. "ECP 203 Section 4.2.1")
 - Saudi: cite SBC 304 (concrete), SBC 301 (loads), SBC 601 (energy)
 - UAE/International: BS 8110 or Eurocode 2 with clause references
-- Units: always label (kN, kN/m², m, mm, MPa, kWh, kWp, m³/day, °C, kJ/kg·°C)
+- Units: always label (kN, kN/m\u00B2, m, mm, MPa, kWh, kWp, m\u00B3/day, °C, kJ/kg·°C)
 - Safety factors: sliding ≥ 1.5, overturning ≥ 2.0, bearing capacity ≥ 3.0
 - SVG DIAGRAMS MANDATORY: every engineering assignment needs at least ONE svg block
   * Structural: cross-section with bar marks, stirrup spacing, cover, dimension lines
   * Process systems (RO, solar, HVAC): full schematic showing all components, flow direction, labels
   * Solar: collector → pipe → tank with height differential (thermosyphon: min 30cm tank above collector)
   * Fluid: pipe schematic with flow rates, pressures, valve positions labeled
-- BBS TABLE: when rebar/reinforcement/stirrups/تسليح/BBS appears, generate full table:
+- BBS TABLE: when rebar/reinforcement/stirrups/\u062A\u0633\u0644\u064A\u062D/BBS appears, generate full table:
   Bar Mark | Shape Code | Dia (mm) | A | B | C | Cut Length (mm) | No. Bars | Total Length (m) | Weight (kg)
   BS 8666 shape codes: 00=straight, 11=L-bar, 21=U-bar, 51=closed stirrup
   Weight = (d²/162.2) × total length in metres
@@ -77,7 +77,7 @@ function buildSubjectContext(contents, missionType) {
 
   // ── BUSINESS / MANAGEMENT ─────────────────────────────────────────────────────
   // Guard: تحليل is too generic alone — require at least one specific business keyword
-  if (/pestel|swot|porter|business plan|marketing strategy|competitive analysis|market analysis|financial model|cash flow|npv|irr|break.even|stakeholder|supply chain|balanced scorecard|خطة أعمال|(تحليل.*(سوق|استراتيجي|pestel|swot|بيئي))|استراتيجية.*(أعمال|تسويق|نمو)|تسويق|ربحية|استثمار/.test(text)) {
+  if (/pestel|swot|porter|business plan|marketing strategy|competitive analysis|market analysis|financial model|cash flow|npv|irr|break.even|stakeholder|supply chain|balanced scorecard|\u062E\u0637\u0629 \u0623\u0639\u0645\u0627\u0644|(\u062A\u062D\u0644\u064A\u0644.*(\u0633\u0648\u0642|\u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A|pestel|swot|\u0628\u064A\u0626\u064A))|\u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A\u0629.*(\u0623\u0639\u0645\u0627\u0644|\u062A\u0633\u0648\u064A\u0642|\u0646\u0645\u0648)|\u062A\u0633\u0648\u064A\u0642|\u0631\u0628\u062D\u064A\u0629|\u0627\u0633\u062A\u062B\u0645\u0627\u0631/.test(text)) {
     return {
       domain: 'BUSINESS',
       rules: `BUSINESS DOMAIN:
@@ -94,7 +94,7 @@ function buildSubjectContext(contents, missionType) {
   }
 
   // ── LAW ───────────────────────────────────────────────────────────────────────
-  if (/contract|tort|liability|negligence|jurisdiction|statute|plaintiff|defendant|case law|legal|legislation|breach|damages|constitutional|intellectual property|arbitration|irac|force majeure|عقد|مسئولية|قانون|محكمة|دعوى|قضائية|تشريع|تعويض|بند|نزاع|حماية المستهلك|مدني|جنائي|براءة|ملكية فكرية|استئناف|حكم|شريعة|قانون مدني|قانون تجاري/.test(text)) {
+  if (/contract|tort|liability|negligence|jurisdiction|statute|plaintiff|defendant|case law|legal|legislation|breach|damages|constitutional|intellectual property|arbitration|irac|force majeure|\u0639\u0642\u062F|\u0645\u0633\u0626\u0648\u0644\u064A\u0629|\u0642\u0627\u0646\u0648\u0646|\u0645\u062D\u0643\u0645\u0629|\u062F\u0639\u0648\u0649|\u0642\u0636\u0627\u0626\u064A\u0629|\u062A\u0634\u0631\u064A\u0639|\u062A\u0639\u0648\u064A\u0636|\u0628\u0646\u062F|\u0646\u0632\u0627\u0639|\u062D\u0645\u0627\u064A\u0629 \u0627\u0644\u0645\u0633\u062A\u0647\u0644\u0643|\u0645\u062F\u0646\u064A|\u062C\u0646\u0627\u0626\u064A|\u0628\u0631\u0627\u0621\u0629|\u0645\u0644\u0643\u064A\u0629 \u0641\u0643\u0631\u064A\u0629|\u0627\u0633\u062A\u0626\u0646\u0627\u0641|\u062D\u0643\u0645|\u0634\u0631\u064A\u0639\u0629|\u0642\u0627\u0646\u0648\u0646 \u0645\u062F\u0646\u064A|\u0642\u0627\u0646\u0648\u0646 \u062A\u062C\u0627\u0631\u064A/.test(text)) {
     return {
       domain: 'LAW',
       rules: `LAW DOMAIN:
@@ -115,7 +115,7 @@ function buildSubjectContext(contents, missionType) {
 
   // ── MEDICAL / NURSING / PHARMACY ──────────────────────────────────────────────
   const hasEngineeringIntent = /membrane|osmosis|desalination|solar pv|photovoltaic|pump|kwp|kwh|hydraulic|structural|reinforced concrete|ecp|sbc|pid controller|heat exchanger|thermosyphon|solar collector|thermal|collector area|flat.plate|evacuated tube|circuit design|database|algorithm/.test(text);
-  if (!hasEngineeringIntent && /patient|diagnosis|treatment|clinical|nursing|pharmacy|drug|dosage|symptom|pathophysiology|anatomy|medical|healthcare|care plan|pharmacology|مريض|تشخيص|علاج|دواء|جرعة|مستشفى|رعاية|تمريض|صيدلة/.test(text)) {
+  if (!hasEngineeringIntent && /patient|diagnosis|treatment|clinical|nursing|pharmacy|drug|dosage|symptom|pathophysiology|anatomy|medical|healthcare|care plan|pharmacology|\u0645\u0631\u064A\u0636|\u062A\u0634\u062E\u064A\u0635|\u0639\u0644\u0627\u062C|\u062F\u0648\u0627\u0621|\u062C\u0631\u0639\u0629|\u0645\u0633\u062A\u0634\u0641\u0649|\u0631\u0639\u0627\u064A\u0629|\u062A\u0645\u0631\u064A\u0636|\u0635\u064A\u062F\u0644\u0629/.test(text)) {
     return {
       domain: 'MEDICAL',
       rules: `MEDICAL DOMAIN:
@@ -137,7 +137,7 @@ function buildSubjectContext(contents, missionType) {
 
   // ── COMPUTER SCIENCE / SOFTWARE ENGINEERING ───────────────────────────────────
   // Guard: avoid matching "system design" in non-CS contexts by requiring code-specific terms
-  if (/algorithm|data structure|sql|rest api|endpoint|backend|frontend|web app|mobile app|machine learning|neural network|operating system|programming|oop|uml|er diagram|entity.*relationship|schema|crud|mvc|microservice|docker|authentication|jwt|middleware|قاعدة بيانات|برمجة|خوارزمية|كود|(database(?!.*hospital administration|.*management system(?!.*software)))/.test(text) || /\bcode\b|\bfunction\b|\bclass\b|\bobject\b/.test(text)) {
+  if (/algorithm|data structure|sql|rest api|endpoint|backend|frontend|web app|mobile app|machine learning|neural network|operating system|programming|oop|uml|er diagram|entity.*relationship|schema|crud|mvc|microservice|docker|authentication|jwt|middleware|\u0642\u0627\u0639\u062F\u0629 \u0628\u064A\u0627\u0646\u0627\u062A|\u0628\u0631\u0645\u062C\u0629|\u062E\u0648\u0627\u0631\u0632\u0645\u064A\u0629|\u0643\u0648\u062F|(database(?!.*hospital administration|.*management system(?!.*software)))/.test(text) || /\bcode\b|\bfunction\b|\bclass\b|\bobject\b/.test(text)) {
     return {
       domain: 'CS',
       rules: `CS DOMAIN:
@@ -155,7 +155,7 @@ function buildSubjectContext(contents, missionType) {
   }
 
   // ── SPORTS / CLUBS / ORGANIZATIONS ───────────────────────────────────────────
-  if (/نادي|كرة القدم|football|soccer|club|sport|player|match|league|champion|tournament|stadium|coach|season|trophy|الأهلي|الزمالك|barcelona|real madrid|al ahly|zamalek|نادي رياضي|دوري|بطولة|مباراة|لاعب|مدرب|ملعب|كأس|تشكيل|موسم/.test(text)) {
+  if (/\u0646\u0627\u062F\u064A|\u0643\u0631\u0629 \u0627\u0644\u0642\u062F\u0645|football|soccer|club|sport|player|match|league|champion|tournament|stadium|coach|season|trophy|\u0627\u0644\u0623\u0647\u0644\u064A|\u0627\u0644\u0632\u0645\u0627\u0644\u0643|barcelona|real madrid|al ahly|zamalek|\u0646\u0627\u062F\u064A \u0631\u064A\u0627\u0636\u064A|\u062F\u0648\u0631\u064A|\u0628\u0637\u0648\u0644\u0629|\u0645\u0628\u0627\u0631\u0627\u0629|\u0644\u0627\u0639\u0628|\u0645\u062F\u0631\u0628|\u0645\u0644\u0639\u0628|\u0643\u0623\u0633|\u062A\u0634\u0643\u064A\u0644|\u0645\u0648\u0633\u0645/.test(text)) {
     return {
       domain: 'SPORTS',
       rules: `SPORTS & ORGANIZATIONS DOMAIN:
@@ -172,7 +172,7 @@ function buildSubjectContext(contents, missionType) {
 
   // ── HUMANITIES — Literature, History, Philosophy, Sociology ──────────────────
   // Guard: "analysis" and "theory" alone are too generic — require domain-specific terms
-  if (/literature|literary|philosophy|sociology|anthropology|cultural studies|discourse analysis|narrative theory|postcolonial|feminism|marxism|psychoanalysis|historiography|علم الاجتماع|فلسفة|أدب|نقد أدبي|دراسات ثقافية/.test(text) || (/\b(history|historical|thesis)\b/.test(text) && !/engineering|medical|business|law|computer|sport|marketing|digital/.test(text))) {
+  if (/literature|literary|philosophy|sociology|anthropology|cultural studies|discourse analysis|narrative theory|postcolonial|feminism|marxism|psychoanalysis|historiography|\u0639\u0644\u0645 \u0627\u0644\u0627\u062C\u062A\u0645\u0627\u0639|\u0641\u0644\u0633\u0641\u0629|\u0623\u062F\u0628|\u0646\u0642\u062F \u0623\u062F\u0628\u064A|\u062F\u0631\u0627\u0633\u0627\u062A \u062B\u0642\u0627\u0641\u064A\u0629/.test(text) || (/\b(history|historical|thesis)\b/.test(text) && !/engineering|medical|business|law|computer|sport|marketing|digital/.test(text))) {
     return {
       domain: 'HUMANITIES',
       rules: `HUMANITIES DOMAIN:
@@ -213,8 +213,8 @@ function buildSubjectContext(contents, missionType) {
 
   // ── MULTI-DOMAIN detection ────────────────────────────────────────────────────
   const domainScores = {
-    MEDICAL: /patient|diagnosis|stroke|hemiparesis|triage|ct scan|tpa|thrombolytic|ischemic|hemorrhagic|fast assessment|symptom|pathophysiology|anatomy|medical|healthcare|care plan|pharmacology|مريض|تشخيص|علاج|دواء/.test(text) ? 1 : 0,
-    ENGINEERING: /retaining wall|ecp|lateral earth pressure|safety factor|pid controller|reinforced concrete|beam|slab|column|structural|foundation|steel design|load|moment|shear|هندسة مدنية/.test(text) ? 1 : 0,
+    MEDICAL: /patient|diagnosis|stroke|hemiparesis|triage|ct scan|tpa|thrombolytic|ischemic|hemorrhagic|fast assessment|symptom|pathophysiology|anatomy|medical|healthcare|care plan|pharmacology|\u0645\u0631\u064A\u0636|\u062A\u0634\u062E\u064A\u0635|\u0639\u0644\u0627\u062C|\u062F\u0648\u0627\u0621/.test(text) ? 1 : 0,
+    ENGINEERING: /retaining wall|ecp|lateral earth pressure|safety factor|pid controller|reinforced concrete|beam|slab|column|structural|foundation|steel design|load|moment|shear|\u0647\u0646\u062F\u0633\u0629 \u0645\u062F\u0646\u064A\u0629/.test(text) ? 1 : 0,
     BUSINESS: /pestel|swot|npv|irr|feasibility|market analysis|financial model|cash flow|investment/.test(text) ? 1 : 0,
     MATH_STATS: /correlation|calculus|optimization|standard deviation|regression|statistical/.test(text) ? 1 : 0,
   };

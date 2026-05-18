@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Upload, X, ChevronDown, Zap, FileText, Image, Code2, Calculator, BookOpen, Presentation, Globe, Building2, PlusCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/utils';
@@ -6,6 +6,7 @@ import { cn } from '../lib/utils';
 interface UploadHandlerProps {
   onLaunch: (files: File[], prompt: string, university?: string, course?: string, system?: string, reference?: string, missionType?: string, country?: string, major?: string) => void;
   isProcessing?: boolean;
+  userProfile?: { country: string; university: string; major: string } | null;
 }
 
 // ── COUNTRY DATA ─────────────────────────────────────────────────────────────
@@ -179,7 +180,7 @@ const MISSION_TYPES_AR = [
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function UploadHandler({ onLaunch, isProcessing }: UploadHandlerProps) {
+export function UploadHandler({ onLaunch, isProcessing, userProfile }: UploadHandlerProps) {
   const { i18n } = useTranslation();
   const isAr = i18n.language === 'ar';
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -194,6 +195,14 @@ export function UploadHandler({ onLaunch, isProcessing }: UploadHandlerProps) {
   const [system, setSystem] = useState('');
   const [missionType, setMissionType] = useState('');
   const [dragging, setDragging] = useState(false);
+
+  // Pre-fill from saved profile — runs when profile loads
+  useEffect(() => {
+    if (!userProfile) return;
+    if (userProfile.country) setCountry(userProfile.country);
+    if (userProfile.university) setUniversity(userProfile.university);
+    if (userProfile.major) setMajor(userProfile.major);
+  }, [userProfile?.university, userProfile?.major, userProfile?.country]);
 
   const SYSTEMS = isAr ? SYSTEMS_AR : SYSTEMS_EN;
   const MISSION_TYPES = isAr ? MISSION_TYPES_AR : MISSION_TYPES_EN;

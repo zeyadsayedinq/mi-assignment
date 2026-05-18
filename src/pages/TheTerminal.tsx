@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { ResultsDashboard } from '../components/ResultsDashboard';
 import { UploadHandler } from '../components/UploadHandler';
 import { ImageGenerator } from '../components/ImageGenerator';
+import { OnboardingModal } from '../components/OnboardingModal';
 import { processMission } from '../lib/mi';
 import { supabase } from '../lib/supabase';
 import { FloatingOrbs } from '../components/Scene3D';
@@ -48,7 +49,37 @@ export function TheTerminal() {
   const [showImageLab, setShowImageLab] = useState(false);
   const [missionMeta, setMissionMeta] = useState<{ name: string; university: string; course: string } | null>(null);
 
+  // User profile — university + major pre-fill
+  const [userProfile, setUserProfile] = useState<{ country: string; university: string; major: string } | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+
   const PROCESSING = isAr ? PROCESSING_AR : PROCESSING_EN;
+
+  // Load user profile — check if onboarding needed
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('country, university, major, onboarding_complete')
+          .eq('id', user.id)
+          .single();
+        if (data?.onboarding_complete && data.university && data.major) {
+          setUserProfile({ country: data.country || '', university: data.university, major: data.major });
+        } else {
+          // First time — show onboarding
+          setShowOnboarding(true);
+        }
+      } catch {
+        // profiles table may not exist yet — show onboarding
+        setShowOnboarding(true);
+      } finally {
+        setProfileLoaded(true);
+      }
+    })();
+  }, [user]);
 
   useEffect(() => {
     if (missionState !== 'analyzing') return;
@@ -132,6 +163,17 @@ export function TheTerminal() {
     <div className={cn('flex bg-[#050608] text-gray-300 font-sans w-full h-full relative', isAr && 'font-[Cairo]')}
       dir={isAr ? 'rtl' : 'ltr'}>
 
+      {/* Onboarding modal — first time only */}
+      {showOnboarding && user && (
+        <OnboardingModal
+          userId={user.id}
+          onComplete={(profile) => {
+            setUserProfile(profile);
+            setShowOnboarding(false);
+          }}
+        />
+      )}
+
       <div className="fixed inset-0 pointer-events-none z-0 opacity-40">
         <FloatingOrbs count={3} colors={['#22D3EE', '#A855F7']} />
       </div>
@@ -190,7 +232,7 @@ export function TheTerminal() {
                         : 'Upload your assignment files, fill in the context, and let Mi handle the rest.'}
                     </p>
                   </div>
-                  <UploadHandler onLaunch={handleMissionLaunch} />
+                  <UploadHandler onLaunch={handleMissionLaunch} userProfile={userProfile} />
                 </motion.div>
               )}
 
