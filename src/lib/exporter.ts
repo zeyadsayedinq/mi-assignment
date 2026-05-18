@@ -13,16 +13,16 @@ import * as XLSX from 'xlsx';
 // Strip hidden AI watermark / invisible unicode characters from all output text
 function sanitizeText(text: string): string {
   if (!text || typeof text !== 'string') return text || '';
-  return text
-    .replace(/[\u200B\u200C\u200D\u200E\u200F]/g, '')  // Zero-width chars (ZWSP, ZWNJ, ZWJ, LRM, RLM)
-    .replace(/[\u2060\u2061\u2062\u2063\u2064]/g, '')  // Invisible joiners / math chars
-    .replace(/\uFEFF/g, '')                             // BOM / ZWNBSP
-    .replace(/[\u202A-\u202E]/g, '')                   // Directional formatting overrides
-    .replace(/[\u2028\u2029]/g, ' ')                   // Line/paragraph separators
-    .replace(/\u00AD/g, '')                            // Soft hyphen (SHY)
-    .replace(/\u00A0/g, ' ')                           // Non-breaking space → regular space
-    .replace(/\u202F/g, ' ')                           // Narrow non-breaking space → regular space
-    .trim();
+  return text.split('').filter(ch => {
+    const c = ch.charCodeAt(0);
+    if (c === 0x200B || c === 0x200C || c === 0x200D || c === 0x200E || c === 0x200F) return false;
+    if (c >= 0x2060 && c <= 0x2064) return false;
+    if (c === 0xFEFF) return false;
+    if (c >= 0x202A && c <= 0x202E) return false;
+    if (c === 0x2028 || c === 0x2029) return false;
+    if (c === 0x00AD) return false;
+    return true;
+  }).join('').replace(/ /g, ' ').replace(/ /g, ' ').trim();
 }
 
 function cleanLaTeX(text: string): string {

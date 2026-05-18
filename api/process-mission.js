@@ -506,17 +506,17 @@ export default async function handler(req, res) {
     // ── Sanitize all text fields — strip hidden unicode AI watermarks ────────
     const sanitizeText = (text) => {
       if (typeof text !== 'string') return text;
-      return text
-        .replace(/[​‌‍‎‏]/g, '')   // Zero-width chars
-        .replace(/[⁠⁡⁢⁣⁤]/g, '')   // Word/invisible joiners
-        .replace(/﻿/g, '')                              // BOM / ZWNBSP
-        .replace(/[‪-‮]/g, '')                    // Directional overrides
-        .replace(/[  ]/g, ' ')                    // Line/paragraph separators
-        .replace(/­/g, '')                             // Soft hyphen
-        .replace(/ /g, ' ')                            // NBSP → regular space
-        .replace(/ /g, ' ')                            // NNBSP → regular space
-        .replace(/ /g, ' ')                            // Em space → regular space
-        .trim();
+      // Remove hidden AI watermark characters using char codes (no literal unicode in source)
+      return text.split('').filter(ch => {
+        const c = ch.charCodeAt(0);
+        if (c === 0x200B || c === 0x200C || c === 0x200D || c === 0x200E || c === 0x200F) return false;
+        if (c >= 0x2060 && c <= 0x2064) return false;
+        if (c === 0xFEFF) return false;
+        if (c >= 0x202A && c <= 0x202E) return false;
+        if (c === 0x2028 || c === 0x2029) return false;
+        if (c === 0x00AD) return false;
+        return true;
+      }).join('').replace(/\xa0/g, ' ').replace(/\u202f/g, ' ').trim();
     };
 
     const sanitizeDeep = (obj) => {
