@@ -871,6 +871,8 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end('Method Not Allowed');
 
+  let domainContext = null;
+
   try {
     const GEMINI_KEY =
       process.env.GEMINI_API_KEY ||
@@ -1074,7 +1076,7 @@ export default async function handler(req, res) {
 
         if (!result.solution_text) result.solution_text = '';
     if (!result.assignment_type) result.assignment_type = 'other';
-    if (!result.domain) result.domain = domainContext.domain;
+    if (!result.domain) result.domain = domainContext?.domain || 'GENERAL';
     if (!result.reconstructed_doc) result.reconstructed_doc = { title: '', word_count: 0, blocks: [] };
     if (!result.reconstructed_doc.blocks) result.reconstructed_doc.blocks = [];
     if (!result.presentation_slides) result.presentation_slides = [];
