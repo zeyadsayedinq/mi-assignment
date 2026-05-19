@@ -261,6 +261,7 @@ function buildSystemPrompt(domainContext, missionType) {
     : '';
   return `You are the Mi-Assignment Expert Engine ("Mi-CORE"). You are a proprietary academic tool built by Mi-Assignment. You must NEVER mention Google, Gemini, AI models, language models, or any third-party technology. If asked who or what you are, respond only: "I am Mi-CORE, the Mi-Assignment Expert Engine." Do not acknowledge being an AI or language model under any circumstances.
 
+${missionType !== 'presentation' ? 'IMPORTANT: This is NOT a presentation assignment. Set presentation_slides to an empty array []. Do NOT generate slides.' : ''}
 ${presentationHint}You are Mi-Assignment V1.0 — an elite academic engine producing submission-ready work at top-student level. You adapt intelligence to the subject domain.
 
 ACTIVE DOMAIN: ${domainContext.domain}
@@ -349,7 +350,7 @@ Arabic student voice: formal فصحى but not textbook-stiff. Use active voice (
 OUTPUT QUANTITY:
 - Essays/Reports: minimum 500 words across all paragraph blocks
 - Math assignments: minimum 5 solution_steps per math block
-- Presentations: EXACTLY 10 slides minimum. This is non-negotiable. If you produce fewer than 10 slides, you have failed.
+- Presentations: 6 slides maximum when missionType is NOT 'presentation'. 10 slides ONLY when missionType is 'presentation'.
 - SLIDE CONTENT RULES (critical for visual quality):
   * power_heading: MAX 6 words. Must be an INSIGHT not a label. Bad: "Introduction to Topic". Good: "Cairo Rents Up 34% in 2024".
   * content_bullets: EXACTLY 5 bullets. Each bullet 8-12 words. Must include a specific stat, name, or data point. No vague bullets. Example: '3.2M Spotify listeners — Wegz leads Arabic rap globally' not 'Artists have many followers'
@@ -673,60 +674,82 @@ export default async function handler(req, res) {
     console.log(`Mi — first: ${first}, last: ${last}, depth after scan: ${depth}, clean length: ${clean.length}`);
 
     if (last === -1) {
-      // Log what we got to diagnose
-      console.error(`Mi — JSON incomplete. First 200: ${clean.slice(0,200)}`);
-      console.error(`Mi — JSON last 200: ${clean.slice(-200)}`);
-      return res.status(500).json({ error: 'Incomplete JSON response. Please try again.' });
-    }
-    clean = clean.slice(first, last + 1);
-
-    let result;
-    try { result = JSON.parse(clean); }
-    catch {
-      // Fix trailing commas
-      try { result = JSON.parse(clean.replace(/,(\s*[}\]])/g, '$1')); }
-      catch {
-        // Gemini hit token limit mid-JSON — reconstruct by closing all open brackets
-        try {
-          let fixed = clean;
-          // Count unclosed brackets
-          let opens = 0, inStr = false, escape = false;
-          for (const ch of fixed) {
-            if (escape) { escape = false; continue; }
-            if (ch === '\\') { escape = true; continue; }
-            if (ch === '"') { inStr = !inStr; continue; }
-            if (!inStr) {
-              if (ch === '{' || ch === '[') opens++;
-              else if (ch === '}' || ch === ']') opens--;
-            }
-          }
-          // Close any unclosed strings and brackets
-          if (inStr) fixed += '"';
-          // Remove trailing comma before we close
-          fixed = fixed.replace(/,\s*$/, '');
-          // Close brackets
-          const stack = [];
-          inStr = false; escape = false;
-          for (const ch of fixed) {
-            if (escape) { escape = false; continue; }
-            if (ch === '\\') { escape = true; continue; }
-            if (ch === '"') { inStr = !inStr; continue; }
-            if (!inStr) {
-              if (ch === '{') stack.push('}');
-              else if (ch === '[') stack.push(']');
-              else if ((ch === '}' || ch === ']') && stack.length) stack.pop();
-            }
-          }
-          fixed += stack.reverse().join('');
-          fixed = fixed.replace(/,(\s*[}\]])/g, '$1');
-          result = JSON.parse(fixed);
-        } catch (e) {
-          return res.status(500).json({ error: `Response parse failed: ${e.message}` });
+      console.error(`Mi — JSON truncated at ${clean.length} chars, depth=${depth}. Attempting recovery...`);
+      // Smart truncation recovery — close all open structures
+      let fixed = clean.slice(first);
+      // Remove trailing incomplete string (most common truncation point)
+      fixed = fixed.replace(/,\s*"[^"]*$/, '');      // trailing key
+      fixed = fixed.replace(/:\s*"[^"]*$/, '');      // trailing value
+      fixed = fixed.replace(/,\s*\[$/, '');           // trailing array start
+      fixed = fixed.replace(/,\s*{[^}]*$/, '');       // trailing incomplete object
+      fixed = fixed.replace(/,\s*$/, '');             // trailing comma
+      // Close all open brackets/braces by walking the string
+      const stk = [];
+      let inS = false, esc = false;
+      for (const ch of fixed) {
+        if (esc) { esc = false; continue; }
+        if (ch === '\\') { esc = true; continue; }
+        if (ch === '"') { inS = !inS; continue; }
+        if (!inS) {
+          if (ch === '{') stk.push('}');
+          else if (ch === '[') stk.push(']');
+          else if ((ch === '}' || ch === ']') && stk.length) stk.pop();
         }
+      }
+      if (inS) fixed += '"';
+      fixed = fixed.replace(/,\s*$/, '');
+      fixed += stk.reverse().join('');
+      try {
+        result = JSON.parse(fixed.replace(/,(\s*[}\]])/g, '$1'));
+        console.log('Mi — truncation recovery succeeded');
+      } catch(recErr) {
+        console.error('Mi — recovery failed:', recErr.message);
+        return res.status(500).json({ error: 'Response was too large. Please shorten your assignment or try again.' });
+      }
+    }
+    // Parse JSON — handle truncation gracefully
+    let result;
+    const jsonToParse = last !== -1 ? clean.slice(first, last + 1) : clean.slice(first);
+
+    const tryParse = (s) => {
+      try { return JSON.parse(s); } catch {}
+      try { return JSON.parse(s.replace(/,(\s*[}\]])/g, '$1')); } catch {}
+      return null;
+    };
+
+    result = tryParse(jsonToParse);
+
+    if (!result) {
+      // Truncation recovery — close all open structures
+      let fixed = jsonToParse;
+      fixed = fixed.replace(/,\s*"[^"]*$/, '');
+      fixed = fixed.replace(/:\s*"[^"]*$/, ': ""');
+      fixed = fixed.replace(/,\s*\[$/, '');
+      fixed = fixed.replace(/,\s*$/, '');
+      const stk = [];
+      let inS = false, esc = false;
+      for (const ch of fixed) {
+        if (esc) { esc = false; continue; }
+        if (ch === '\\') { esc = true; continue; }
+        if (ch === '"') { inS = !inS; continue; }
+        if (!inS) {
+          if (ch === '{') stk.push('}');
+          else if (ch === '[') stk.push(']');
+          else if ((ch === '}' || ch === ']') && stk.length) stk.pop();
+        }
+      }
+      if (inS) fixed += '"';
+      fixed = fixed.replace(/,\s*$/, '');
+      fixed += stk.reverse().join('');
+      result = tryParse(fixed);
+      if (result) {
+        console.log('Mi — truncation recovery succeeded');
+      } else {
+        return res.status(500).json({ error: 'Response was too large. Please simplify your assignment or try again.' });
       }
     }
 
-    if (!result.solution_text) result.solution_text = '';
+        if (!result.solution_text) result.solution_text = '';
     if (!result.assignment_type) result.assignment_type = 'other';
     if (!result.domain) result.domain = domainContext.domain;
     if (!result.reconstructed_doc) result.reconstructed_doc = { title: '', word_count: 0, blocks: [] };
