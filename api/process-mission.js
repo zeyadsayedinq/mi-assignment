@@ -190,26 +190,381 @@ function buildSubjectContext(contents, missionType) {
   }
 
   // ── Country/university curriculum anchors for GENERAL ────────────────────────
-  const getCountryStandards = (country, uni) => {
-    const c = country.toLowerCase(), u = uni.toLowerCase();
-    if (c.includes('egypt') || u.includes('cairo') || u.includes('ain shams') || u.includes('guc') || u.includes('auc') || u.includes('bue') || u.includes('miu')) {
-      if (u.includes('auc') || u.includes('bue') || u.includes('guc')) return 'International standards (AUC=US, GUC=German, BUE=British). APA 7th default. English academic register.';
-      return 'Egyptian academic standards. Reference ECP 203 for structures, Egyptian Civil Code for law. Arabic or English per assignment language.';
-    }
-    if (c.includes('saudi') || u.includes('kfupm') || u.includes('king') || u.includes('kaust') || u.includes('alfaisal'))
-      return 'Saudi academic standards. Reference SBC, Saudi Green Initiative, Vision 2030 frameworks. SI units.';
-    if (c.includes('uae') || u.includes('uaeu') || u.includes('aus') || u.includes('zayed') || u.includes('khalifa'))
-      return 'UAE academic standards. Reference UAE Building Code, UAE Vision 2031 for business context.';
-    if (c.includes('kuwait')) return 'Kuwait academic standards. GCC standards.';
-    if (c.includes('jordan')) return 'Jordanian academic standards. Jordanian Building Code.';
-    return 'International academic standards. Internationally recognized codes and frameworks.';
+  // ── HARDCODED CURRICULUM DATABASE ────────────────────────────────────────────
+  // Keyed by university/country, contains domain-specific standards per institution
+  const CURRICULUM = {
+    // ── EGYPT: PUBLIC UNIVERSITIES ──────────────────────────────────────────────
+    'cairo': {
+      style: 'Egyptian public university. Arabic-first. Formal فصحى.',
+      engineering: 'ECP 203-2018 (concrete), ECP 201 (loads), ECP 205 (steel). Cite by section number. SI units. Safety factors: sliding≥1.5, overturning≥2.0, bearing≥3.0. Report format: Given→Find→Assumptions→Solution→Verify.',
+      medical: 'Egyptian MOH clinical guidelines. Egyptian Heart Association protocols. MOHP drug formulary. Cairo University Faculty of Medicine grading rubric: Introduction→Case History→Examination→Investigations→Diagnosis→Management→Follow-up.',
+      law: 'Egyptian Civil Code (Law 131/1948). Egyptian Commercial Code (Law 17/1999). Egyptian Labor Law (Law 12/2003). Consumer Protection Law (181/2018). Cite articles by number. Format: IRAC. Courts: Ibtidaʾi→Istinaf→Naqd.',
+      business: 'Egyptian Exchange (EGX) references. Central Bank of Egypt (CBE) rates. Egyptian Competition Authority. CAPMAS data for demographics. Currency: EGP. Fiscal year: July-June.',
+      cs: 'Standard IEEE/ACM curriculum. Arabic UI considerations. Egyptian e-government API standards. Focus on practical implementation.',
+      math: 'Egyptian national curriculum standards. Show full Arabic mathematical notation where applicable. Reference Egyptian university exam format.',
+      citation: 'Arabic essays: no specific style enforced — use inline references. English essays: APA 7th.',
+    },
+    'ain_shams': {
+      style: 'Egyptian public university. Arabic-first. Similar to Cairo University standards.',
+      engineering: 'ECP 203-2018. Ain Shams Faculty of Engineering known for soil mechanics and geotechnical focus. Reference ECP 202 (soil).',
+      medical: 'Ain Shams University Hospital protocols. Egyptian MOH guidelines. Strong clinical case study tradition.',
+      law: 'Egyptian Civil Code. Ain Shams Faculty of Law focuses on comparative law (Egyptian + French civil law tradition).',
+      business: 'Ain Shams Faculty of Commerce standards. Focus on Egyptian market analysis.',
+      citation: 'APA 7th for English. No strict style for Arabic.',
+    },
+    'alexandria': {
+      style: 'Egyptian public university. Arabic-first. Mediterranean academic tradition.',
+      engineering: 'ECP 203-2018. Alexandria known for marine/coastal engineering. Reference coastal engineering standards.',
+      medical: 'Alexandria University Medical School protocols. Egyptian MOH guidelines.',
+      citation: 'APA 7th for English.',
+    },
+    'mansoura': {
+      style: 'Egyptian public university. Arabic-first. Known for medicine and engineering.',
+      medical: 'Mansoura University Hospital (MUCH) protocols. Transplant surgery pioneer institution. Reference Egyptian MOH + MUCH clinical pathways.',
+      engineering: 'ECP 203-2018. Delta region construction considerations.',
+      citation: 'APA 7th for English.',
+    },
+    'helwan': {
+      style: 'Egyptian public university. Arabic-first. Strong in applied arts and engineering.',
+      engineering: 'ECP 203-2018. Industrial engineering focus.',
+      citation: 'APA 7th for English.',
+    },
+    'azhar': {
+      style: 'Al-Azhar University. Arabic. Islamic academic tradition. Sharia law framework.',
+      law: 'Islamic Sharia law primary source. Egyptian Civil Code as secondary. Quran + Sunnah citations. Fiqh schools: Hanafi (Egypt official), Maliki, Shafi\'i, Hanbali.',
+      citation: 'Classical Islamic citation style. APA 7th for scientific papers.',
+    },
+
+    // ── EGYPT: PRIVATE/INTERNATIONAL UNIVERSITIES ───────────────────────────────
+    'guc': {
+      style: 'German University in Cairo. English and German. German academic standards. Structured, precise, formal.',
+      engineering: 'Eurocode 2 (EN 1992) for concrete, Eurocode 3 (EN 1993) for steel, Eurocode 7 (EN 1997) for geotechnical. German DIN standards where applicable. SI units strictly. Format: Aufgabe→Lösung→Kontrolle or Given→Required→Solution→Check.',
+      business: 'German business frameworks. Porter\'s Five Forces, BCG Matrix. DIN ISO standards. European market context alongside Egyptian.',
+      cs: 'German software engineering standards. UML mandatory. Clean code principles (German precision culture). IEEE documentation.',
+      citation: 'German citation style or APA 7th. IEEE for engineering.',
+      grading: 'German grading: 1 (sehr gut) to 5 (nicht bestanden). GPA equivalent.',
+    },
+    'auc': {
+      style: 'American University in Cairo. English only. American liberal arts tradition. Writing-intensive.',
+      engineering: 'ACI 318 (concrete), AISC (steel), ASCE 7 (loads). US customary or SI units. ABET outcomes.',
+      medical: 'US clinical guidelines. UpToDate references. AHA/ACC protocols.',
+      law: 'Common law tradition + Egyptian Civil Code. Case-based analysis. Bluebook citation.',
+      business: 'Harvard Business School case method. US GAAP accounting. AUC School of Business standards.',
+      cs: 'US ACM/IEEE curriculum. Python/Java focus. Agile methodology.',
+      humanities: 'Chicago/MLA citation. Writing Center standards. Thesis-driven. Peer review required.',
+      citation: 'APA 7th default. Chicago for humanities. IEEE for engineering.',
+      grading: 'US GPA 4.0 scale. Letter grades A-F.',
+    },
+    'bue': {
+      style: 'British University in Egypt. English only. British academic standards.',
+      engineering: 'BS 8110 (concrete), BS 5950 (steel), Eurocode as supplement. British Standards Institution (BSI).',
+      law: 'English common law + Egyptian Civil Code. OSCOLA citation. Essay-based exams.',
+      business: 'UK business frameworks. ACCA/CIMA accounting standards. UK market context.',
+      cs: 'BCS (British Computer Society) standards. Object-oriented focus.',
+      citation: 'Harvard referencing (Leeds style). OSCOLA for law.',
+      grading: 'UK grading: First (70%+), 2:1 (60-69%), 2:2 (50-59%), Third (40-49%).',
+    },
+    'miu': {
+      style: 'Misr International University. English-medium. American-style curriculum.',
+      engineering: 'ACI 318, ASCE 7. American standards.',
+      business: 'American business education model.',
+      citation: 'APA 7th.',
+      grading: 'US GPA scale.',
+    },
+    'msa': {
+      style: 'MSA University. English-medium. British-accredited programs.',
+      citation: 'Harvard referencing.',
+      grading: 'UK grading scale.',
+    },
+    'must': {
+      style: 'Misr University for Science and Technology. Arabic and English.',
+      engineering: 'ECP 203-2018. Applied focus.',
+      citation: 'APA 7th for English.',
+    },
+    'future': {
+      style: 'Future University in Egypt. Arabic and English.',
+      citation: 'APA 7th.',
+    },
+    'october6': {
+      style: 'October 6 University. Arabic-first.',
+      engineering: 'ECP 203-2018.',
+      citation: 'APA 7th for English.',
+    },
+    'aast': {
+      style: 'Arab Academy for Science, Technology and Maritime Transport. English-medium. Strong maritime and engineering focus.',
+      engineering: 'International maritime standards (IMO, SOLAS). Lloyd\'s Register. ACI/AISC for civil/structural.',
+      cs: 'IEEE standards. Network engineering focus.',
+      citation: 'IEEE for engineering. APA 7th.',
+    },
+    'nile': {
+      style: 'Nile University. English-medium. Research-focused. Technology and entrepreneurship.',
+      cs: 'Research-oriented. IEEE standards. Machine learning and AI focus.',
+      business: 'Technology entrepreneurship. Egyptian startup ecosystem context.',
+      citation: 'IEEE for tech. APA 7th.',
+    },
+
+    // ── SAUDI ARABIA ────────────────────────────────────────────────────────────
+    'kfupm': {
+      style: 'King Fahd University of Petroleum and Minerals. English-medium. US-style ABET-accredited. Engineering and petroleum focus.',
+      engineering: 'SBC 304 (concrete), SBC 301 (loads), SBC 601 (energy). Saudi Aramco Engineering Standards (SAES) for petroleum. API standards for oil/gas. SABIC standards for petrochemicals. SI units.',
+      cs: 'ACM/IEEE curriculum. KFUPM known for computing research.',
+      math: 'US university math curriculum. Rigorous proof-based.',
+      business: 'Vision 2030 frameworks. Saudi investment frameworks. GOSI, ZATCA regulations.',
+      citation: 'APA 7th. IEEE for engineering.',
+      grading: 'US GPA 4.0 scale.',
+    },
+    'ksu': {
+      style: 'King Saud University. Arabic and English. Saudi MOE standards.',
+      engineering: 'SBC 304, SBC 301. Saudi standards.',
+      medical: 'Saudi MOH clinical guidelines. Saudi Heart Association. NCBE (National Competency-Based Exam) preparation.',
+      law: 'Saudi legal system: Sharia law primary. Basic Law of Governance. Labor Law (Royal Decree M/51). HRSD regulations.',
+      business: 'Vision 2030. Saudi market. Tadawul (Saudi Exchange) references.',
+      citation: 'APA 7th for English. No strict style for Arabic.',
+    },
+    'kaust': {
+      style: 'King Abdullah University of Science and Technology. English only. Graduate research institution. International faculty. Highest academic standards.',
+      engineering: 'International standards. Nature/Science level research quality. Computational methods emphasized.',
+      cs: 'Cutting-edge AI/ML research. Top-tier conference standards (NeurIPS, ICML, CVPR).',
+      math: 'Graduate-level rigor. Proof-based.',
+      citation: 'Nature/IEEE/ACM citation styles.',
+      grading: 'Research output based.',
+    },
+    'alfaisal': {
+      style: 'Alfaisal University. English-medium. American model. Riyadh.',
+      engineering: 'ABET-accredited. SBC + ACI/AISC.',
+      business: 'American business school model. Vision 2030 context.',
+      citation: 'APA 7th. IEEE for engineering.',
+    },
+    'psu_saudi': {
+      style: 'Prince Sultan University. English-medium. Riyadh.',
+      citation: 'APA 7th.',
+    },
+    'iau': {
+      style: 'Imam Abdulrahman Bin Faisal University. Arabic and English. Eastern Province.',
+      medical: 'Saudi MOH guidelines. Dammam Medical Complex protocols.',
+      citation: 'APA 7th for English.',
+    },
+    'umm_al_qura': {
+      style: 'Umm Al-Qura University. Arabic-first. Mecca. Islamic studies focus.',
+      law: 'Islamic Sharia law. Saudi legal system.',
+      citation: 'Classical Islamic + APA 7th.',
+    },
+
+    // ── UAE ──────────────────────────────────────────────────────────────────────
+    'uaeu': {
+      style: 'UAE University. Arabic and English. UAE national university. Al Ain.',
+      engineering: 'UAE Building Code (UAEBC). Dubai Building Code (DBC). Abu Dhabi International Building Code (ADIBC). Estidama (green building) standards. SI units.',
+      medical: 'MOHAP (UAE Ministry of Health and Prevention) guidelines. DHA (Dubai Health Authority) protocols. HAAD (Abu Dhabi) standards.',
+      law: 'UAE Civil Transactions Code (Federal Law No. 5/1985). DIFC Law. UAE Commercial Companies Law (Federal Law No. 2/2015). UAE Labor Law (Federal Decree-Law No. 33/2021).',
+      business: 'UAE Vision 2031. Dubai Economic Agenda D33. Free zone regulations (DMCC, DIFC, ADGM). AED currency.',
+      citation: 'APA 7th. IEEE for engineering.',
+    },
+    'aus': {
+      style: 'American University of Sharjah. English only. ABET/AACSB accredited. US academic standards.',
+      engineering: 'ABET outcomes. ACI 318, AISC, ASCE 7. UAE Building Code for local context.',
+      business: 'AACSB standards. Case-based. UAE and Gulf market context.',
+      humanities: 'Liberal arts tradition. Chicago/MLA.',
+      citation: 'APA 7th. Chicago for humanities. IEEE for engineering.',
+      grading: 'US GPA 4.0.',
+    },
+    'khalifa': {
+      style: 'Khalifa University. English-medium. Abu Dhabi. Research-intensive. Masdar City partnership.',
+      engineering: 'Advanced research standards. Sustainability focus. Masdar clean energy context. UAE Building Code.',
+      cs: 'AI and robotics research focus. IEEE standards.',
+      citation: 'IEEE. APA 7th.',
+    },
+    'zayed': {
+      style: 'Zayed University. English-medium. Abu Dhabi and Dubai. Professional focus.',
+      business: 'Communication and business focus. UAE Vision 2031.',
+      citation: 'APA 7th.',
+    },
+    'sharjah': {
+      style: 'University of Sharjah. Arabic and English.',
+      engineering: 'UAE Building Code.',
+      medical: 'MOHAP guidelines.',
+      citation: 'APA 7th.',
+    },
+    'hct': {
+      style: 'Higher Colleges of Technology. English-medium. Applied/vocational focus. UAE.',
+      citation: 'APA 7th.',
+    },
+
+    // ── KUWAIT ───────────────────────────────────────────────────────────────────
+    'kuwait_uni': {
+      style: 'Kuwait University. Arabic and English. Kuwait national university.',
+      engineering: 'Kuwait Municipality building codes. GCC standards. KUNA references.',
+      medical: 'Kuwait MOH guidelines. Kuwait Cancer Control Center (KCCC) for oncology.',
+      law: 'Kuwait Civil Code. Kuwaiti Commercial Law.',
+      business: 'Kuwait stock market (Boursa Kuwait). KD currency. Gulf market.',
+      citation: 'APA 7th for English.',
+    },
+    'gust': {
+      style: 'Gulf University for Science and Technology. English-medium. US-model. Kuwait.',
+      citation: 'APA 7th. IEEE for engineering.',
+      grading: 'US GPA 4.0.',
+    },
+    'auk': {
+      style: 'American University of Kuwait. English-medium. Liberal arts. US model.',
+      citation: 'APA 7th. Chicago for humanities.',
+    },
+
+    // ── BAHRAIN ──────────────────────────────────────────────────────────────────
+    'uob': {
+      style: 'University of Bahrain. Arabic and English.',
+      engineering: 'Bahrain building regulations. GCC standards.',
+      business: 'Bahrain Economic Vision 2030. BHD currency. Bahrain Bourse.',
+      citation: 'APA 7th.',
+    },
+    'ama_bahrain': {
+      style: 'AMA International University Bahrain. English-medium.',
+      citation: 'APA 7th.',
+    },
+    'rcsi_bahrain': {
+      style: 'RCSI Bahrain. English. Irish medical education model.',
+      medical: 'Irish/UK clinical guidelines. RCSI standards. NICE guidelines apply.',
+      citation: 'Vancouver/APA 7th.',
+    },
+
+    // ── JORDAN ───────────────────────────────────────────────────────────────────
+    'jordan_uni': {
+      style: 'University of Jordan. Arabic-first. Jordan national university. Amman.',
+      engineering: 'Jordanian Building Code (JBC). Arabic standards.',
+      medical: 'Jordanian MOH guidelines. Royal Medical Services (RMS) protocols.',
+      law: 'Jordanian Civil Code (Law No. 43/1976). Jordan Companies Law.',
+      business: 'Amman Stock Exchange (ASE). JD currency.',
+      citation: 'APA 7th for English.',
+    },
+    'yarmouk': {
+      style: 'Yarmouk University. Arabic-first. Irbid, Jordan.',
+      citation: 'APA 7th.',
+    },
+    'just': {
+      style: 'Jordan University of Science and Technology. English-medium. ABET. Irbid.',
+      engineering: 'ABET. JBC + international standards.',
+      medical: 'JUST Faculty of Medicine. Jordanian MOH.',
+      citation: 'APA 7th. IEEE for engineering.',
+    },
+    'gju': {
+      style: 'German-Jordanian University. English and German. German academic model.',
+      engineering: 'Eurocode + Jordanian standards.',
+      business: 'German business frameworks.',
+      citation: 'APA 7th. German citation style.',
+    },
+
+    // ── LEBANON ──────────────────────────────────────────────────────────────────
+    'aub': {
+      style: 'American University of Beirut. English-medium. Oldest research university in Arab world. US liberal arts + research.',
+      engineering: 'ACI 318, AISC, ASCE 7. Lebanese building standards.',
+      medical: 'AUB Medical Center (AUBMC) protocols. JCI-accredited. US clinical guidelines (UpToDate, AHA).',
+      law: 'Lebanese Civil Code (French civil law tradition). Lebanese commercial law.',
+      business: 'AUB Suliman S. Olayan School of Business. AACSB. Case method.',
+      humanities: 'Strong research tradition. Chicago/MLA. Peer-reviewed standards.',
+      citation: 'APA 7th. Chicago for humanities. Vancouver for medicine.',
+      grading: 'US GPA 4.0.',
+    },
+    'lau': {
+      style: 'Lebanese American University. English-medium. AACSB/ABET accredited.',
+      engineering: 'ABET. ACI 318.',
+      business: 'AACSB. American business model.',
+      citation: 'APA 7th. IEEE for engineering.',
+    },
+    'ndu': {
+      style: 'Notre Dame University Lebanon. English-medium. Catholic liberal arts tradition.',
+      humanities: 'Strong liberal arts. Chicago/MLA.',
+      citation: 'APA 7th. Chicago.',
+    },
+    'leb_uni': {
+      style: 'Lebanese University. Arabic and French. French academic tradition.',
+      law: 'Lebanese Civil Code. French civil law. French citation style.',
+      citation: 'French citation style. APA 7th for English papers.',
+    },
   };
 
-  const curriculumNote = [
-    detectedUni ? `University: ${detectedUni} — ${getCountryStandards(detectedCountry, detectedUni)}` : '',
-    detectedMajor ? `Major: ${detectedMajor} — use discipline-specific terminology and assessment criteria` : '',
-    detectedCountry && !detectedUni ? `Country: ${detectedCountry} — ${getCountryStandards(detectedCountry, '')}` : '',
-  ].filter(Boolean).join('\n');
+  // Match university name to curriculum entry
+  const matchCurriculum = (uni) => {
+    const u = (uni || '').toLowerCase().replace(/[^a-z0-9]/g, '_');
+    // Direct matches
+    const directMap = {
+      'cairo': 'cairo', 'cairo_university': 'cairo', 'cu': 'cairo',
+      'ain_shams': 'ain_shams', 'ain_shams_university': 'ain_shams', 'asu': 'ain_shams',
+      'alexandria': 'alexandria', 'alexandria_university': 'alexandria',
+      'mansoura': 'mansoura', 'mansoura_university': 'mansoura',
+      'helwan': 'helwan', 'helwan_university': 'helwan',
+      'al_azhar': 'azhar', 'azhar': 'azhar',
+      'guc': 'guc', 'german_university_in_cairo': 'guc',
+      'auc': 'auc', 'american_university_in_cairo': 'auc',
+      'bue': 'bue', 'british_university_in_egypt': 'bue',
+      'miu': 'miu', 'misr_international': 'miu',
+      'msa': 'msa', 'msa_university': 'msa',
+      'must': 'must', 'misr_university': 'must',
+      'future': 'future', 'future_university': 'future',
+      'october_6': 'october6', 'october6': 'october6', '6_october': 'october6',
+      'aast': 'aast', 'arab_academy': 'aast',
+      'nile': 'nile', 'nile_university': 'nile',
+      'kfupm': 'kfupm', 'king_fahd': 'kfupm',
+      'ksu': 'ksu', 'king_saud': 'ksu',
+      'kaust': 'kaust', 'king_abdullah': 'kaust',
+      'alfaisal': 'alfaisal', 'alfaisal_university': 'alfaisal',
+      'psu': 'psu_saudi', 'prince_sultan': 'psu_saudi',
+      'iau': 'iau', 'imam_abdulrahman': 'iau',
+      'umm_al_qura': 'umm_al_qura', 'uqu': 'umm_al_qura',
+      'uaeu': 'uaeu', 'uae_university': 'uaeu', 'united_arab_emirates_university': 'uaeu',
+      'aus': 'aus', 'american_university_of_sharjah': 'aus',
+      'khalifa': 'khalifa', 'khalifa_university': 'khalifa',
+      'zayed': 'zayed', 'zayed_university': 'zayed',
+      'sharjah': 'sharjah', 'university_of_sharjah': 'sharjah',
+      'hct': 'hct',
+      'kuwait': 'kuwait_uni', 'kuwait_university': 'kuwait_uni',
+      'gust': 'gust',
+      'auk': 'auk', 'american_university_of_kuwait': 'auk',
+      'uob': 'uob', 'university_of_bahrain': 'uob',
+      'ama': 'ama_bahrain',
+      'rcsi': 'rcsi_bahrain',
+      'ju': 'jordan_uni', 'jordan_university': 'jordan_uni', 'university_of_jordan': 'jordan_uni',
+      'yarmouk': 'yarmouk', 'yarmouk_university': 'yarmouk',
+      'just': 'just',
+      'gju': 'gju', 'german_jordanian': 'gju',
+      'aub': 'aub', 'american_university_of_beirut': 'aub',
+      'lau': 'lau', 'lebanese_american': 'lau',
+      'ndu': 'ndu', 'notre_dame': 'ndu',
+      'lu': 'leb_uni', 'lebanese_university': 'leb_uni',
+    };
+    for (const [key, val] of Object.entries(directMap)) {
+      if (u.includes(key)) return CURRICULUM[val];
+    }
+    return null;
+  };
+
+  const curriculumData = matchCurriculum(detectedUni);
+  const domain = domainContext?.domain?.toLowerCase().split(':')[0].trim() || 'general';
+  const domainKey = domain.includes('engineer') ? 'engineering' :
+    domain.includes('medical') || domain.includes('nurs') ? 'medical' :
+    domain.includes('law') ? 'law' :
+    domain.includes('business') ? 'business' :
+    domain.includes('cs') || domain.includes('computer') ? 'cs' :
+    domain.includes('math') ? 'math' :
+    domain.includes('human') ? 'humanities' : 'general';
+
+  const buildCurriculumNote = () => {
+    if (!curriculumData && !detectedUni && !detectedCountry) return '';
+    const lines = [];
+    if (curriculumData) {
+      lines.push(`INSTITUTION: ${detectedUni} — ${curriculumData.style}`);
+      if (curriculumData[domainKey]) lines.push(`DOMAIN STANDARDS: ${curriculumData[domainKey]}`);
+      if (curriculumData.citation) lines.push(`CITATION STYLE: ${curriculumData.citation}`);
+      if (curriculumData.grading) lines.push(`GRADING CONTEXT: ${curriculumData.grading}`);
+    } else if (detectedUni) {
+      lines.push(`INSTITUTION: ${detectedUni} — ${getCountryStandards(detectedCountry, detectedUni)}`);
+    } else if (detectedCountry) {
+      lines.push(`COUNTRY: ${detectedCountry} — ${getCountryStandards(detectedCountry, '')}`);
+    }
+    if (detectedMajor) lines.push(`MAJOR: ${detectedMajor}`);
+    return lines.join('\n');
+  };
+
+  const curriculumNote = buildCurriculumNote();
+
+
 
   // ── MULTI-DOMAIN detection ────────────────────────────────────────────────────
   const domainScores = {
@@ -673,40 +1028,6 @@ export default async function handler(req, res) {
 
     console.log(`Mi — first: ${first}, last: ${last}, depth after scan: ${depth}, clean length: ${clean.length}`);
 
-    if (last === -1) {
-      console.error(`Mi — JSON truncated at ${clean.length} chars, depth=${depth}. Attempting recovery...`);
-      // Smart truncation recovery — close all open structures
-      let fixed = clean.slice(first);
-      // Remove trailing incomplete string (most common truncation point)
-      fixed = fixed.replace(/,\s*"[^"]*$/, '');      // trailing key
-      fixed = fixed.replace(/:\s*"[^"]*$/, '');      // trailing value
-      fixed = fixed.replace(/,\s*\[$/, '');           // trailing array start
-      fixed = fixed.replace(/,\s*{[^}]*$/, '');       // trailing incomplete object
-      fixed = fixed.replace(/,\s*$/, '');             // trailing comma
-      // Close all open brackets/braces by walking the string
-      const stk = [];
-      let inS = false, esc = false;
-      for (const ch of fixed) {
-        if (esc) { esc = false; continue; }
-        if (ch === '\\') { esc = true; continue; }
-        if (ch === '"') { inS = !inS; continue; }
-        if (!inS) {
-          if (ch === '{') stk.push('}');
-          else if (ch === '[') stk.push(']');
-          else if ((ch === '}' || ch === ']') && stk.length) stk.pop();
-        }
-      }
-      if (inS) fixed += '"';
-      fixed = fixed.replace(/,\s*$/, '');
-      fixed += stk.reverse().join('');
-      try {
-        result = JSON.parse(fixed.replace(/,(\s*[}\]])/g, '$1'));
-        console.log('Mi — truncation recovery succeeded');
-      } catch(recErr) {
-        console.error('Mi — recovery failed:', recErr.message);
-        return res.status(500).json({ error: 'Response was too large. Please shorten your assignment or try again.' });
-      }
-    }
     // Parse JSON — handle truncation gracefully
     let result;
     const jsonToParse = last !== -1 ? clean.slice(first, last + 1) : clean.slice(first);
@@ -720,11 +1041,12 @@ export default async function handler(req, res) {
     result = tryParse(jsonToParse);
 
     if (!result) {
-      // Truncation recovery — close all open structures
+      console.error(`Mi — JSON truncated at ${clean.length} chars, depth=${depth}. Attempting recovery...`);
       let fixed = jsonToParse;
       fixed = fixed.replace(/,\s*"[^"]*$/, '');
       fixed = fixed.replace(/:\s*"[^"]*$/, ': ""');
       fixed = fixed.replace(/,\s*\[$/, '');
+      fixed = fixed.replace(/,\s*{[^}]*$/, '');
       fixed = fixed.replace(/,\s*$/, '');
       const stk = [];
       let inS = false, esc = false;
@@ -745,6 +1067,7 @@ export default async function handler(req, res) {
       if (result) {
         console.log('Mi — truncation recovery succeeded');
       } else {
+        console.error('Mi — recovery failed');
         return res.status(500).json({ error: 'Response was too large. Please simplify your assignment or try again.' });
       }
     }
