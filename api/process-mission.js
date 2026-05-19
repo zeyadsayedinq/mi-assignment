@@ -880,26 +880,11 @@ export default async function handler(req, res) {
     if (!contents || !Array.isArray(contents) || contents.length === 0)
       return res.status(400).json({ error: 'Missing contents array' });
 
-    // Quota check
     const userId = body.userId || body.user_id || '';
-    const userEmail = body.email || body.userEmail || '';
-    const quotaResp = await fetch(`${req.headers.origin || 'https://mi-assignment.com'}/api/check-quota`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, email: userEmail, lang }),
-    }).catch(() => null);
 
-    if (quotaResp && !quotaResp.ok) {
-      const err = await quotaResp.json().catch(() => ({}));
-      if (quotaResp.status === 402) {
-        const e = new Error(err.message || 'Limit reached');
-        e.code = 'LIMIT_REACHED';
-        Object.assign(e, err);
-        throw e;
-      }
-    }
-
+    // Build domain context early so it's always available
     const domainContext = buildSubjectContext(contents, missionType);
+    // NOTE: Quota is checked by the frontend before calling this endpoint
     const systemPrompt = buildSystemPrompt(domainContext, missionType);
 
     const geminiContents = [{ role: 'user', parts: contents.map(c => c.inlineData ? { inlineData: c.inlineData } : { text: c.text || '' }) }];
@@ -1045,10 +1030,6 @@ export default async function handler(req, res) {
     return res.status(200).json(sanitizeDeep(result));
 
   } catch (e) {
-    if (e?.code === 'LIMIT_REACHED') {
-      setCORS(res);
-      return res.status(402).json({ error: e.message, code: 'LIMIT_REACHED', plan: e.plan, limit: e.limit });
-    }
     if (e?.name === 'AbortError') return res.status(503).json({ error: 'Timeout. Please try again.' });
     console.error('Mi Engine FATAL:', e?.message || e);
     return res.status(500).json({ error: 'Mission failed. Please try again.' });
