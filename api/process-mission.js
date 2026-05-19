@@ -871,185 +871,130 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end('Method Not Allowed');
 
-  let domainContext = null;
-
   try {
-    const GEMINI_KEY =
-      process.env.GEMINI_API_KEY ||
-      process.env.VITE_GEMINI_API_KEY ||
-      process.env.GEMINI_KEY;
-
-    if (!GEMINI_KEY) {
-      return res.status(500).json({ error: 'GEMINI_API_KEY not configured in Vercel environment variables.' });
-    }
+    const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_KEY;
+    if (!GEMINI_KEY) return res.status(500).json({ error: 'GEMINI_API_KEY not configured.' });
 
     const body = await parseBody(req);
     const { contents, lang, missionType = 'other' } = body;
-
-    if (!contents || !Array.isArray(contents) || contents.length === 0) {
+    if (!contents || !Array.isArray(contents) || contents.length === 0)
       return res.status(400).json({ error: 'Missing contents array' });
-    }
 
-    // ── Sanitize all text fields — strip hidden unicode AI watermarks ────────
-    const sanitizeText = (text) => {
-      if (typeof text !== 'string') return text;
-      // Remove hidden AI watermark characters using char codes (no literal unicode in source)
-      return text.split('').filter(ch => {
-        const c = ch.charCodeAt(0);
-        if (c === 0x200B || c === 0x200C || c === 0x200D || c === 0x200E || c === 0x200F) return false;
-        if (c >= 0x2060 && c <= 0x2064) return false;
-        if (c === 0xFEFF) return false;
-        if (c >= 0x202A && c <= 0x202E) return false;
-        if (c === 0x2028 || c === 0x2029) return false;
-        if (c === 0x00AD) return false;
-        return true;
-      }).join('').replace(/\xa0/g, ' ').replace(/\u202f/g, ' ').trim();
-    };
+    // Quota check
+    const userId = body.userId || body.user_id || '';
+    const userEmail = body.email || body.userEmail || '';
+    const quotaResp = await fetch(`${req.headers.origin || 'https://mi-assignment.com'}/api/check-quota`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, email: userEmail, lang }),
+    }).catch(() => null);
 
-    const sanitizeDeep = (obj) => {
-      if (typeof obj === 'string') return sanitizeText(obj);
-      if (Array.isArray(obj)) return obj.map(sanitizeDeep);
-      if (obj && typeof obj === 'object') {
-        const out = {};
-        for (const [k, v] of Object.entries(obj)) out[k] = sanitizeDeep(v);
-        return out;
+    if (quotaResp && !quotaResp.ok) {
+      const err = await quotaResp.json().catch(() => ({}));
+      if (quotaResp.status === 402) {
+        const e = new Error(err.message || 'Limit reached');
+        e.code = 'LIMIT_REACHED';
+        Object.assign(e, err);
+        throw e;
       }
-      return obj;
-    };
+    }
 
     const domainContext = buildSubjectContext(contents, missionType);
     const systemPrompt = buildSystemPrompt(domainContext, missionType);
 
-    // Transform contents into Gemini API format
-    // Frontend sends [{text:"..."}, {inlineData:{...}}]
-    // Gemini needs [{role:"user", parts:[{text:"..."},{inlineData:{...}}]}]
-    const geminiContents = [{
-      role: 'user',
-      parts: contents.map(c => {
-        if (c.inlineData) return { inlineData: c.inlineData };
-        return { text: c.text || '' };
-      })
-    }];
+    const geminiContents = [{ role: 'user', parts: contents.map(c => c.inlineData ? { inlineData: c.inlineData } : { text: c.text || '' }) }];
 
-    // Build Gemini API request payload
-    const isHeavyDomain = /ENGINEERING|MATH|MEDICAL|CS|SCIENCE|DATA/.test((domainContext.domain || '').toUpperCase());
+    const isHeavy = /ENGINEERING|MATH|MEDICAL|CS|LAW|SPORTS/.test((domainContext.domain || '').toUpperCase());
+
     const geminiPayload = {
       system_instruction: { parts: [{ text: systemPrompt }] },
       contents: geminiContents,
       generationConfig: {
-        // Only set thinkingBudget for domains that support it — omit entirely otherwise
-        ...(isHeavyDomain ? { thinkingConfig: { thinkingBudget: 8000 } } : {}),
+        ...(isHeavy ? { thinkingConfig: { thinkingBudget: 4000 } } : {}),
         temperature: 0.4,
         topP: 0.85,
         topK: 40,
         responseMimeType: 'application/json',
-        // Token budget: enough for complete JSON, low enough to avoid timeouts
-        // 5000 was truncating JSON. 16000 was causing 45s hangs. 7000 is the sweet spot.
-        maxOutputTokens: /ENGINEERING|MATH|MEDICAL|CS|LAW/.test(
-          (domainContext?.domain || '').toUpperCase()
-        ) ? 7000 : 6000,
+        maxOutputTokens: isHeavy ? 7000 : 6000,
       },
     };
 
-    // Model waterfall — try each model with 55s timeout
-    // If one hangs or 503s, move to the next immediately
     const MODEL = 'gemini-3-flash-preview';
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 45000);
 
-    let geminiRes = null;
+    let geminiRes;
     try {
       console.log(`Mi — calling ${MODEL}`);
       geminiRes = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_KEY}`,
-        {
-          signal: ctrl.signal,
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(geminiPayload),
-        }
+        { signal: ctrl.signal, method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(geminiPayload) }
       );
       clearTimeout(timer);
       console.log(`Mi — ${MODEL} responded with ${geminiRes.status}`);
     } catch (err) {
       clearTimeout(timer);
-      if (err.name === 'AbortError') {
-        return res.status(503).json({ error: 'Assignment took too long. Please try again or simplify your prompt.' });
-      }
+      if (err.name === 'AbortError') return res.status(503).json({ error: 'Assignment took too long. Please try again.' });
       throw err;
     }
 
-
-
-
     if (geminiRes.status === 403) {
       const e = await geminiRes.json().catch(() => ({}));
-      return res.status(403).json({ error: `API key error: ${e?.error?.message || 'Invalid or revoked key.'}` });
+      return res.status(403).json({ error: `API key error: ${e?.error?.message || 'Invalid key.'}` });
     }
     if (!geminiRes.ok) {
       const t = await geminiRes.text();
-      console.error('Gemini error:', geminiRes.status, t.slice(0, 300));
+      console.error('Gemini error:', geminiRes.status, t.slice(0, 200));
       return res.status(500).json({ error: `AI request failed (${geminiRes.status}). Please try again.` });
     }
 
     const geminiData = await geminiRes.json();
 
-    // Check for safety block or empty response
     if (geminiData?.promptFeedback?.blockReason) {
-      console.error('Mi: prompt blocked:', geminiData.promptFeedback.blockReason);
       return res.status(500).json({ error: 'Assignment could not be processed. Please rephrase and try again.' });
     }
     if (!geminiData?.candidates?.length) {
-      console.error('Mi: empty candidates array:', JSON.stringify(geminiData).slice(0, 200));
-      return res.status(500).json({ error: 'AI returned an empty response. Please try again.' });
+      console.error('Mi: empty candidates:', JSON.stringify(geminiData).slice(0, 200));
+      return res.status(500).json({ error: 'AI returned empty response. Please try again.' });
     }
 
-    const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const rawText = geminiData.candidates[0]?.content?.parts?.[0]?.text || '';
+    console.log(`Mi — rawText: ${rawText.length} chars`);
 
-    if (!rawText || rawText.trim().startsWith('<!') || rawText.trim().startsWith('<html')) {
-      return res.status(503).json({ error: 'AI service returned an error page. Please try again.' });
-    }
+    if (!rawText) return res.status(500).json({ error: 'Empty response. Please try again.' });
 
-    let clean = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
-
-    // DIAGNOSTIC: log response size and structure
-    console.log(`Mi — rawText length: ${rawText.length} chars, starts: ${rawText.slice(0,50)}, ends: ${rawText.slice(-50)}`);
-
+    // ── Parse JSON with truncation recovery ──────────────────────────────────
+    const clean = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
     const first = clean.indexOf('{');
-    if (first === -1) return res.status(500).json({ error: 'AI response was not valid JSON. Please try again.' });
-
-    // Find the matching closing brace using bracket counting
-    let depth = 0, last = -1;
-    for (let i = first; i < clean.length; i++) {
-      if (clean[i] === '{') depth++;
-      else if (clean[i] === '}') {
-        depth--;
-        if (depth === 0) { last = i; break; }
-      }
-    }
-
-    console.log(`Mi — first: ${first}, last: ${last}, depth after scan: ${depth}, clean length: ${clean.length}`);
-
-    // Parse JSON — handle truncation gracefully
-    let result;
-    const jsonToParse = last !== -1 ? clean.slice(first, last + 1) : clean.slice(first);
+    if (first === -1) return res.status(500).json({ error: 'Invalid response format. Please try again.' });
 
     const tryParse = (s) => {
+      if (!s) return null;
       try { return JSON.parse(s); } catch {}
       try { return JSON.parse(s.replace(/,(\s*[}\]])/g, '$1')); } catch {}
       return null;
     };
 
-    result = tryParse(jsonToParse);
+    // Find closing brace
+    let depth = 0, last = -1;
+    for (let i = first; i < clean.length; i++) {
+      if (clean[i] === '{') depth++;
+      else if (clean[i] === '}') { depth--; if (depth === 0) { last = i; break; } }
+    }
+
+    const jsonStr = last !== -1 ? clean.slice(first, last + 1) : clean.slice(first);
+    let result = tryParse(jsonStr);
 
     if (!result) {
-      console.error(`Mi — JSON truncated at ${clean.length} chars, depth=${depth}. Attempting recovery...`);
-      let fixed = jsonToParse;
+      // Truncation recovery
+      console.log('Mi — attempting truncation recovery...');
+      let fixed = jsonStr;
+      // Remove trailing incomplete tokens
       fixed = fixed.replace(/,\s*"[^"]*$/, '');
       fixed = fixed.replace(/:\s*"[^"]*$/, ': ""');
-      fixed = fixed.replace(/,\s*\[$/, '');
-      fixed = fixed.replace(/,\s*{[^}]*$/, '');
+      fixed = fixed.replace(/,\s*[\[{][^}\]]*$/, '');
       fixed = fixed.replace(/,\s*$/, '');
+      // Close open brackets
       const stk = [];
       let inS = false, esc = false;
       for (const ch of fixed) {
@@ -1066,35 +1011,46 @@ export default async function handler(req, res) {
       fixed = fixed.replace(/,\s*$/, '');
       fixed += stk.reverse().join('');
       result = tryParse(fixed);
-      if (result) {
-        console.log('Mi — truncation recovery succeeded');
-      } else {
-        console.error('Mi — recovery failed');
-        return res.status(500).json({ error: 'Response was too large. Please simplify your assignment or try again.' });
-      }
+      if (result) console.log('Mi — truncation recovery succeeded');
+      else return res.status(500).json({ error: 'Response too large. Please simplify your assignment and try again.' });
     }
 
-        if (!result.solution_text) result.solution_text = '';
-    if (!result.assignment_type) result.assignment_type = 'other';
-    if (!result.domain) result.domain = domainContext?.domain || 'GENERAL';
-    if (!result.reconstructed_doc) result.reconstructed_doc = { title: '', word_count: 0, blocks: [] };
-    if (!result.reconstructed_doc.blocks) result.reconstructed_doc.blocks = [];
-    if (!result.presentation_slides) result.presentation_slides = [];
-    if (!result.code_snippets) result.code_snippets = [];
-    if (!result.steps) result.steps = [];
-    if (!result.logic_breakdown) result.logic_breakdown = null;
+    // Defaults
+    result.solution_text = result.solution_text || '';
+    result.assignment_type = result.assignment_type || 'other';
+    result.domain = result.domain || domainContext.domain || 'GENERAL';
+    result.reconstructed_doc = result.reconstructed_doc || { title: '', word_count: 0, blocks: [] };
+    result.reconstructed_doc.blocks = result.reconstructed_doc.blocks || [];
+    result.presentation_slides = result.presentation_slides || [];
+    result.code_snippets = result.code_snippets || [];
+    result.steps = result.steps || [];
 
-    // Strip all hidden unicode chars from every text field before sending
-    const cleanResult = sanitizeDeep(result);
-    return res.status(200).json(cleanResult);
+    // Sanitize
+    const sanitizeText = (t) => {
+      if (typeof t !== 'string') return t;
+      return t.split('').filter(ch => {
+        const c = ch.charCodeAt(0);
+        return !(c === 0x200B || c === 0x200C || c === 0x200D || c === 0x200E || c === 0x200F ||
+          (c >= 0x2060 && c <= 0x2064) || c === 0xFEFF || (c >= 0x202A && c <= 0x202E) ||
+          c === 0x2028 || c === 0x2029 || c === 0x00AD);
+      }).join('').replace(/ /g, ' ').replace(/ /g, ' ').trim();
+    };
+    const sanitizeDeep = (obj) => {
+      if (typeof obj === 'string') return sanitizeText(obj);
+      if (Array.isArray(obj)) return obj.map(sanitizeDeep);
+      if (obj && typeof obj === 'object') { const o = {}; for (const [k,v] of Object.entries(obj)) o[k] = sanitizeDeep(v); return o; }
+      return obj;
+    };
+
+    return res.status(200).json(sanitizeDeep(result));
 
   } catch (e) {
-    if (e && e.name === 'AbortError') {
-      console.error('Mi Engine: 50s timeout');
+    if (e?.code === 'LIMIT_REACHED') {
       setCORS(res);
-      return res.status(503).json({ error: 'This assignment took too long to process. Please try again or break it into smaller parts.' });
+      return res.status(402).json({ error: e.message, code: 'LIMIT_REACHED', plan: e.plan, limit: e.limit });
     }
-    console.error('Mi Engine FATAL:', e.message);
-    return res.status(500).json({ error: e.message || 'Mission failed. Please try again.' });
+    if (e?.name === 'AbortError') return res.status(503).json({ error: 'Timeout. Please try again.' });
+    console.error('Mi Engine FATAL:', e?.message || e);
+    return res.status(500).json({ error: 'Mission failed. Please try again.' });
   }
 }
