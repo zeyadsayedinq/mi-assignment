@@ -536,14 +536,17 @@ function buildSubjectContext(contents, missionType) {
   };
 
   const curriculumData = matchCurriculum(detectedUni);
-  const domain = domainContext?.domain?.toLowerCase().split(':')[0].trim() || 'general';
-  const domainKey = domain.includes('engineer') ? 'engineering' :
-    domain.includes('medical') || domain.includes('nurs') ? 'medical' :
-    domain.includes('law') ? 'law' :
-    domain.includes('business') ? 'business' :
-    domain.includes('cs') || domain.includes('computer') ? 'cs' :
-    domain.includes('math') ? 'math' :
-    domain.includes('human') ? 'humanities' : 'general';
+
+  // Determine domain key from text patterns (same logic as domain router above)
+  const domain = text.includes('engineer') || /reinforced|beam|slab|ecp|structural/.test(text) ? 'engineering' :
+    /patient|nursing|medical|pharmacy|مريض/.test(text) ? 'medical' :
+    /contract|irac|law|legal|قانون/.test(text) ? 'law' :
+    /pestel|swot|business|marketing|استراتيجية/.test(text) ? 'business' :
+    /algorithm|database|sql|coding|software|برمجة/.test(text) ? 'cs' :
+    /calculus|statistics|integral|regression|إحصاء/.test(text) ? 'math' :
+    /literature|philosophy|sociology|أدب/.test(text) ? 'humanities' : 'general';
+
+  const domainKey = domain;
 
   const buildCurriculumNote = () => {
     if (!curriculumData && !detectedUni && !detectedCountry) return '';
