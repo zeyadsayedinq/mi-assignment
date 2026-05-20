@@ -178,9 +178,9 @@ export function TheVault() {
                             </button>
                           </div>
                         </div>
-                        <h3 className="text-white font-bold text-sm mb-1 line-clamp-2 leading-snug">{mission.payload_name}</h3>
+                        <h3 className="text-white font-bold text-sm mb-1 line-clamp-2 leading-snug break-words min-w-0">{mission.payload_name}</h3>
                         <p className="text-gray-500 text-xs mb-3 line-clamp-2 leading-relaxed">{mission.summary}</p>
-                        <div className="flex gap-2 flex-wrap">
+                        <div className="flex gap-2 flex-wrap min-w-0">
                           {mission.university && <span className="text-[10px] text-gray-600 bg-gray-900 px-2 py-0.5 rounded-full">{mission.university}</span>}
                           {mission.course && <span className="text-[10px] text-gray-600 bg-gray-900 px-2 py-0.5 rounded-full">{mission.course}</span>}
                         </div>
@@ -232,10 +232,10 @@ export function TheVault() {
       {/* Mission detail drawer */}
       <AnimatePresence>
         {selected && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] bg-[#020617]/80 backdrop-blur-sm overflow-y-auto">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] bg-[#020617]/95 backdrop-blur-sm overflow-y-auto md:bg-[#020617]/80">
             <div className="min-h-screen flex justify-end">
               <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="w-full max-w-4xl bg-[#050608] border-l border-gray-800 overflow-y-auto">
+                className="w-full max-w-4xl bg-[#050608] md:border-l border-gray-800 overflow-y-auto min-h-screen md:min-h-0">
                 <div className="sticky top-0 z-10 bg-[#050608]/90 backdrop-blur border-b border-gray-800 px-6 py-4 flex items-center justify-between">
                   <div>
                     <h2 className="text-white font-bold text-sm">{selected.payload_name}</h2>

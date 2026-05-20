@@ -383,7 +383,7 @@ async function buildDocx(data: any, payloadName: string, isPro = false, clean = 
 // ─── PDF builder — full multi-page ───────────────────────────────────────────
 async function buildPDF(data: any, payloadName: string, isPro = false, clean = false): Promise<Blob> {
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const W = 210, MARGIN = 18, LINE_H = 7, MAX_Y = 270;
+  const W = 210, MARGIN = 20, LINE_H = 7, MAX_Y = 270;
   let y = MARGIN;
 
   const addPage = () => { pdf.addPage(); y = MARGIN; };
@@ -450,7 +450,7 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
     pdf.setFontSize(size);
     pdf.setFont('helvetica', bold ? 'bold' : 'normal');
     pdf.setTextColor(...color);
-    const lines = pdf.splitTextToSize(rawText, W - MARGIN * 2);
+    const lines = pdf.splitTextToSize(rawText, W - MARGIN * 2 - 4);
     lines.forEach((line: string) => {
       checkPage();
       pdf.text(line, MARGIN, y);
@@ -595,6 +595,7 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
         }
         // else: empty table — skip, render nothing
       } else if (block.content && block.content !== 'undefined') {
+        pdf.setFont('helvetica', 'normal'); // ensure no monospace leak
         await writeLineAsync(block.content, 10, false, [51, 65, 85]);
       }
     }

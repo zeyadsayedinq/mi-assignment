@@ -763,7 +763,7 @@ Slide field rules:
     "word_count": 0,
     "blocks": [
       {"type": "heading", "content": "Section Title", "level": 1},
-      {"type": "paragraph", "content": "Full paragraph in student voice — start with the argument or finding, not setup. Topic sentence + evidence + analysis + so-what. Min 60 words. Never a placeholder. Never start with 'It is important to note' or 'In today's world'"},
+      {"type": "paragraph", "content": "Full paragraph in student voice. Start with the argument, not setup. Topic sentence + evidence + analysis. Min 60 words. Inline formulas allowed but keep them short — complex equations go in math blocks."},
       {"type": "list", "content": "Specific finding 1\\nSpecific finding 2\\nSpecific finding 3"},
       {"type": "math", "content": "LaTeX expression or equation", "solution_steps": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."]},
       {"type": "code", "content": "# Complete runnable code", "language": "python"},
