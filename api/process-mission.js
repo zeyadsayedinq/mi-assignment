@@ -552,14 +552,13 @@ function buildSubjectContext(contents, missionType) {
     if (!curriculumData && !detectedUni && !detectedCountry) return '';
     const lines = [];
     if (curriculumData) {
-      lines.push(`INSTITUTION: ${detectedUni} — ${curriculumData.style}`);
-      if (curriculumData[domainKey]) lines.push(`DOMAIN STANDARDS: ${curriculumData[domainKey]}`);
-      if (curriculumData.citation) lines.push(`CITATION STYLE: ${curriculumData.citation}`);
-      if (curriculumData.grading) lines.push(`GRADING CONTEXT: ${curriculumData.grading}`);
+      lines.push(`UNI: ${detectedUni} — ${curriculumData.style}`);
+      if (curriculumData[domainKey]) lines.push(`STANDARDS: ${curriculumData[domainKey].slice(0, 250)}`);
+      if (curriculumData.citation) lines.push(`CITE: ${curriculumData.citation}`);
     } else if (detectedUni) {
-      lines.push(`INSTITUTION: ${detectedUni} — ${getCountryStandards(detectedCountry, detectedUni)}`);
+      lines.push(`UNI: ${detectedUni}`);
     } else if (detectedCountry) {
-      lines.push(`COUNTRY: ${detectedCountry} — ${getCountryStandards(detectedCountry, '')}`);
+      lines.push(`COUNTRY: ${detectedCountry}`);
     }
     if (detectedMajor) lines.push(`MAJOR: ${detectedMajor}`);
     return lines.join('\n');
@@ -903,7 +902,9 @@ export default async function handler(req, res) {
         topP: 0.85,
         topK: 40,
         responseMimeType: 'application/json',
-        maxOutputTokens: isHeavy ? 7000 : 6000,
+        // LAW needs more tokens for IRAC × 3 tasks
+        maxOutputTokens: /LAW/.test((domainContext.domain || '').toUpperCase()) ? 9000 :
+          isHeavy ? 7000 : 6000,
       },
     };
 
