@@ -897,20 +897,17 @@ export default async function handler(req, res) {
       system_instruction: { parts: [{ text: systemPrompt }] },
       contents: geminiContents,
       generationConfig: {
-        ...(isHeavy ? { thinkingConfig: { thinkingBudget: 4000 } } : {}),
         temperature: 0.4,
         topP: 0.85,
         topK: 40,
         responseMimeType: 'application/json',
-        // LAW needs more tokens for IRAC × 3 tasks
-        maxOutputTokens: /LAW/.test((domainContext.domain || '').toUpperCase()) ? 9000 :
-          isHeavy ? 7000 : 6000,
+        maxOutputTokens: 4096,
       },
     };
 
     const MODEL = 'gemini-3-flash-preview';
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 45000);
+    const timer = setTimeout(() => ctrl.abort(), 55000);
 
     let geminiRes;
     try {
@@ -920,7 +917,7 @@ export default async function handler(req, res) {
         { signal: ctrl.signal, method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(geminiPayload) }
       );
       clearTimeout(timer);
-      console.log(`Mi — ${MODEL} responded with ${geminiRes.status}`);
+      console.log(`Mi — ${MODEL} responded with ${geminiRes.status}, size: ${geminiRes.headers.get('content-length') || 'unknown'}`);
     } catch (err) {
       clearTimeout(timer);
       if (err.name === 'AbortError') return res.status(503).json({ error: 'Assignment took too long. Please try again.' });
