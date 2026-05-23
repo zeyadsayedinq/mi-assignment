@@ -170,14 +170,14 @@ export function TheAcademy() {
                 {entry.steps?.length > 0 && <span className="text-[9px] text-emerald-500 ms-auto flex items-center gap-0.5"><CheckCircle2 className="w-2.5 h-2.5" />{entry.steps.length}</span>}
               </div>
               <p className="text-white text-xs font-semibold leading-snug line-clamp-2 mb-1">{entry.payload_name}</p>
-              {entry.university ? <p className="text-gray-700 text-[10px] truncate">{entry.university}</p> : null}
+              <p className="text-gray-700 text-[10px] truncate">{entry.university}</p>
             </button>
           ))}
         </div>
         {domains.length > 0 && (
           <div className="p-4 border-t border-white/[0.06]">
             <p className="text-gray-700 text-[10px] uppercase tracking-widest mb-2">{isAr ? 'تخصصاتك' : 'Your domains'}</p>
-            <div className="flex flex-wrap gap-1.5 max-h-20 overflow-hidden">
+            <div className="flex flex-wrap gap-1.5">
               {domains.slice(0, 6).map(d => (
                 <span key={d} className="text-[9px] bg-[#0A0B0E] border border-gray-800 text-gray-500 px-2 py-0.5 rounded-full">{DOMAIN_ICONS[d] || ''} {d}</span>
               ))}

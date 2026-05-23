@@ -1,7 +1,7 @@
 // imageService.ts — Mi-Assignment Image Engine V1.0
 // Waterfall: Pexels → Unsplash → Pixabay → Pollinations (Image Lab only)
 
-const PEXELS_KEY   = import.meta.env.VITE_PEXELS_API_KEY   || '';
+const PEXELS_KEY   = import.meta.env.VITE_PEXELS_API_KEY   || 'HfLNkod8pFrjPIB4fd4H2a5Iddt05SCcDcEOward18GA5fomCFoFxzqL';
 const UNSPLASH_KEY = import.meta.env.VITE_UNSPLASH_KEY      || '';
 const PIXABAY_KEY  = import.meta.env.VITE_PIXABAY_KEY       || '';
 

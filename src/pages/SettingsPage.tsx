@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Settings, User, Shield, Loader2, LogOut, CreditCard, Globe, CheckCircle2, XCircle, GraduationCap } from 'lucide-react';
+import { Settings, User, Shield, Loader2, LogOut, CreditCard, Globe, CheckCircle2, XCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
@@ -23,14 +23,6 @@ export function SettingsPage() {
   const [displayName, setDisplayName] = useState(user?.user_metadata?.full_name || user?.email?.split('@')[0] || '');
   const [sub, setSub] = useState<SubscriptionStatus | null>(null);
 
-  // Academic profile
-  const [country, setCountry] = useState('');
-  const [university, setUniversity] = useState('');
-  const [major, setMajor] = useState('');
-  const [profileSaving, setProfileSaving] = useState(false);
-  const [profileSaved, setProfileSaved] = useState(false);
-  const [initialProfile, setInitialProfile] = useState({ university: '', major: '' });
-
   // Admin panel state (owner only)
   const [adminEmail, setAdminEmail] = useState('');
   const [adminAction, setAdminAction] = useState<'grant' | 'revoke'>('grant');
@@ -41,36 +33,8 @@ export function SettingsPage() {
     if (user) {
       setDisplayName(user.user_metadata?.full_name || user.email?.split('@')[0] || '');
       getSubscriptionStatus(user.id, user.email).then(setSub);
-      // Load academic profile
-      supabase.from('profiles').select('country, university, major').eq('id', user.id).single()
-        .then(({ data }) => {
-          if (data) {
-            setCountry(data.country || '');
-            setUniversity(data.university || '');
-            setMajor(data.major || '');
-            setInitialProfile({ university: data.university || '', major: data.major || '' });
-          }
-        }).catch(() => {});
     }
   }, [user]);
-
-  const handleSaveProfile = async () => {
-    setProfileSaving(true);
-    try {
-      await supabase.from('profiles').upsert({
-        id: user?.id,
-        country,
-        university,
-        major,
-        onboarding_complete: true,
-        updated_at: new Date().toISOString(),
-      });
-      setProfileSaved(true);
-      setInitialProfile({ university, major }); // update baseline after save
-      setTimeout(() => setProfileSaved(false), 2000);
-    } catch {}
-    setProfileSaving(false);
-  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -184,52 +148,6 @@ export function SettingsPage() {
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Academic Profile */}
-          <div className="bg-[#0A0B0E] border border-gray-800 rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <GraduationCap className="w-4 h-4 text-[#22D3EE]" />
-              <h2 className="text-white font-bold text-sm">{isAr ? 'الملف الأكاديمي' : 'Academic Profile'}</h2>
-              {university && major && (
-                <span className="ms-auto text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                  {isAr ? 'مفعّل ✓' : 'Active ✓'}
-                </span>
-              )}
-            </div>
-            <p className="text-gray-600 text-xs mb-4">
-              {isAr
-                ? 'احفظ جامعتك وتخصصك عشان Mi يحل واجباتك صح من غير ما تختار كل مرة'
-                : 'Save your university and major so Mi pre-fills them on every assignment — no need to select each time'}
-            </p>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs text-gray-500 mb-1.5 block">{isAr ? 'جامعتك' : 'University'}</label>
-                <input
-                  value={university}
-                  onChange={e => setUniversity(e.target.value)}
-                  placeholder={isAr ? 'مثال: GUC، جامعة القاهرة، KFUPM...' : 'e.g. GUC, Cairo University, KFUPM...'}
-                  className="w-full bg-[#050608] border border-gray-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#22D3EE] transition-all"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1.5 block">{isAr ? 'تخصصك' : 'Major'}</label>
-                <input
-                  value={major}
-                  onChange={e => setMajor(e.target.value)}
-                  placeholder={isAr ? 'مثال: هندسة مدنية، تمريض، إدارة أعمال...' : 'e.g. Civil Engineering, Nursing, Business Administration...'}
-                  className="w-full bg-[#050608] border border-gray-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#22D3EE] transition-all"
-                />
-              </div>
-              <button
-                onClick={handleSaveProfile}
-                disabled={profileSaving || (university === initialProfile.university && major === initialProfile.major)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-[#22D3EE] text-black font-bold rounded-xl hover:bg-white transition-all text-sm disabled:opacity-40"
-              >
-                {profileSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : profileSaved ? <CheckCircle2 className="w-4 h-4" /> : null}
-                {profileSaved ? (isAr ? 'تم الحفظ ✓' : 'Saved ✓') : (isAr ? 'حفظ التخصص' : 'Save Academic Profile')}
-              </button>
             </div>
           </div>
 

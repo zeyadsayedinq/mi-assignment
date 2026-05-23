@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import { ResultsDashboard } from '../components/ResultsDashboard';
 import { UploadHandler } from '../components/UploadHandler';
 import { ImageGenerator } from '../components/ImageGenerator';
-import { OnboardingModal } from '../components/OnboardingModal';
 import { processMission } from '../lib/mi';
 import { supabase } from '../lib/supabase';
 import { FloatingOrbs } from '../components/Scene3D';
@@ -14,125 +13,19 @@ import { useExplosion } from '../contexts/ExplosionContext';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { Analytics } from '../lib/analytics';
-import { UsageBanner } from '../components/UsageBanner';
 
-// Domain-aware loading messages
-const DOMAIN_MESSAGES: Record<string, string[]> = {
-  law: [
-    'Reading the case facts...', 'Identifying legal issues...', 'Researching applicable statutes...',
-    'Structuring IRAC argument...', 'Citing article numbers...', 'Drafting legal analysis...',
-    'Reviewing fiduciary duties...', 'Building legal memo...',
-  ],
-  engineering: [
-    'Reading structural parameters...', 'Applying design code standards...',
-    'Running load calculations...', 'Computing safety factors...',
-    'Generating cross-section diagram...', 'Verifying ECP 203 compliance...',
-    'Building BBS table...', 'Finalizing engineering report...',
-  ],
-  medical: [
-    'Reviewing patient presentation...', 'Structuring SOAP note...',
-    'Checking drug interactions...', 'Applying clinical guidelines...',
-    'Running differential diagnosis...', 'Writing management plan...',
-    'Referencing MOH protocols...', 'Finalizing clinical report...',
-  ],
-  cs: [
-    'Analyzing system requirements...', 'Designing database schema...',
-    'Writing algorithm logic...', 'Generating ER diagram...',
-    'Optimizing time complexity...', 'Documenting API endpoints...',
-    'Building runnable code...', 'Packaging solution...',
-  ],
-  business: [
-    'Scanning market data...', 'Running PESTEL analysis...',
-    'Building SWOT matrix...', 'Modeling financial projections...',
-    'Applying Porter\'s Five Forces...', 'Computing NPV & IRR...',
-    'Writing executive summary...', 'Finalizing business report...',
-  ],
-  math: [
-    'Reading the problem...', 'Identifying variables...',
-    'Setting up equations...', 'Running step-by-step solution...',
-    'Verifying with second derivative...', 'Formatting LaTeX output...',
-    'Checking final answer...', 'Building solution breakdown...',
-  ],
-  presentation: [
-    'Reading the brief...', 'Structuring slide narrative...',
-    'Writing slide headings...', 'Building speaker notes...',
-    'Selecting slide layouts...', 'Generating image prompts...',
-    'Finalizing 10 slides...', 'Packaging PPTX...',
-  ],
-  general: [
-    'Parsing assignment payload...', 'Running analysis...',
-    'Cross-referencing academic sources...', 'Synthesizing expert solution...',
-    'Applying citation protocols...', 'Building output packages...',
-    'Quality assurance scan...', 'Packaging intelligence brief...',
-  ],
-};
-
-const DOMAIN_MESSAGES_AR: Record<string, string[]> = {
-  law: [
-    'بقرأ وقائع القضية...', 'بحدد المسائل القانونية...',
-    'ببحث في النصوص التشريعية...', 'بهيكل تحليل IRAC...',
-    'بستشهد بأرقام المواد...', 'بكتب المذكرة القانونية...',
-    'براجع الواجبات الائتمانية...', 'بجهز التقرير النهائي...',
-  ],
-  engineering: [
-    'بقرأ البيانات الإنشائية...', 'بطبق معايير الكود...',
-    'بحسب الأحمال...', 'بتحقق من عوامل الأمان...',
-    'برسم القطاع العرضي...', 'براجع ECP 203...',
-    'بعمل جدول BBS...', 'بجهز التقرير الهندسي...',
-  ],
-  medical: [
-    'بقرأ حالة المريض...', 'بهيكل ملاحظة SOAP...',
-    'بتحقق من تفاعلات الأدوية...', 'بطبق الإرشادات السريرية...',
-    'بحدد التشخيص التفريقي...', 'بكتب خطة العلاج...',
-    'براجع بروتوكولات وزارة الصحة...', 'بجهز التقرير الطبي...',
-  ],
-  cs: [
-    'بقرأ المتطلبات...', 'بصمم قاعدة البيانات...',
-    'بكتب الخوارزمية...', 'برسم مخطط ER...',
-    'بحسن التعقيد الزمني...', 'بوثق الـ API...',
-    'بكتب الكود...', 'بجهز الحل...',
-  ],
-  business: [
-    'بفحص بيانات السوق...', 'بحلل PESTEL...',
-    'ببني مصفوفة SWOT...', 'بعمل التوقعات المالية...',
-    'بطبق قوى بورتر الخمس...', 'بحسب NPV وIRR...',
-    'بكتب الملخص التنفيذي...', 'بجهز التقرير...',
-  ],
-  math: [
-    'بقرأ المسألة...', 'بحدد المتغيرات...',
-    'بعمل المعادلات...', 'بحل خطوة بخطوة...',
-    'بتحقق بالمشتقة الثانية...', 'بكتب LaTeX...',
-    'بتأكد من الإجابة...', 'بجهز الحل...',
-  ],
-  presentation: [
-    'بقرأ الموضوع...', 'بهيكل السرد...',
-    'بكتب عناوين الشرائح...', 'بعمل ملاحظات المقدم...',
-    'بختار تصميم الشرائح...', 'بجهز الصور...',
-    'بجهز ١٠ شرائح...', 'ببني PPTX...',
-  ],
-  general: [
-    'بقرأ الواجب...', 'بشغّل التحليل...',
-    'بدور في المصادر الأكاديمية...', 'بولّد الحل...',
-    'بطبّق التوثيق...', 'ببني الملفات...',
-    'مسح الجودة...', 'بجهز التقرير...',
-  ],
-};
-
-const getProcessingMessages = (missionType?: string, prompt?: string, isAr = false): string[] => {
-  const messages = isAr ? DOMAIN_MESSAGES_AR : DOMAIN_MESSAGES;
-  const t = (missionType || '').toLowerCase();
-  const p = (prompt || '').toLowerCase();
-
-  if (t === 'presentation') return messages.presentation;
-  if (t === 'law' || /contract|irac|liability|legal|قانون|مسئولية|عقد/.test(p)) return messages.law;
-  if (t === 'engineering' || /beam|concrete|ecp|structural|هندسة|خرسانة/.test(p)) return messages.engineering;
-  if (t === 'medical' || /patient|soap|nursing|diagnosis|مريض|تمريض/.test(p)) return messages.medical;
-  if (t === 'cs' || /algorithm|database|sql|code|خوارزمية|برمجة/.test(p)) return messages.cs;
-  if (t === 'business' || /pestel|swot|marketing|financial|استراتيجية/.test(p)) return messages.business;
-  if (t === 'math' || /calculus|integral|statistics|optimize|إحصاء/.test(p)) return messages.math;
-  return messages.general;
-};
-
+const PROCESSING_EN = [
+  'Parsing assignment payload...', 'Running neural analysis...',
+  'Cross-referencing academic database...', 'Synthesizing expert solution...',
+  'Applying citation protocols...', 'Building output packages...',
+  'Quality assurance scan...', 'Packaging intelligence brief...',
+];
+const PROCESSING_AR = [
+  'بقرأ الواجب...', 'بشغّل التحليل العصبي...',
+  'بدور في قاعدة البيانات الأكاديمية...', 'بولّد الحل الاحترافي...',
+  'بطبّق بروتوكولات التوثيق...', 'ببني الملفات النهائية...',
+  'مسح جودة الحل...', 'تعبئة التقرير الاستخباراتي...',
+];
 
 interface LimitReachedError {
   plan: string;
@@ -152,83 +45,21 @@ export function TheTerminal() {
   const [errorMessage, setErrorMessage] = useState('');
   const [limitInfo, setLimitInfo] = useState<LimitReachedError | null>(null);
   const [processingMsg, setProcessingMsg] = useState('');
-  const [processingMessages, setProcessingMessages] = useState<string[]>([]);
   const [showImageLab, setShowImageLab] = useState(false);
   const [missionMeta, setMissionMeta] = useState<{ name: string; university: string; course: string } | null>(null);
 
-  // User profile — university + major pre-fill
-  const [userProfile, setUserProfile] = useState<{ country: string; university: string; major: string } | null>(null);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [profileLoaded, setProfileLoaded] = useState(false);
-
-  // Load user profile — check if onboarding needed
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      try {
-        // Check localStorage first — if dismissed once, never show again
-        const localDone = localStorage.getItem(`mi_onboarding_${user.id}`);
-        if (localDone === 'done') {
-          // Still try to load profile for pre-fill, but don't show modal
-          const { data } = await supabase
-            .from('profiles')
-            .select('country, university, major')
-            .eq('id', user.id)
-            .single();
-          if (data?.university && data?.major) {
-            setUserProfile({ country: data.country || '', university: data.university, major: data.major });
-          }
-          setShowOnboarding(false);
-          setProfileLoaded(true);
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('country, university, major, onboarding_complete')
-          .eq('id', user.id)
-          .single();
-
-        if (data?.onboarding_complete && data.university && data.major) {
-          // Profile complete — pre-fill silently
-          setUserProfile({ country: data.country || '', university: data.university, major: data.major });
-          setShowOnboarding(false);
-          // Also set localStorage so future loads are instant
-          try { localStorage.setItem(`mi_onboarding_${user.id}`, 'done'); } catch {}
-        } else if (data?.onboarding_complete) {
-          // Completed but cleared — respect that, no modal
-          setShowOnboarding(false);
-          try { localStorage.setItem(`mi_onboarding_${user.id}`, 'done'); } catch {}
-        } else if (!data && error?.code === 'PGRST116') {
-          // No row found — genuine new user, show onboarding once
-          setShowOnboarding(true);
-        } else if (error) {
-          // RLS or table error — skip silently, never block the user
-          console.warn('Mi: profiles fetch error:', error.code);
-          setShowOnboarding(false);
-        } else {
-          // Row exists but onboarding not complete — show once
-          setShowOnboarding(true);
-        }
-      } catch {
-        setShowOnboarding(false);
-      } finally {
-        setProfileLoaded(true);
-      }
-    })();
-  }, [user]);
+  const PROCESSING = isAr ? PROCESSING_AR : PROCESSING_EN;
 
   useEffect(() => {
     if (missionState !== 'analyzing') return;
-    const msgs = processingMessages.length > 0 ? processingMessages : getProcessingMessages(undefined, undefined, isAr);
-    setProcessingMsg(msgs[0]);
+    setProcessingMsg(PROCESSING[0]);
     let idx = 0;
     const interval = setInterval(() => {
-      idx = (idx + 1) % msgs.length;
-      setProcessingMsg(msgs[idx]);
+      idx = (idx + 1) % PROCESSING.length;
+      setProcessingMsg(PROCESSING[idx]);
     }, 2200);
     return () => clearInterval(interval);
-  }, [missionState, isAr, processingMessages]);
+  }, [missionState, isAr]);
 
   const handleMissionLaunch = async (
     files: File[], prompt: string,
@@ -239,8 +70,6 @@ export function TheTerminal() {
     setMissionState('analyzing');
     setErrorMessage('');
     setLimitInfo(null);
-    // Set domain-aware loading messages immediately
-    setProcessingMessages(getProcessingMessages(missionType, prompt, isAr));
     Analytics.missionLaunched(missionType || 'unknown', university || 'unknown');
     setMissionMeta({
       name: files.length > 0 ? files[0].name : prompt.substring(0, 40),
@@ -303,17 +132,6 @@ export function TheTerminal() {
     <div className={cn('flex bg-[#050608] text-gray-300 font-sans w-full h-full relative', isAr && 'font-[Cairo]')}
       dir={isAr ? 'rtl' : 'ltr'}>
 
-      {/* Onboarding modal — first time only */}
-      {showOnboarding && user && (
-        <OnboardingModal
-          userId={user.id}
-          onComplete={(profile) => {
-            setUserProfile(profile);
-            setShowOnboarding(false);
-          }}
-        />
-      )}
-
       <div className="fixed inset-0 pointer-events-none z-0 opacity-40">
         <FloatingOrbs count={3} colors={['#22D3EE', '#A855F7']} />
       </div>
@@ -372,8 +190,7 @@ export function TheTerminal() {
                         : 'Upload your assignment files, fill in the context, and let Mi handle the rest.'}
                     </p>
                   </div>
-                  <UsageBanner />
-                  <UploadHandler onLaunch={handleMissionLaunch} userProfile={userProfile} />
+                  <UploadHandler onLaunch={handleMissionLaunch} />
                 </motion.div>
               )}
 

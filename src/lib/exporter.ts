@@ -10,26 +10,10 @@ import * as XLSX from 'xlsx';
 
 // ─── LATEX TO UNICODE UTILITY ──────────────────────────────────────────────
 // This helper makes math/chem readable in text-only environments like PDF/Docx
-// Strip hidden AI watermark / invisible unicode characters from all output text
-function sanitizeText(text: string): string {
-  if (!text || typeof text !== 'string') return text || '';
-  return text.split('').filter(ch => {
-    const c = ch.charCodeAt(0);
-    if (c === 0x200B || c === 0x200C || c === 0x200D || c === 0x200E || c === 0x200F) return false;
-    if (c >= 0x2060 && c <= 0x2064) return false;
-    if (c === 0xFEFF) return false;
-    if (c >= 0x202A && c <= 0x202E) return false;
-    if (c === 0x2028 || c === 0x2029) return false;
-    if (c === 0x00AD) return false;
-    return true;
-  }).join('').replace(/ /g, ' ').replace(/ /g, ' ').trim();
-}
-
 function cleanLaTeX(text: string): string {
   if (!text) return "";
   
-  // Strip hidden chars first
-  let cleaned = sanitizeText(text);
+  let cleaned = text;
 
   // 1. Remove delimiters
   cleaned = cleaned.replace(/(\$\$?|\\\[|\\\]|\\\(|\\\))/g, '');
@@ -383,7 +367,7 @@ async function buildDocx(data: any, payloadName: string, isPro = false, clean = 
 // ─── PDF builder — full multi-page ───────────────────────────────────────────
 async function buildPDF(data: any, payloadName: string, isPro = false, clean = false): Promise<Blob> {
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const W = 210, MARGIN = 20, LINE_H = 7, MAX_Y = 270;
+  const W = 210, MARGIN = 18, LINE_H = 7, MAX_Y = 270;
   let y = MARGIN;
 
   const addPage = () => { pdf.addPage(); y = MARGIN; };
@@ -450,7 +434,7 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
     pdf.setFontSize(size);
     pdf.setFont('helvetica', bold ? 'bold' : 'normal');
     pdf.setTextColor(...color);
-    const lines = pdf.splitTextToSize(rawText, W - MARGIN * 2 - 4);
+    const lines = pdf.splitTextToSize(rawText, W - MARGIN * 2);
     lines.forEach((line: string) => {
       checkPage();
       pdf.text(line, MARGIN, y);
@@ -595,7 +579,6 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
         }
         // else: empty table — skip, render nothing
       } else if (block.content && block.content !== 'undefined') {
-        pdf.setFont('helvetica', 'normal'); // ensure no monospace leak
         await writeLineAsync(block.content, 10, false, [51, 65, 85]);
       }
     }
@@ -637,9 +620,6 @@ const WATERMARK = "Powered by Mi-Assignment · www.mi-assignment.com";
 // ─── MAIN EXPORT FUNCTION ────────────────────────────────────────────────────
 export async function downloadMissionPackage(data: any, payloadName: string = "Mission_Intelligence", isPro = false) {
   const zip = new JSZip();
-  // RTL detection for Arabic assignments
-  const _hasArabic = (t: string) => /[؀-ۿ]/.test(t || '');
-  const isRTLDoc = _hasArabic(payloadName) || _hasArabic(data?.solution_text || '');
   const safeName = payloadName.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_') || 'Mission';
 
   // 1. README

@@ -19,15 +19,13 @@ export function PaymentSuccessPage() {
   const isAr = i18n.language === 'ar';
 
   const plan = params.get('plan') || 'pro_quarterly';
-  const tapId = params.get('tap_id') || params.get('charge_id') || '';
   const planInfo = PLAN_LABELS[plan] || PLAN_LABELS.pro_quarterly;
 
   const [checking, setChecking] = useState(true);
   const [activated, setActivated] = useState(false);
-  const [fraudBlock, setFraudBlock] = useState(!tapId); // No tap_id = direct navigation attempt
 
   useEffect(() => {
-    if (!user?.id || fraudBlock) { setChecking(false); return; }
+    if (!user?.id) { setChecking(false); return; }
     // Poll for up to 15 seconds for subscription to activate via webhook
     let attempts = 0;
     const poll = setInterval(async () => {
@@ -47,21 +45,7 @@ export function PaymentSuccessPage() {
       }
     }, 3000);
     return () => clearInterval(poll);
-  }, [user, fraudBlock]);
-
-  // Block direct navigation attempts (no tap_id in URL)
-  if (fraudBlock) {
-    return (
-      <div className="min-h-screen bg-[#020617] flex items-center justify-center text-white p-6">
-        <div className="max-w-sm text-center">
-          <p className="text-gray-500 text-sm">Invalid payment session.</p>
-          <button onClick={() => navigate('/pricing')} className="mt-4 text-[#22D3EE] text-sm hover:underline">
-            View Pricing
-          </button>
-        </div>
-      </div>
-    );
-  }
+  }, [user]);
 
   return (
     <div

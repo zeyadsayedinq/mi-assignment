@@ -25,17 +25,11 @@ export function AuthPage() {
   const navigate = useNavigate();
   const next = searchParams.get('next') || '/terminal';
 
-  // Handle password recovery link + OAuth errors from URL hash
+  // Handle password recovery link from email
   useEffect(() => {
     const hash = window.location.hash;
     if (hash.includes('type=recovery') || hash.includes('type=invite')) {
       setMode('update');
-    }
-    // Google OAuth error callback
-    if (hash.includes('error=') || hash.includes('error_description=')) {
-      const params = new URLSearchParams(hash.slice(1));
-      const desc = params.get('error_description') || params.get('error') || 'Authentication failed';
-      setError(decodeURIComponent(desc.replace(/\+/g, ' ')));
     }
   }, []);
 
@@ -121,8 +115,6 @@ export function AuthPage() {
           ? 'تجاوزت الحد المسموح به من الإيميلات. استنى ٥ دقائق وحاول تاني.'
           : 'Too many attempts. Please wait 5 minutes and try again.');
       } else if (msg.includes('already registered') || msg.includes('User already registered')) {
-        // Clear referral code so it doesn't get applied to wrong account on retry
-        localStorage.removeItem('mi_ref_code');
         setError(isAr
           ? 'الإيميل ده مسجل قبل كده. جرب تسجيل الدخول بدل إنشاء حساب.'
           : 'This email is already registered. Try signing in instead.');
