@@ -474,42 +474,58 @@ export default async function handler(req, res) {
 
     let clean = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
     const first = clean.indexOf('{');
-    const last = clean.lastIndexOf('}');
     if (first === -1) return res.status(500).json({ error: 'AI response was not valid JSON. Please try again.' });
-    clean = clean.slice(first, last + 1);
 
-    // Fix common JSON issues from Gemini:
-    // 1. Trailing commas before } or ]
-    // NOTE: We deliberately do NOT touch backslashes here.
-    //       Gemini with responseMimeType:'application/json' already escapes LaTeX correctly (\\frac).
-    //       Applying a backslash regex on top double-escapes them (\\frac → \\\\frac),
-    //       which breaks KaTeX rendering on the frontend.
-    clean = clean
-      .replace(/,(\s*[}\]])/g, '$1');  // trailing commas only
+    // Find the real closing brace by walking the string and tracking depth.
+    // This is more reliable than lastIndexOf('}') when there's garbage after
+    // a truncated string value (the "Unexpected non-whitespace" error).
+    let depth = 0, inStr = false, escaped = false, realLast = -1;
+    for (let i = first; i < clean.length; i++) {
+      const ch = clean[i];
+      if (escaped) { escaped = false; continue; }
+      if (ch === '\\' && inStr) { escaped = true; continue; }
+      if (ch === '"') { inStr = !inStr; continue; }
+      if (inStr) continue;
+      if (ch === '{' || ch === '[') depth++;
+      else if (ch === '}' || ch === ']') {
+        depth--;
+        if (depth === 0) { realLast = i; break; }
+      }
+    }
+
+    // Use the walked boundary if found, otherwise fall back to lastIndexOf
+    clean = clean.slice(first, realLast !== -1 ? realLast + 1 : clean.lastIndexOf('}') + 1);
+
+    // Fix trailing commas before } or ] (Gemini sometimes emits them)
+    // NOTE: deliberately NOT touching backslashes — Gemini with responseMimeType:'application/json'
+    // already escapes LaTeX correctly. Double-escaping breaks KaTeX rendering.
+    clean = clean.replace(/,(\s*[}\]])/g, '$1');
 
     let result;
     try { result = JSON.parse(clean); }
-    catch {
-      try { result = JSON.parse(clean.replace(/,(\s*[}\]])/g, '$1')); }
-      catch (e) {
-      // Last resort: try to recover truncated JSON
+    catch (firstErr) {
+      // Recovery: strip incomplete trailing tokens then close open braces/brackets
       console.warn('Mi: parse failed, attempting truncation recovery...');
       try {
-        // Find last complete top-level key and close the JSON
         let r = clean;
-        // Remove any trailing incomplete string/array/object
-        const patterns = [/,\s*"[^"]*$/, /,\s*\[[^\]]*$/, /:\s*"[^"]*$/];
-        for (const p of patterns) r = r.replace(p, '');
-        // Count and close unclosed braces/brackets
+        // Remove trailing incomplete string, array element, or key-value
+        r = r
+          .replace(/,\s*"[^"]*$/, '')      // trailing incomplete string value
+          .replace(/:\s*"[^"]*$/, '')       // trailing incomplete key: "value
+          .replace(/,\s*\{[^}]*$/, '')      // trailing incomplete object
+          .replace(/,\s*\[[^\]]*$/, '');    // trailing incomplete array
+        // Remove trailing commas left over
+        r = r.replace(/,(\s*[}\]])/g, '$1');
+        // Close any unclosed braces/brackets
         const ob = (r.match(/\{/g)||[]).length - (r.match(/\}/g)||[]).length;
         const oa = (r.match(/\[/g)||[]).length - (r.match(/\]/g)||[]).length;
-        r += ']'.repeat(Math.max(0,oa)) + '}'.repeat(Math.max(0,ob));
+        r += ']'.repeat(Math.max(0, oa)) + '}'.repeat(Math.max(0, ob));
         result = JSON.parse(r);
         console.log('Mi: truncation recovery succeeded');
-      } catch {
-        return res.status(500).json({ error: `Response parse failed: ${e.message}. Try a simpler assignment or try again.` });
+      } catch (e) {
+        console.error('Mi: recovery failed:', e.message, '| first parse error:', firstErr.message);
+        return res.status(500).json({ error: `Response parse failed. Try a simpler assignment or try again.` });
       }
-    }
     }
 
     if (!result.solution_text) result.solution_text = '';
