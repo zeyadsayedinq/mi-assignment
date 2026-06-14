@@ -905,7 +905,7 @@ export default async function handler(req, res) {
       },
     };
 
-    const MODEL = 'gemini-1.5-flash-8b';
+    const MODEL = 'gemini-3-flash-preview';
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 55000);
 
@@ -953,6 +953,17 @@ export default async function handler(req, res) {
     try { geminiData = JSON.parse(rawBody); }
     catch { return res.status(500).json({ error: 'Response too large. Please simplify your assignment.' }); }
 
+    if (geminiData?.promptFeedback?.blockReason) {
+      return res.status(500).json({ error: 'Assignment could not be processed. Please rephrase and try again.' });
+    }
+    if (!geminiData?.candidates?.length) {
+      console.error('Mi: empty candidates');
+      return res.status(500).json({ error: 'AI returned empty response. Please try again.' });
+    }
+
+    const rawText = geminiData.candidates[0]?.content?.parts?.[0]?.text || '';
+    console.log(`Mi — rawText: ${rawText.length} chars`);
+    if (!rawText) return res.status(500).json({ error: 'Empty response. Please try again.' });
 
     // ── Parse JSON with truncation recovery ──────────────────────────────────
     const clean = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
