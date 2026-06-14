@@ -244,3 +244,29 @@ export function TiltCard({
     </div>
   );
 }
+
+export function MagneticButton({ children, className = '', onClick }: {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+}) {
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const onMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const btn = btnRef.current; if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    btn.style.transform = `translate(${(e.clientX - (rect.left + rect.width / 2)) * 0.35}px, ${(e.clientY - (rect.top + rect.height / 2)) * 0.35}px) scale(1.06)`;
+  };
+  const onMouseLeave = () => { if (btnRef.current) btnRef.current.style.transform = 'translate(0,0) scale(1)'; };
+  return (
+    <button
+      ref={btnRef}
+      onClick={onClick}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      className={className}
+      style={{ transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)', willChange: 'transform' }}
+    >
+      {children}
+    </button>
+  );
+}
