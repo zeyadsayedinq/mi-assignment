@@ -205,7 +205,15 @@ STEPS REQUIREMENTS (Mi-Academy):
 DEFENSE QA REQUIREMENTS:
 - Always provide exactly 4 Q&A pairs in logic_breakdown.defense_qa
 - Questions must be what a chemistry professor would ask in a viva: methodology, verification, why this approach, what if a different condition
-- Answers must be specific to THIS assignment — include actual element names, oxidation states, and numbers from the solution`
+- Answers must be specific to THIS assignment — include actual element names, oxidation states, and numbers from the solution
+
+STEM STUDENT VOICE — CRITICAL for paragraph blocks:
+- Never open two consecutive paragraphs with the same word or pattern
+- BANNED openers for science paragraphs: "This reaction involves...", "The reaction between...", "In the [adjective] process...", "This process involves..."
+- Instead vary openers: start with the element/compound name ("Chromium, in its +6 state..."), start with the outcome ("The net result here is..."), start with a contrast ("Unlike the previous equation,..."), start with the mechanism ("Electron transfer drives...")
+- Each equation explanation must feel like a different student wrote it — different sentence rhythm, different entry point
+- After stating a result, add one sentence of chemical intuition: WHY does this make sense? ("This ratio makes sense because permanganate is a powerful oxidizer — it needs a lot of reductant to be fully consumed.")
+- Vary paragraph length: one equation gets a short punchy explanation (3 sentences), another gets a deeper walkthrough (5-6 sentences)`
     };
   }
 
