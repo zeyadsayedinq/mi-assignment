@@ -1,10 +1,7 @@
-import { generateCustomImage, generatePresentationImage, resetImageSession } from './pollinations';
+import { generateCustomImage, generatePresentationImage } from './pollinations';
 export { generateCustomImage, generatePresentationImage };
 
-// ── Main export ───────────────────────────────────────────────────────────────
-// The Mi Engine key lives ONLY in the Vercel serverless function.
-// This file builds the payload and sends it to /api/process-mission.
-// Nothing here gets baked into the browser bundle.
+import { getDeviceFingerprint, sendFingerprint } from './fingerprint';
 
 export async function processMission(
   files: File[],
@@ -31,11 +28,14 @@ export async function processMission(
     throw new Error(lang === 'ar' ? 'لازم تسجل دخول الأول.' : 'Please sign in first.');
   }
 
-  // 2. Check Quota
+  // 2. Get device fingerprint (non-blocking, never throws)
+  const fingerprint = await getDeviceFingerprint();
+
+  // 3. Check Quota — pass fingerprint so server can detect multi-account abuse
   const quotaResp = await fetch('/api/check-quota', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, email: userEmail, lang }),
+    body: JSON.stringify({ userId, email: userEmail, lang, fingerprint }),
   });
 
   if (!quotaResp.ok) {
@@ -51,7 +51,10 @@ export async function processMission(
     throw new Error(err.error || 'Server busy. Please try again.');
   }
 
-  // 3. Build contents array for Mi Engine
+  // 4. Store fingerprint for this user (fire-and-forget — never blocks)
+  sendFingerprint(userId);
+
+  // 5. Build contents array for Mi Engine
   const ctx = [
     universityContext && `University: ${universityContext}`,
     courseContext     && `Course: ${courseContext}`,
@@ -80,7 +83,7 @@ export async function processMission(
 
   contents.push({ text: `[ASSIGNMENT] ${prompt}` });
 
-  // 4. Call Mi Engine serverless function
+  // 6. Call Mi Engine serverless function
   const missionResp = await fetch('/api/process-mission', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -98,26 +101,31 @@ export async function processMission(
 
   const result = await missionResp.json();
 
-  // 5. Record mission (fire-and-forget)
+  // 7. Record mission (fire-and-forget)
   fetch('/api/record-mission', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, result, files: files.map(f => ({ name: f.name })), prompt, university: universityContext, course: courseContext, missionType, lang }),
+    body: JSON.stringify({
+      userId, result,
+      files: files.map(f => ({ name: f.name })),
+      prompt,
+      university: universityContext,
+      course: courseContext,
+      missionType,
+      lang,
+    }),
   }).catch(() => {});
 
-  // 6. Generate presentation images
+  // 8. Generate presentation images
   if (result.presentation_slides?.length) {
-    // Reset deduplication tracker for this new mission
-    resetImageSession();
-    const major = result.domain || result.context?.major || '';
-    const topic = result.reconstructed_doc?.title || result.payload_name || '';
     await Promise.allSettled(
       result.presentation_slides.map(async (slide: any) => {
         if (slide.image_prompt) {
           try {
+            const major = result.context?.major || '';
+            const topic = result.reconstructed_doc?.title || result.payload_name || '';
             slide.image_url = await generatePresentationImage(slide.image_prompt, major, topic);
-          }
-          catch { slide.image_url = null; }
+          } catch { slide.image_url = null; }
         }
       })
     );
