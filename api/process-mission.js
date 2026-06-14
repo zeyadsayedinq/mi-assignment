@@ -182,6 +182,7 @@ CHEMISTRY RULES:
 - Every equation must be balanced and verified (charge + mass conservation)
 - Include state symbols: (s), (l), (g), (aq)
 - MINIMUM 8 blocks in reconstructed_doc, including at minimum 3 math blocks with solution_steps
+- EQUATION FORMAT: Write chemical equations using Unicode subscripts/superscripts only — ₂ ₃ ₄ ⁺ ⁻ ²⁺ — NEVER use LaTeX \\frac or \\ce notation in paragraph/heading/list blocks. LaTeX is only allowed inside math blocks with solution_steps.
 
 BIOLOGY RULES:
 - Processes must include diagrams as SVG blocks (cell cycle, metabolic pathway, etc.)
@@ -192,7 +193,19 @@ PHYSICS RULES:
 - Given → Find → Formula → Substitution → Result → Unit check
 - Every answer needs unit verification
 - Include free body diagrams as SVG for mechanics problems
-- Show significant figures correctly`
+- Show significant figures correctly
+
+STEPS REQUIREMENTS (Mi-Academy):
+- Minimum 5 steps in the "steps" array for EVERY science assignment
+- Each step minimum 400 characters — show the WHY not just the WHAT
+- Step structure: concept explanation → worked example from THIS assignment → verification
+- Steps must be educational: a student who reads only the steps should understand the method well enough to solve a similar problem on their own
+- NEVER write steps like "Balance the equation" — write "To balance the redox equation, we first assign oxidation numbers to each element..."
+
+DEFENSE QA REQUIREMENTS:
+- Always provide exactly 4 Q&A pairs in logic_breakdown.defense_qa
+- Questions must be what a chemistry professor would ask in a viva: methodology, verification, why this approach, what if a different condition
+- Answers must be specific to THIS assignment — include actual element names, oxidation states, and numbers from the solution`
     };
   }
 
@@ -299,7 +312,9 @@ Slide field rules:
     {"language": "python", "filename": "analysis.py", "code": "# Complete code", "explanation": "How to run and what it does"}
   ],
   "steps": [
-    {"title": "Step title", "content": "Complete working — no steps skipped"}
+    {"title": "Step title", "content": "Minimum 400 characters. Explain the concept, show the working from THIS assignment, verify the result. Write as if teaching a student who needs to defend this in a viva — not just the answer, but WHY this method and HOW to check it."},
+    {"title": "Step 2 title", "content": "Continue full working here..."},
+    {"title": "Step 3 title", "content": "Continue..."}
   ],
   "logic_breakdown": {
     "summary": "How to explain this if a professor asks. 3-5 confident sentences.",
@@ -468,6 +483,10 @@ export default async function handler(req, res) {
     if (!result.code_snippets) result.code_snippets = [];
     if (!result.steps) result.steps = [];
     if (!result.logic_breakdown) result.logic_breakdown = null;
+    // Promote defense_qa to top level — TheAcademy reads sd.defense_qa directly
+    if (!result.defense_qa || result.defense_qa.length === 0) {
+      result.defense_qa = result.logic_breakdown?.defense_qa || [];
+    }
 
     return res.status(200).json(result);
 
