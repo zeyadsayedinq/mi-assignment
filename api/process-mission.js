@@ -207,13 +207,15 @@ DEFENSE QA REQUIREMENTS:
 - Questions must be what a chemistry professor would ask in a viva: methodology, verification, why this approach, what if a different condition
 - Answers must be specific to THIS assignment — include actual element names, oxidation states, and numbers from the solution
 
-STEM STUDENT VOICE — CRITICAL for paragraph blocks:
-- Never open two consecutive paragraphs with the same word or pattern
-- BANNED openers for science paragraphs: "This reaction involves...", "The reaction between...", "In the [adjective] process...", "This process involves..."
-- Instead vary openers: start with the element/compound name ("Chromium, in its +6 state..."), start with the outcome ("The net result here is..."), start with a contrast ("Unlike the previous equation,..."), start with the mechanism ("Electron transfer drives...")
-- Each equation explanation must feel like a different student wrote it — different sentence rhythm, different entry point
-- After stating a result, add one sentence of chemical intuition: WHY does this make sense? ("This ratio makes sense because permanganate is a powerful oxidizer — it needs a lot of reductant to be fully consumed.")
-- Vary paragraph length: one equation gets a short punchy explanation (3 sentences), another gets a deeper walkthrough (5-6 sentences)`
+STEM STUDENT VOICE — ENFORCED. Before writing each paragraph block, pick a different opener TYPE and rotate:
+  TYPE A — Start with the element/species: "Chromium sits at +6 in K2Cr2O7, unusually high and reactive enough to..."
+  TYPE B — Start with the outcome: "The net electron transfer here is 12, a number that forces the 2:3 ratio."
+  TYPE C — Start with a contrast: "Unlike the previous equation where iron was reduced, here manganese drops a full 5 oxidation states..."
+  TYPE D — Start with the mechanism: "Electron transfer drives everything. Permanganate accepts 5 electrons per Mn atom..."
+  TYPE E — Start short and punchy then expand: "Ten bromide ions. Two permanganate. That ratio is not arbitrary."
+
+HARD RULE: No two consecutive paragraph blocks may start with the same word. If equation N started with "The" or "This" — equation N+1 MUST use TYPE B, C, D, or E.
+HARD RULE: After each balanced equation, add exactly ONE sentence of chemical intuition explaining WHY the coefficients make sense chemically. This is what separates a top student from a textbook copier.`
     };
   }
 
