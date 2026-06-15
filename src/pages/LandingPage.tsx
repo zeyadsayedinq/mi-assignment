@@ -33,6 +33,32 @@ function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
   return <span ref={ref}>{val}{suffix}</span>;
 }
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+const REVIEWS = [
+  { stars: 5, text: 'حلّ واجب الكيمياء بتاعي في ٢٠ ثانية — وكأن زميلي المتفوق كتبه.', name: 'فريدة ح.', uni: 'جامعة القاهرة' },
+  { stars: 5, text: 'The engineering report was better than what I would have written in 3 hours.', name: 'Karim A.', uni: 'GUC Cairo' },
+  { stars: 5, text: 'الـ PPTX طلع احترافي جداً، الدكتور مدحه أمام الكل.', name: 'سارة م.', uni: 'جامعة عين شمس' },
+  { stars: 5, text: 'Used it for a law case study — cited correctly, IRAC format, instant.', name: 'Nour T.', uni: 'AUC' },
+];
+
+const DOMAIN_CARDS_AR = [
+  { icon: '🧠', label: 'دراسات حالة' },
+  { icon: '📚', label: 'أبحاث عملية' },
+  { icon: '🔢', label: 'رياضيات ومنظمة' },
+  { icon: '💻', label: 'كود وبيانات' },
+  { icon: '✨', label: 'برزنتيشن' },
+  { icon: '📊', label: 'ملفات وتقارير' },
+];
+
+const DOMAIN_CARDS_EN = [
+  { icon: '🧠', label: 'Case Studies' },
+  { icon: '📚', label: 'Research Papers' },
+  { icon: '🔢', label: 'Math & Calculations' },
+  { icon: '💻', label: 'Code & Data' },
+  { icon: '✨', label: 'Presentations' },
+  { icon: '📊', label: 'Reports & Essays' },
+];
+
 // ─── Nebula canvas background ─────────────────────────────────────────────────
 function NebulaCanvas() {
   const ref = useRef<HTMLCanvasElement>(null);
