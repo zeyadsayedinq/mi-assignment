@@ -1,121 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { MILogo3D } from '../components/MILogo3D';
 import { GlitchText } from '../components/GlitchText';
 import { supabase } from '../lib/supabase';
 import { Zap, ChevronRight, Shield, Star, CheckCircle2, Users } from 'lucide-react';
+import { ReferralWidget } from '../components/ReferralWidget';
 import { cn } from '../lib/utils';
-
-// ─── ReferralWidget — inline minimal version ─────────────────────────────────
-function ReferralWidget({ isAr }: { isAr: boolean }) {
-  const { session } = useAuth();
-  const link = session ? `${window.location.origin}?ref=${session.user.id.slice(0, 8)}` : '';
-  const [copied, setCopied] = useState(false);
-  const copy = () => { navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2000); };
-  return (
-    <div className="flex flex-col sm:flex-row gap-3 items-center justify-center">
-      <code className="text-xs text-[#22D3EE] bg-[#22D3EE]/10 border border-[#22D3EE]/20 px-4 py-2 rounded-xl font-mono truncate max-w-xs">{link}</code>
-      <button onClick={copy} className="px-4 py-2 bg-[#22D3EE] text-black text-xs font-black rounded-xl hover:bg-white transition-all whitespace-nowrap">
-        {copied ? (isAr ? 'تم النسخ ✓' : 'Copied ✓') : (isAr ? 'انسخ الرابط' : 'Copy link')}
-      </button>
-    </div>
-  );
-}
-
-const REVIEWS = [
-  { stars: 5, text: 'حلّ واجب الكيمياء بتاعي في ٢٠ ثانية — وكأن زميلي المتفوق كتبه.', name: 'فريدة ح.', uni: 'جامعة القاهرة' },
-  { stars: 5, text: 'The engineering report was better than what I would have written in 3 hours.', name: 'Karim A.', uni: 'GUC Cairo' },
-  { stars: 5, text: 'الـ PPTX طلع احترافي جداً، الدكتور مدحه أمام الكل.', name: 'سارة م.', uni: 'جامعة عين شمس' },
-  { stars: 5, text: 'Used it for a law case study — cited correctly, IRAC format, instant.', name: 'Nour T.', uni: 'AUC' },
-];
-
-const DOMAIN_CARDS_AR = [
-  { icon: '🧠', label: 'دراسات حالة' },
-  { icon: '📚', label: 'أبحاث عملية' },
-  { icon: '🔢', label: 'رياضيات ومنظمة' },
-  { icon: '💻', label: 'كود وبيانات' },
-  { icon: '✨', label: 'برزنتيشن + برزنتيشن إبداعية' },
-  { icon: '📊', label: 'ملفات وتقارير' },
-];
-
-const DOMAIN_CARDS_EN = [
-  { icon: '🧠', label: 'Case Studies' },
-  { icon: '📚', label: 'Research Papers' },
-  { icon: '🔢', label: 'Math & Calculations' },
-  { icon: '💻', label: 'Code & Data' },
-  { icon: '✨', label: 'Presentations' },
-  { icon: '📊', label: 'Reports & Essays' },
-];
-
-// ─── Nebula canvas background ─────────────────────────────────────────────────
-function NebulaCanvas() {
-  const ref = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const c = ref.current; if (!c) return;
-    const ctx = c.getContext('2d'); if (!ctx) return;
-    let raf: number;
-    const resize = () => { c.width = window.innerWidth; c.height = window.innerHeight; };
-    resize();
-    window.addEventListener('resize', resize);
-
-    // particles
-    const N = 120;
-    const pts = Array.from({ length: N }, () => ({
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      r: Math.random() * 1.5 + 0.3,
-      vx: (Math.random() - 0.5) * 0.12,
-      vy: (Math.random() - 0.5) * 0.12,
-      hue: Math.random() > 0.5 ? 190 : 280, // teal or purple
-    }));
-
-    let t = 0;
-    function draw() {
-      t += 0.004;
-      ctx.clearRect(0, 0, c.width, c.height);
-
-      // nebula blobs
-      const blobs = [
-        { x: c.width * 0.2, y: c.height * 0.3, r: 380, h: 190 },
-        { x: c.width * 0.8, y: c.height * 0.6, r: 320, h: 280 },
-        { x: c.width * 0.5, y: c.height * 0.8, r: 260, h: 235 },
-      ];
-      blobs.forEach(b => {
-        const pulse = 1 + Math.sin(t + b.h) * 0.06;
-        const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r * pulse);
-        g.addColorStop(0, `hsla(${b.h},80%,55%,0.055)`);
-        g.addColorStop(0.5, `hsla(${b.h},70%,45%,0.025)`);
-        g.addColorStop(1, 'transparent');
-        ctx.fillStyle = g; ctx.beginPath();
-        ctx.arc(b.x, b.y, b.r * pulse, 0, Math.PI * 2); ctx.fill();
-      });
-
-      // star particles
-      pts.forEach(p => {
-        p.x += p.vx; p.y += p.vy;
-        if (p.x < 0) p.x = c.width; if (p.x > c.width) p.x = 0;
-        if (p.y < 0) p.y = c.height; if (p.y > c.height) p.y = 0;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${p.hue},80%,75%,${0.25 + Math.sin(t * 2 + p.x) * 0.15})`;
-        ctx.fill();
-      });
-
-      raf = requestAnimationFrame(draw);
-    }
-    draw();
-    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
-  }, []);
-  return <canvas ref={ref} className="fixed inset-0 pointer-events-none z-0" />;
-}
 
 // ─── Animated counter ─────────────────────────────────────────────────────────
 function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
   const [val, setVal] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') { setVal(to); return; }
     const obs = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) return;
       let start = 0; const dur = 1400;
@@ -135,7 +34,7 @@ function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function LandingPage() {
+export function LandingPage() {
   const { session } = useAuth();
   const navigate = useNavigate();
   const [isAr, setIsAr] = useState(() => localStorage.getItem('mi_lang') === 'ar');
