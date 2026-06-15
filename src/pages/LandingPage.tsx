@@ -33,6 +33,60 @@ function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
   return <span ref={ref}>{val}{suffix}</span>;
 }
 
+// ─── Nebula canvas background ─────────────────────────────────────────────────
+function NebulaCanvas() {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const c = ref.current; if (!c) return;
+    const ctx = c.getContext('2d'); if (!ctx) return;
+    let raf: number;
+    const resize = () => { try { c.width = window.innerWidth; c.height = window.innerHeight; } catch(e) {} };
+    resize();
+    window.addEventListener('resize', resize);
+    const N = 120;
+    const pts = Array.from({ length: N }, () => ({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      r: Math.random() * 1.5 + 0.3,
+      vx: (Math.random() - 0.5) * 0.12,
+      vy: (Math.random() - 0.5) * 0.12,
+      hue: Math.random() > 0.5 ? 190 : 280,
+    }));
+    let t = 0;
+    function draw() {
+      t += 0.004;
+      ctx.clearRect(0, 0, c.width, c.height);
+      const blobs = [
+        { x: c.width * 0.2, y: c.height * 0.3, r: 380, h: 190 },
+        { x: c.width * 0.8, y: c.height * 0.6, r: 320, h: 280 },
+        { x: c.width * 0.5, y: c.height * 0.8, r: 260, h: 235 },
+      ];
+      blobs.forEach(b => {
+        const pulse = 1 + Math.sin(t + b.h) * 0.06;
+        const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r * pulse);
+        g.addColorStop(0, `hsla(${b.h},80%,55%,0.055)`);
+        g.addColorStop(0.5, `hsla(${b.h},70%,45%,0.025)`);
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g; ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r * pulse, 0, Math.PI * 2); ctx.fill();
+      });
+      pts.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = c.width; if (p.x > c.width) p.x = 0;
+        if (p.y < 0) p.y = c.height; if (p.y > c.height) p.y = 0;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${p.hue},80%,75%,${0.25 + Math.sin(t * 2 + p.x) * 0.15})`;
+        ctx.fill();
+      });
+      raf = requestAnimationFrame(draw);
+    }
+    draw();
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
+  }, []);
+  return <canvas ref={ref} className="fixed inset-0 pointer-events-none z-0" />;
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export function LandingPage() {
   const { session } = useAuth();
