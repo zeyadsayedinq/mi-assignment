@@ -174,11 +174,13 @@ async function buildDocx(data: any, payloadName: string, isPro = false, clean = 
         }
       } else if (block.type === 'table') {
         if (block.headers?.length > 0 && block.rows?.length > 0) {
+          const colCount = block.headers.length;
+          const cellW = Math.floor(9000 / colCount);
           const newTableRows = [
-            new TableRow({ children: block.headers.map((h: string) => new TableCell({ children: [new Paragraph({ text: String(h), spacing: { after: 80 } })], shading: { fill: 'E2E8F0' } })) }),
-            ...(block.rows || []).map((row: string[]) => new TableRow({ children: (Array.isArray(row) ? row : [String(row)]).map((cell: string) => new TableCell({ children: [new Paragraph({ text: String(cell || ''), bidirectional: hasArabic(String(cell || '')), spacing: { after: 80 } })] })) }))
+            new TableRow({ children: block.headers.map((h: string) => new TableCell({ width: { size: cellW, type: 'dxa' }, children: [new Paragraph({ text: String(h), spacing: { after: 80 } })], shading: { fill: 'E2E8F0' } })) }),
+            ...(block.rows || []).map((row: string[]) => new TableRow({ children: (Array.isArray(row) ? row : [String(row)]).map((cell: string) => new TableCell({ width: { size: cellW, type: 'dxa' }, children: [new Paragraph({ text: String(cell || ''), bidirectional: hasArabic(String(cell || '')), spacing: { after: 80 } })] })) }))
           ];
-          children.push(new Table({ rows: newTableRows, width: { size: 9000, type: 'dxa' } }));
+          children.push(new Table({ rows: newTableRows, width: { size: 9000, type: 'dxa' }, columnWidths: Array(colCount).fill(cellW) }));
           children.push(new Paragraph({ text: '', spacing: { after: 200 } }));
         } else if (block.content && String(block.content) !== 'undefined') {
           const rows = String(block.content).split('\n').filter(Boolean);
@@ -304,10 +306,13 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
         }
         y += 2;
       } else if (block.type === 'code') {
-        pdf.setFillColor(30, 41, 59); pdf.rect(MARGIN, y - 3, W - MARGIN * 2, LINE_H + 4, 'F');
         pdf.setFont('courier', 'normal'); pdf.setFontSize(8); pdf.setTextColor(148, 163, 184);
         const clines = pdf.splitTextToSize(block.content || '', W - MARGIN * 2 - 4);
-        clines.slice(0, 8).forEach((l: string) => { checkPage(); pdf.text(l, MARGIN + 2, y); y += 5; });
+        const visibleLines = clines.slice(0, 12);
+        const blockH = visibleLines.length * 5 + 6;
+        checkPage(blockH);
+        pdf.setFillColor(30, 41, 59); pdf.rect(MARGIN, y - 3, W - MARGIN * 2, blockH, 'F');
+        visibleLines.forEach((l: string) => { pdf.text(l, MARGIN + 2, y); y += 5; });
         pdf.setFont('helvetica', 'normal');
         y += 2;
       } else if (block.type === 'list') {
@@ -319,15 +324,16 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
       } else if (block.type === 'table') {
         if (block.headers?.length && block.rows?.length) {
           checkPage(20);
-          const colW = Math.min(40, (W - MARGIN * 2) / block.headers.length);
+          const colW = (W - MARGIN * 2) / block.headers.length;
+          const maxChars = Math.max(4, Math.floor(colW / 2.1)); // ~2.1mm per char at size 9
           pdf.setFontSize(9); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(15, 23, 42);
           pdf.setFillColor(226, 232, 240); pdf.rect(MARGIN, y - 4, W - MARGIN * 2, LINE_H, 'F');
-          block.headers.forEach((h: string, k: number) => { pdf.text(String(h).substring(0, 20), MARGIN + k * colW + 1, y); });
+          block.headers.forEach((h: string, k: number) => { pdf.text(String(h).substring(0, maxChars), MARGIN + k * colW + 1, y); });
           y += LINE_H;
           pdf.setFont('helvetica', 'normal'); pdf.setTextColor(51, 65, 85);
           block.rows.forEach((row: string[]) => {
             checkPage();
-            (Array.isArray(row) ? row : [row]).forEach((cell: string, k: number) => { pdf.text(String(cell).substring(0, 25), MARGIN + k * colW + 1, y); });
+            (Array.isArray(row) ? row : [row]).forEach((cell: string, k: number) => { pdf.text(String(cell).substring(0, maxChars), MARGIN + k * colW + 1, y); });
             y += 7; checkPage();
           });
           y += 3;
@@ -414,16 +420,7 @@ export async function downloadMissionPackage(data: any, payloadName: string = "M
     zip.file('Submission_Clean.docx', cleanDocxBlob);
   } catch (e) { console.warn('DOCX generation failed:', e); }
 
-  // XLSX
-  if (data.data_sheet?.rows?.length) {
-    try {
-      const ws = XLSX.utils.aoa_to_sheet([data.data_sheet.headers, ...data.data_sheet.rows]);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Data");
-      const xlsxBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      zip.file('Data_Sheet.xlsx', xlsxBuffer);
-    } catch (e) { console.warn('XLSX generation failed:', e); }
-  }
+  // XLSX (generated below alongside Data_Sheet.csv in the data_sheet block)
 
   // PPTX
   const slides = data.presentation_slides;
@@ -547,7 +544,10 @@ export async function downloadMissionPackage(data: any, payloadName: string = "M
       });
       sql += `);\n\n`;
       data.data_sheet.rows.forEach((row: string[]) => {
-        const vals = row.map((v: string) => `'${String(v ?? '').replace(/'/g, "''")}'`).join(', ');
+        const vals = row.map((v: string) => {
+          const safe = String(v ?? '').replace(/\\/g, '\\\\').replace(/'/g, "''");
+          return `'${safe}'`;
+        }).join(', ');
         sql += `INSERT INTO ${tableName} VALUES (DEFAULT, ${vals});\n`;
       });
       zip.file('Database_Import.sql', sql);

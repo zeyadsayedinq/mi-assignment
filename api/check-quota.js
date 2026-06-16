@@ -68,17 +68,21 @@ export default async function handler(req, res) {
     const { userId, email, lang, fingerprint } = await parseBody(req);
     if (!userId) { setCORS(res); return res.status(401).json({ error: 'Unauthorized' }); }
 
-    // ── Owner bypass — always unlimited ───────────────────────────────────────
-    if (email && OWNER_EMAILS.includes(email.toLowerCase())) {
-      setCORS(res);
-      return res.status(200).json({ allowed: true, plan: 'owner', limit: 999999 });
-    }
-
     const supabase = createClient(
       process.env.VITE_SUPABASE_URL || '',
       process.env.SUPABASE_SERVICE_ROLE_KEY || '',
       { auth: { persistSession: false } }
     );
+
+    // ── Owner bypass — verify email server-side, never trust client-supplied email ──
+    try {
+      const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
+      const verifiedEmail = authUser?.email?.toLowerCase();
+      if (verifiedEmail && OWNER_EMAILS.includes(verifiedEmail)) {
+        setCORS(res);
+        return res.status(200).json({ allowed: true, plan: 'owner', limit: 999999 });
+      }
+    } catch { /* non-fatal — continue to normal quota check */ }
 
     // ── 1. Get plan ────────────────────────────────────────────────────────────
     let plan = 'free';
@@ -99,9 +103,10 @@ export default async function handler(req, res) {
 
     // ── 2. Count usage ─────────────────────────────────────────────────────────
     const periodStart = new Date();
-    if (plan === 'pro_quarterly') periodStart.setDate(periodStart.getDate() - 90);
+    if (plan === 'pro_monthly') periodStart.setDate(periodStart.getDate() - 30);
+    else if (plan === 'pro_quarterly') periodStart.setDate(periodStart.getDate() - 90);
     else if (plan === 'pro_yearly') periodStart.setFullYear(periodStart.getFullYear() - 1);
-    else { periodStart.setDate(1); periodStart.setHours(0, 0, 0, 0); }
+    else { periodStart.setDate(1); periodStart.setHours(0, 0, 0, 0); } // free: calendar month
 
     const { count } = await supabase
       .from('missions')

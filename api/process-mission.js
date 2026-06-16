@@ -323,7 +323,7 @@ Slide field rules:
       {"type": "math", "content": "LaTeX expression or equation", "solution_steps": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."]},
       {"type": "code", "content": "# Complete runnable code", "language": "python"},
       {"type": "table", "headers": ["Month", "Distance_km", "Price_EGP_sqm"], "rows": [["Jan 2023","0.5","18500"],["Feb 2023","1.2","16200"]]},
-      {"type": "svg", "content": "<svg viewBox='0 0 600 300' xmlns='http://www.w3.org/2000/svg'><!-- detailed diagram --></svg>"}
+      {"type": "svg", "content": "<svg viewBox='0 0 800 400' xmlns='http://www.w3.org/2000/svg'><!-- FULL SVG — follow SVG QUALITY RULES --></svg>"}
     ]
   },
   "presentation_slides": [
@@ -365,6 +365,59 @@ Slide field rules:
       {"q": "What are the limitations?", "a": "Honest informed answer"}
     ]
   }
+
+\u2550\u2550\u2550 SVG VISUAL QUALITY RULES (enforced on every svg block) \u2550\u2550\u2550
+
+PALETTE \u2014 technology/academic aesthetic ONLY:
+- Primary: #2563EB (blue), #1E40AF (dark blue), #0EA5E9 (sky)
+- Secondary: #64748B (slate-500), #334155 (slate-700), #94A3B8 (slate-400)
+- Accent: #10B981 (emerald for outputs/positive), #F59E0B (amber for warnings)
+- Background: #F8FAFC or transparent. NEVER solid black fills or rainbow colors.
+- BANNED: hot pink, garish red fills, random multi-color palettes
+
+GEOMETRY \u2014 professional diagrams only:
+- All boxes: rx="6", stroke-width="1.5", fill with low opacity (fill-opacity="0.08")
+- Arrows: always use <marker> in <defs> with proper arrowhead path
+- Labels: font-family="system-ui,-apple-system,sans-serif" font-size="12" fill="#1E293B"
+- Flow direction: strict left\u2192right OR top\u2192bottom, aligned to an invisible grid
+- Minimum 4 labeled elements per SVG. viewBox minimum 500x250.
+- Connections: <line> or <path> with marker-end="url(#arr)"
+- Secondary/optional connections: stroke-dasharray="4 2"
+
+REQUIRED defs in EVERY SVG:
+<defs>
+  <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 z" fill="#2563EB"/>
+  </marker>
+  <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#EFF6FF"/><stop offset="100%" stop-color="#DBEAFE"/>
+  </linearGradient>
+</defs>
+
+BANNED: solid filled rects with no stroke, random unaligned coordinates, missing node labels, emoji in diagrams.
+
+\u2550\u2550\u2550 CODE QUALITY RULES (enforced on every code block) \u2550\u2550\u2550
+
+STRUCTURE over hardcoding \u2014 code must show student intelligence:
+- NEVER: result = 42   \u2192   ALWAYS: result = base_price * (1 + TAX_RATE)
+- Named constants at top of file: TAX_RATE = 0.14; GRAVITY = 9.81
+- Minimum 2 reusable functions per code block. Use loops, not repeated statements.
+- Data structures must match the domain: dict/DataFrame for business, numpy for engineering, list-of-dicts for DB
+
+Comments explain WHY not WHAT:
+- BAD: # multiply by 0.14
+- GOOD: # VAT rate per Egyptian Tax Law No. 67/2016
+
+Output must include context:
+- BAD: print(q)
+- GOOD: print(f"Optimal quantity: {q:.0f} units \u2192 Max profit: {p:.2f} EGP")
+
+Language rules:
+- Python: type hints, f-strings, list comprehensions, try/except
+- JavaScript/TS: const over let, arrow functions, destructuring
+- SQL: explicit JOIN type, table aliases, WHERE before ORDER BY
+- Java/C++: proper class structure, not everything in main()
+
 }`;
 }
 
@@ -452,6 +505,7 @@ export default async function handler(req, res) {
         }
         rawText += decoder.decode(value, { stream: true });
       }
+      rawText += decoder.decode(); // flush remaining buffered bytes (fixes truncated multi-byte UTF-8)
     } else {
       // Fallback for environments without streaming (e.g. Node 16)
       const geminiData = await geminiRes.json();
