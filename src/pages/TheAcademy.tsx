@@ -32,6 +32,59 @@ const DOMAIN_ICONS: Record<string, string> = {
 
 type Tab = 'steps' | 'defense' | 'summary' | 'slides';
 
+// ── FIX 5: Highlight numbers/percentages/metrics in text ─────────────────────
+function HighlightMetrics({ text, className = '' }: { text: string; className?: string }) {
+  if (!text) return null;
+  const parts = text.split(/(\b\d+(?:\.\d+)?%|\b\d{2,}(?:,\d{3})*(?:\.\d+)?\s*(?:EGP|USD|SAR|ms|GB|TB|MHz|GHz|km|kg|s|hrs?)?\b)/g);
+  return (
+    <span className={className}>
+      {parts.map((part, i) =>
+        /^\d/.test(part) ? (
+          <mark key={i} className="bg-[#22D3EE]/15 text-[#22D3EE] font-bold px-0.5 rounded not-italic">{part}</mark>
+        ) : part
+      )}
+    </span>
+  );
+}
+
+// ── FIX 5b: Key Terms box ─────────────────────────────────────────────────────
+function KeyTerms({ blocks, isAr }: { blocks: any[]; isAr: boolean }) {
+  const terms = new Set<string>();
+  blocks.forEach(b => {
+    if (b.type === 'paragraph' || b.type === 'heading') {
+      const matches = (b.content || '').match(/\b[A-Z][a-zA-Z]{3,}(?:\s[A-Z][a-zA-Z]{3,}){0,2}\b/g) || [];
+      matches.forEach((m: string) => { if (m.length > 4 && terms.size < 5) terms.add(m); });
+    }
+  });
+  const termArr = [...terms].slice(0, 4);
+  if (termArr.length === 0) return null;
+  return (
+    <div className="bg-[#0A0B0E] border border-[#A855F7]/20 rounded-xl p-4 mb-6">
+      <p className="text-[#A855F7] text-[10px] font-bold uppercase tracking-widest mb-3">
+        {isAr ? 'مصطلحات مفتاحية' : 'Key Terms'}
+      </p>
+      <div className="space-y-2">
+        {termArr.map((term, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#A855F7] shrink-0" />
+            <span className="text-white text-xs font-semibold">{term}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── FIX 4: Smart file name display ───────────────────────────────────────────
+function smartFileName(name: string, type: string, createdAt: string): string {
+  if (/whatsapp|screenshot|img_|image_|\\.jpeg|\\.jpg|\\.png|photo_/i.test(name || '')) {
+    const label = type ? type.replace(/_/g, ' ') : 'Assignment';
+    const date = new Date(createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    return `${label.charAt(0).toUpperCase() + label.slice(1)} — ${date}`;
+  }
+  return name;
+}
+
 export function TheAcademy() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -76,7 +129,7 @@ export function TheAcademy() {
           lang: m.lang || 'en',
           solution_text: sd.solution_text || m.summary || '',
           steps: sd.steps || [],
-          defense_qa: sd.defense_qa || [],
+          defense_qa: sd.defense_qa?.length ? sd.defense_qa : (sd.logic_breakdown?.defense_qa || []),
           slides: sd.slides || [],
           blocks: sd.reconstructed_doc?.blocks || [],
         };
@@ -110,6 +163,9 @@ export function TheAcademy() {
   const slides = sel?.slides || [];
   const keyParas = (sel?.blocks || []).filter((b: any) => b.type === 'paragraph' && b.content?.length > 100).slice(0, 3);
 
+  // FIX 2: Arabic text detection for bidi
+  const isArabicText = (t: string) => /[\u0600-\u06FF]/.test(t || '');
+
   const tabs = [
     { key: 'summary' as Tab, icon: FileText, label: isAr ? 'الملخص' : 'Summary', count: 1 },
     { key: 'steps' as Tab, icon: BookOpen, label: isAr ? `خطوات (${steps.length})` : `Steps (${steps.length})`, count: steps.length },
@@ -119,6 +175,7 @@ export function TheAcademy() {
 
   return (
     <div className="flex h-screen bg-[#020617] overflow-hidden" dir={isAr ? 'rtl' : 'ltr'}>
+
       {/* LEFT PANEL */}
       <div className="w-72 border-e border-white/[0.06] flex flex-col shrink-0 bg-[#030508]">
         <div className="p-5 border-b border-white/[0.06]">
@@ -169,7 +226,10 @@ export function TheAcademy() {
                 {entry.domain && <span className="text-[10px]">{DOMAIN_ICONS[entry.domain] || '📝'}</span>}
                 {entry.steps?.length > 0 && <span className="text-[9px] text-emerald-500 ms-auto flex items-center gap-0.5"><CheckCircle2 className="w-2.5 h-2.5" />{entry.steps.length}</span>}
               </div>
-              <p className="text-white text-xs font-semibold leading-snug line-clamp-2 mb-1">{entry.payload_name}</p>
+              {/* FIX 4: Smart file name — replaces WhatsApp/screenshot names */}
+              <p className="text-white text-xs font-semibold leading-snug line-clamp-2 mb-1">
+                {smartFileName(entry.payload_name, entry.assignment_type, entry.created_at)}
+              </p>
               <p className="text-gray-700 text-[10px] truncate">{entry.university}</p>
             </button>
           ))}
@@ -198,6 +258,7 @@ export function TheAcademy() {
           </div>
         ) : (
           <div className="p-8 max-w-4xl">
+
             {/* Header */}
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-3 flex-wrap">
@@ -205,7 +266,8 @@ export function TheAcademy() {
                 {sel.domain && <span className="text-[10px] bg-[#0A0B0E] border border-gray-800 text-gray-400 px-2 py-0.5 rounded font-mono">{DOMAIN_ICONS[sel.domain]} {sel.domain}</span>}
                 <span className="text-[10px] text-gray-600 ms-auto flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(sel.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
               </div>
-              <h1 className="text-2xl font-black text-white leading-tight mb-1">{sel.payload_name}</h1>
+              {/* FIX 1: Title wraps — never truncates */}
+              <h1 className="text-2xl font-black text-white leading-tight mb-1 break-words">{sel.payload_name}</h1>
               <p className="text-gray-500 text-sm">{sel.university}{sel.course ? ` · ${sel.course}` : ''}</p>
             </div>
 
@@ -240,22 +302,44 @@ export function TheAcademy() {
               <div className="space-y-5">
                 {sel.solution_text && (
                   <div className="bg-[#0A0B0E] border border-gray-800 rounded-2xl p-5">
-                    <div className="flex items-center gap-2 mb-3"><Target className="w-4 h-4 text-[#22D3EE]" /><span className="text-white font-bold text-sm">{isAr ? 'ماذا فعلنا؟' : 'What we solved'}</span></div>
-                    <p className="text-gray-300 text-sm leading-relaxed">{sel.solution_text}</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Target className="w-4 h-4 text-[#22D3EE]" />
+                      <span className="text-white font-bold text-sm">{isAr ? 'ماذا فعلنا؟' : 'What we solved'}</span>
+                    </div>
+                    {/* FIX 6: Highlight metrics in solution text */}
+                    <HighlightMetrics text={sel.solution_text} className="text-gray-300 text-sm leading-relaxed" />
                   </div>
                 )}
+
+                {/* FIX 5b: Key Terms box */}
+                {sel.blocks?.length > 0 && <KeyTerms blocks={sel.blocks} isAr={isAr} />}
+
                 {keyParas.length > 0 && (
                   <div className="bg-[#0A0B0E] border border-gray-800 rounded-2xl p-5">
-                    <div className="flex items-center gap-2 mb-4"><BookOpen className="w-4 h-4 text-[#A855F7]" /><span className="text-white font-bold text-sm">{isAr ? 'أبرز محتوى الحل' : 'Key content'}</span></div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <BookOpen className="w-4 h-4 text-[#A855F7]" />
+                      <span className="text-white font-bold text-sm">{isAr ? 'أبرز محتوى الحل' : 'Key content'}</span>
+                    </div>
                     <div className="space-y-4">
+                      {/* FIX 3: Full text, no line-clamp, proper bidi for mixed Arabic+English */}
                       {keyParas.map((b: any, i: number) => (
                         <div key={i} className="border-s-2 border-[#22D3EE]/30 ps-4">
-                          <p className="text-gray-400 text-sm leading-relaxed">{b.content?.slice(0, 400)}{b.content?.length > 400 ? '...' : ''}</p>
+                          <p
+                            className="text-gray-400 text-sm leading-relaxed"
+                            style={{
+                              direction: isArabicText(b.content) ? 'rtl' : 'ltr',
+                              textAlign: isArabicText(b.content) ? 'right' : 'left',
+                              unicodeBidi: 'plaintext',
+                            } as React.CSSProperties}
+                          >
+                            <HighlightMetrics text={b.content} />
+                          </p>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
+
                 <div className="grid grid-cols-3 gap-3">
                   {[
                     { label: isAr ? 'خطوات الحل' : 'Solution steps', value: steps.length, icon: BookOpen, color: '#22D3EE', tab: 'steps' as Tab },
@@ -265,18 +349,11 @@ export function TheAcademy() {
                     <button key={s.label} onClick={() => s.value > 0 && setActiveTab(s.tab)}
                       className={cn('bg-[#0A0B0E] border border-gray-800 rounded-2xl p-4 text-center transition-all', s.value > 0 ? 'hover:border-gray-700 cursor-pointer' : 'opacity-40 cursor-default')}>
                       <s.icon className="w-5 h-5 mx-auto mb-2" style={{ color: s.color }} />
-                      <div className="text-2xl font-black" style={{ color: s.color }}>{s.value}</div>
-                      <div className="text-gray-600 text-[10px] mt-1">{s.label}</div>
+                      <div className="text-xl font-black text-white">{s.value}</div>
+                      <div className="text-[10px] text-gray-600 mt-0.5">{s.label}</div>
                     </button>
                   ))}
                 </div>
-                {!sel.solution_text && steps.length === 0 && qa.length === 0 && (
-                  <div className="bg-[#0A0B0E] border border-gray-800 rounded-2xl p-8 text-center">
-                    <AlertTriangle className="w-8 h-8 text-gray-700 mx-auto mb-3" />
-                    <p className="text-gray-500 text-sm font-medium mb-1">{isAr ? 'هذه مهمة قديمة' : 'This is an older mission'}</p>
-                    <p className="text-gray-700 text-xs">{isAr ? 'المهام الجديدة تحفظ كل الخطوات تلقائياً' : 'New missions automatically save all steps and Q&A'}</p>
-                  </div>
-                )}
               </div>
             )}
 
@@ -284,28 +361,36 @@ export function TheAcademy() {
             {activeTab === 'steps' && (
               <div className="space-y-3">
                 <div className="flex items-center gap-3 mb-5 bg-[#22D3EE]/5 border border-[#22D3EE]/20 rounded-xl px-4 py-3">
-                  <GraduationCap className="w-4 h-4 text-[#22D3EE] shrink-0" />
-                  <p className="text-[#22D3EE] text-xs">{isAr ? 'هذه الخطوات تشرح منطق الحل — اقرأها كأنك بتشرح للدكتور' : 'These steps explain the logic — read them as if explaining to your professor'}</p>
+                  <Zap className="w-4 h-4 text-[#22D3EE] shrink-0" />
+                  <p className="text-[#22D3EE] text-xs">{isAr ? 'اقرأ كل خطوة وتأكد أنك تفهم المنطق — ده اللي يفرق في الامتحان' : 'Read each step and understand the reasoning — this is what makes the difference in exams'}</p>
                 </div>
                 {steps.length === 0 ? (
-                  <div className="text-center py-12 text-gray-600"><BookOpen className="w-8 h-8 mx-auto mb-3 opacity-50" /><p className="text-sm">{isAr ? 'لا خطوات' : 'No steps'}</p></div>
+                  <div className="text-center py-12 text-gray-600"><BookOpen className="w-8 h-8 mx-auto mb-3 opacity-50" /><p className="text-sm">{isAr ? 'لا خطوات متاحة' : 'No steps available'}</p></div>
                 ) : steps.map((step: any, i: number) => (
-                  <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                  <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
                     className="bg-[#0A0B0E] border border-gray-800 rounded-2xl overflow-hidden hover:border-gray-700 transition-colors">
-                    <button onClick={() => setExpandedStep(expandedStep === i ? null : i)} className="w-full flex items-center gap-4 p-4 text-start">
-                      <div className="w-9 h-9 rounded-full bg-[#22D3EE]/10 border border-[#22D3EE]/30 flex items-center justify-center shrink-0">
-                        <span className="text-[#22D3EE] font-black text-sm">{i + 1}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-white font-semibold text-sm">{step.title}</span>
-                        {expandedStep !== i && step.content && <p className="text-gray-600 text-[11px] mt-0.5 truncate">{step.content?.slice(0, 80)}...</p>}
-                      </div>
-                      {expandedStep === i ? <ChevronDown className="w-4 h-4 text-[#22D3EE] shrink-0" /> : <ChevronRight className="w-4 h-4 text-gray-600 shrink-0" />}
+                    <button onClick={() => setExpandedStep(expandedStep === i ? null : i)}
+                      className="w-full flex items-center gap-3 p-5 text-start">
+                      <div className="w-7 h-7 rounded-lg bg-[#22D3EE]/10 border border-[#22D3EE]/20 text-[#22D3EE] font-black text-xs flex items-center justify-center shrink-0">{i + 1}</div>
+                      <span className="text-white font-semibold text-sm flex-1">{step.title}</span>
+                      <ChevronDown className={cn('w-4 h-4 text-gray-600 shrink-0 transition-transform', expandedStep === i && 'rotate-180')} />
                     </button>
                     <AnimatePresence>
                       {expandedStep === i && (
-                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-t border-gray-900">
-                          <div className="p-5 ps-16"><p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{step.content}</p></div>
+                        <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
+                          className="overflow-hidden border-t border-gray-900">
+                          <div className="p-5 pt-4">
+                            <p
+                              className="text-gray-400 text-sm leading-relaxed"
+                              style={{
+                                direction: isArabicText(step.content) ? 'rtl' : 'ltr',
+                                textAlign: isArabicText(step.content) ? 'right' : 'left',
+                                unicodeBidi: 'plaintext',
+                              } as React.CSSProperties}
+                            >
+                              <HighlightMetrics text={step.content} />
+                            </p>
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -316,41 +401,35 @@ export function TheAcademy() {
 
             {/* DEFENSE */}
             {activeTab === 'defense' && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="flex items-center gap-3 mb-5 bg-[#A855F7]/5 border border-[#A855F7]/20 rounded-xl px-4 py-3">
                   <Shield className="w-4 h-4 text-[#A855F7] shrink-0" />
-                  <p className="text-[#A855F7] text-xs">{isAr ? 'دي الأسئلة اللي الدكتور غالباً هيسألها — احفظ الإجابات' : 'Questions your professor will likely ask — memorize the answers'}</p>
+                  <p className="text-[#A855F7] text-xs">{isAr ? 'نصيحة: افتح السؤال وحاول تجاوب من غير ما تشوف الإجابة — كده بتحفظ فعلاً' : 'Pro tip: try answering before revealing — that is how you actually memorize'}</p>
                 </div>
                 {qa.length === 0 ? (
                   <div className="text-center py-12 text-gray-600"><Shield className="w-8 h-8 mx-auto mb-3 opacity-50" /><p className="text-sm">{isAr ? 'لا أسئلة دفاع' : 'No defense Q&A'}</p></div>
                 ) : qa.map((item: any, i: number) => (
-                  <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-                    className="bg-[#0A0B0E] border border-gray-800 rounded-2xl overflow-hidden">
-                    <button onClick={() => setExpandedQA(expandedQA === i ? null : i)} className="w-full flex items-start gap-3 p-4 text-start hover:bg-white/[0.02] transition-colors">
-                      <div className="w-7 h-7 rounded-full bg-[#A855F7]/10 border border-[#A855F7]/30 flex items-center justify-center shrink-0 mt-0.5">
-                        <span className="text-[#A855F7] font-black text-xs">Q</span>
-                      </div>
-                      <p className="text-white text-sm font-semibold flex-1 leading-snug">{item.question || item.q}</p>
-                      {expandedQA === i ? <ChevronDown className="w-4 h-4 text-[#A855F7] shrink-0 mt-1" /> : <ChevronRight className="w-4 h-4 text-gray-600 shrink-0 mt-1" />}
+                  <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                    className="bg-[#0A0B0E] border border-gray-800 rounded-2xl overflow-hidden hover:border-gray-700 transition-colors">
+                    <button onClick={() => setExpandedQA(expandedQA === i ? null : i)}
+                      className="w-full flex items-center gap-3 p-5 text-start">
+                      <div className="w-7 h-7 rounded-lg bg-[#A855F7]/10 border border-[#A855F7]/20 text-[#A855F7] font-black text-xs flex items-center justify-center shrink-0">Q</div>
+                      <span className="text-white font-semibold text-sm flex-1">{item.q}</span>
+                      <ChevronDown className={cn('w-4 h-4 text-gray-600 shrink-0 transition-transform', expandedQA === i && 'rotate-180')} />
                     </button>
                     <AnimatePresence>
                       {expandedQA === i && (
-                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                          <div className="flex items-start gap-3 p-4 bg-[#A855F7]/5 border-t border-[#A855F7]/10">
-                            <div className="w-7 h-7 rounded-full bg-[#22D3EE]/10 border border-[#22D3EE]/30 flex items-center justify-center shrink-0 mt-0.5"><Zap className="w-3 h-3 text-[#22D3EE]" /></div>
-                            <p className="text-gray-300 text-sm leading-relaxed">{item.answer || item.a}</p>
+                        <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
+                          className="overflow-hidden border-t border-gray-900">
+                          <div className="p-5 pt-4 flex gap-3">
+                            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-black text-xs flex items-center justify-center shrink-0">A</div>
+                            <p className="text-gray-300 text-sm leading-relaxed"><HighlightMetrics text={item.a} /></p>
                           </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </motion.div>
                 ))}
-                {qa.length > 0 && (
-                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-4 py-3 flex items-center gap-3">
-                    <Star className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <p className="text-emerald-400 text-xs">{isAr ? 'نصيحة: افتح السؤال وحاول تجاوب من غير ما تشوف الإجابة — كده بتحفظ فعلاً' : 'Pro tip: try answering before revealing — that is how you actually memorize'}</p>
-                  </div>
-                )}
               </div>
             )}
 
@@ -380,7 +459,7 @@ export function TheAcademy() {
                         {slide.content_bullets.map((b: string, j: number) => (
                           <div key={j} className="flex items-start gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-[#22D3EE] mt-1.5 shrink-0" />
-                            <p className="text-gray-400 text-xs leading-relaxed">{b}</p>
+                            <p className="text-gray-400 text-xs leading-relaxed"><HighlightMetrics text={b} /></p>
                           </div>
                         ))}
                       </div>
@@ -395,6 +474,7 @@ export function TheAcademy() {
                 ))}
               </div>
             )}
+
           </div>
         )}
       </div>

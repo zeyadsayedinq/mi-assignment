@@ -229,18 +229,26 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
   const isArabicText = (t: string) => /[؀-ۿ]/.test(t);
 
   // writeLine: cleanLaTeX first, then pdfSafeText to strip Unicode sub/superscripts
+  // IMPORTANT: jsPDF Helvetica cannot render Arabic Unicode — Arabic text is skipped in PDF.
+  // Arabic content is fully preserved in the DOCX export which supports Arabic natively.
   const writeLine = (text: string, size = 11, bold = false, color: [number, number, number] = [30, 30, 30]) => {
     if (!text || text === 'undefined') return;
     const rawText = pdfSafeText(cleanLaTeX(text));
+    // Skip lines that are predominantly Arabic — they render as garbage in jsPDF
+    const arabicCharCount = (rawText.match(/[\u0600-\u06FF]/g) || []).length;
+    const totalCharCount = rawText.replace(/\s/g, '').length;
+    if (totalCharCount > 0 && arabicCharCount / totalCharCount > 0.3) {
+      // Still advance y so spacing doesn't collapse completely
+      y += LINE_H * 0.5;
+      return;
+    }
     pdf.setFontSize(size);
     pdf.setFont('helvetica', bold ? 'bold' : 'normal');
     pdf.setTextColor(...color);
     const lines = pdf.splitTextToSize(rawText, W - MARGIN * 2);
-    const isRTL = isArabicText(rawText);
     lines.forEach((line: string) => {
       checkPage();
-      if (isRTL) { pdf.text(line, W - MARGIN, y, { align: 'right' }); }
-      else { pdf.text(line, MARGIN, y); }
+      pdf.text(line, MARGIN, y);
       y += LINE_H;
     });
   };
@@ -261,6 +269,17 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
 
   writeLine(payloadName, 15, true, [15, 23, 42]);
   y += 3;
+
+  // If content is Arabic, add a clear notice that DOCX is the correct format
+  const isArabicContent = isArabicText(data.solution_text || '');
+  if (isArabicContent) {
+    pdf.setFillColor(254, 243, 199); pdf.rect(MARGIN, y, W - MARGIN * 2, 20, 'F');
+    pdf.setFontSize(9); pdf.setFont('helvetica', 'bold'); pdf.setTextColor(146, 64, 14);
+    pdf.text('Note: Arabic content is best viewed in the Word (.docx) file included in this package.', MARGIN + 2, y + 8);
+    pdf.text('The PDF contains only the English technical sections (code, SQL, math, diagrams).', MARGIN + 2, y + 15);
+    pdf.setTextColor(30, 30, 30);
+    y += 26;
+  }
 
   if (data.solution_text && !clean) {
     writeLine('Summary', 11, true, [34, 211, 238]);
@@ -298,8 +317,14 @@ async function buildPDF(data: any, payloadName: string, isPro = false, clean = f
           }
         }
         if (!renderedMath) {
-          pdf.setFillColor(248, 250, 252); pdf.rect(MARGIN, y - 4, W - MARGIN * 2, LINE_H + 2, 'F');
-          writeLine(block.content, 10, true, [30, 64, 175]);
+          // Fallback: render LaTeX source as monospace — do NOT run through cleanLaTeX
+          // which corrupts the formula. Show it as raw formula text.
+          const mathText = (block.content || '').replace(/\\\\/g, '\\').substring(0, 200);
+          pdf.setFillColor(248, 250, 252); pdf.rect(MARGIN, y - 4, W - MARGIN * 2, LINE_H + 4, 'F');
+          pdf.setFont('courier', 'normal'); pdf.setFontSize(9); pdf.setTextColor(30, 64, 175);
+          const mathLines = pdf.splitTextToSize(mathText, W - MARGIN * 2 - 4);
+          mathLines.slice(0, 3).forEach((l: string) => { pdf.text(l, MARGIN + 2, y); y += LINE_H; });
+          pdf.setFont('helvetica', 'normal');
         }
         if (block.solution_steps && !clean) {
           block.solution_steps.forEach((s: string, i: number) => writeLine(`  ${i + 1}. ${s}`, 9, false, [71, 85, 105]));

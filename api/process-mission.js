@@ -449,34 +449,64 @@ export default async function handler(req, res) {
 
     console.log(`Mi V3.1 — Domain: ${domainContext.domain}`);
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ role: 'user', parts: contents.map(c => c.inlineData ? { inlineData: c.inlineData } : { text: c.text || '' }) }],
-          generationConfig: {
-            thinkingConfig: {
-              thinkingBudget: /ENGINEERING|MATH|MEDICAL|CS|SCIENCE|DATA/.test(
-                (domainContext.domain || '').toUpperCase()
-              ) ? 8000 : 0,
-            },
-            temperature: 0.65,
-            responseMimeType: 'application/json',
-            // Domain-aware token budget — engineering/math need more for calculations+SVG
-            maxOutputTokens: /ENGINEERING|MATH|MEDICAL|CS|LAW|SCIENCE/.test(
-              (domainContext?.domain || '').toUpperCase()
-            ) ? 16000 : 10000,
-          },
-        }),
-      }
-    );
+    // ── Gemini fetch with 52s timeout + auto-retry on 503/429 ────────────────
+    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`;
+    const GEMINI_BODY = JSON.stringify({
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: 'user', parts: contents.map(c => c.inlineData ? { inlineData: c.inlineData } : { text: c.text || '' }) }],
+      generationConfig: {
+        thinkingConfig: {
+          thinkingBudget: /ENGINEERING|MATH|MEDICAL|CS|SCIENCE|DATA/.test(
+            (domainContext.domain || '').toUpperCase()
+          ) ? 8000 : 0,
+        },
+        temperature: 0.65,
+        responseMimeType: 'application/json',
+        maxOutputTokens: /ENGINEERING|MATH|MEDICAL|CS|LAW|SCIENCE/.test(
+          (domainContext?.domain || '').toUpperCase()
+        ) ? 16000 : 10000,
+      },
+    });
 
-    if (geminiRes.status === 503 || geminiRes.status === 429) {
-      return res.status(503).json({ error: 'AI service busy. Please try again in a moment.' });
+    async function callGemini() {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 52000);
+      try {
+        const r = await fetch(GEMINI_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: GEMINI_BODY,
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        return r;
+      } catch (err) {
+        clearTimeout(timeout);
+        if (err.name === 'AbortError') throw new Error('TIMEOUT');
+        throw err;
+      }
     }
+
+    let geminiRes;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        geminiRes = await callGemini();
+      } catch (err) {
+        if (err.message === 'TIMEOUT') {
+          console.warn(`Mi: Gemini timed out (attempt ${attempt})`);
+          if (attempt < 2) { await new Promise(r => setTimeout(r, 2000)); continue; }
+          return res.status(503).json({ error: 'AI service timed out. Please try again.' });
+        }
+        throw err;
+      }
+      if (geminiRes.status === 503 || geminiRes.status === 429) {
+        console.warn(`Mi: Gemini ${geminiRes.status} (attempt ${attempt})`);
+        if (attempt < 2) { await new Promise(r => setTimeout(r, 2000 * attempt)); continue; }
+        return res.status(503).json({ error: 'AI service busy. Please try again in a moment.' });
+      }
+      break;
+    }
+
     if (geminiRes.status === 403) {
       const e = await geminiRes.json().catch(() => ({}));
       return res.status(403).json({ error: `API key error: ${e?.error?.message || 'Invalid or revoked key.'}` });
