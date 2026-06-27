@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
-import { Shield, Zap, Star, ChevronRight, Brain, Sparkles, Code, Calculator, BookOpen, FileText, Users, Share2, Copy, Check, CheckCircle2 } from 'lucide-react';
+import { Shield, Zap, Star, ChevronRight, Brain, Sparkles, Code, Calculator, BookOpen, FileText, Users, CheckCircle2 } from 'lucide-react';
 import { MILogo3D } from '../components/MILogo3D';
 import { GlitchText } from '../components/GlitchText';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
@@ -101,7 +101,6 @@ export function LandingPage() {
   const isAr = i18n.language === 'ar';
   const { session } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [copied, setCopied] = useState(false);
   const missionCount = useMissionCount();
 
   useEffect(() => {
