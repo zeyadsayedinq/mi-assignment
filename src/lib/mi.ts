@@ -93,10 +93,22 @@ export async function processMission(
   if (!missionResp.ok) {
     const err = await missionResp.json().catch(() => ({}));
     const msg = err.error || '';
-    if (missionResp.status === 503 || msg.includes('busy') || msg.includes('unavailable')) {
-      throw new Error(lang === 'ar' ? 'الخدمة مشغولة مؤقتاً. حاول مرة أخرى.' : 'AI service busy. Please try again in a moment.');
+    // Surface the actual server message — it's already user-friendly from process-mission.js
+    if (missionResp.status === 503) {
+      throw new Error(
+        msg ||
+        (lang === 'ar'
+          ? 'الخدمة مشغولة مؤقتاً. حاول مرة أخرى.'
+          : 'AI service temporarily overloaded. Please try again in a moment.')
+      );
     }
-    throw new Error(msg || `Mission failed (${missionResp.status})`);
+    if (missionResp.status === 402) {
+      // Quota errors are already thrown above via quotaResp — this is a fallback
+      const e = new Error(msg || 'Mission limit reached');
+      (e as any).code = 'LIMIT_REACHED';
+      throw e;
+    }
+    throw new Error(msg || `Mission failed (${missionResp.status}). Please try again.`);
   }
 
   const result = await missionResp.json();

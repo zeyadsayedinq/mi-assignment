@@ -33,7 +33,7 @@ function StatCard({
   );
 }
 
-export default function AdminDashboard() {
+export function AdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
 

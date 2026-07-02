@@ -426,7 +426,44 @@ export default async function handler(req, res) {
     clearTimeout(timeoutId);
 
     if (geminiRes.status === 503 || geminiRes.status === 429) {
-      return res.status(503).json({ error: 'AI service busy. Please try again in a moment.' });
+      // Gemini is overloaded — wait 3s and retry once before giving up
+      console.warn(`Mi: Gemini returned ${geminiRes.status}, retrying in 3s...`);
+      await new Promise(r => setTimeout(r, 3000));
+
+      const ctrl2 = new AbortController();
+      const timer2 = setTimeout(() => ctrl2.abort(), 50000);
+      let geminiRes2;
+      try {
+        geminiRes2 = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: ctrl2.signal,
+            body: JSON.stringify({
+              system_instruction: { parts: [{ text: systemPrompt }] },
+              contents: [{ role: 'user', parts: contents.map(c => c.inlineData ? { inlineData: c.inlineData } : { text: c.text || '' }) }],
+              generationConfig: {
+                temperature: 0.65,
+                responseMimeType: 'application/json',
+                maxOutputTokens: /ENGINEERING|MATH|MEDICAL|CS|LAW|SCIENCE/.test(
+                  (domainContext?.domain || '').toUpperCase()
+                ) ? 8000 : 6000,
+              },
+            }),
+          }
+        );
+      } catch (retryErr) {
+        clearTimeout(timer2);
+        return res.status(503).json({ error: 'AI service is temporarily overloaded. Please try again in 30 seconds.' });
+      }
+      clearTimeout(timer2);
+
+      if (!geminiRes2.ok) {
+        return res.status(503).json({ error: 'AI service is temporarily overloaded. Please try again in 30 seconds.' });
+      }
+      // Replace geminiRes with the successful retry response
+      geminiRes = geminiRes2;
     }
     if (geminiRes.status === 403) {
       const e = await geminiRes.json().catch(() => ({}));
