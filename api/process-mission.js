@@ -70,7 +70,7 @@ OUTPUT REQUIREMENTS FOR MATH/STATS:
 - STRUCTURAL: cross-section SVG with bar marks, stirrup spacing, concrete cover, dimension lines
 - BBS TABLE: when rebar present, generate full table (Mark|Shape|Dia|A|B|C|Cut Length|No.|Weight)
 - SIZING CALCULATOR: for parametric designs (solar, RO, HVAC), generate a data_sheet with input variables and calculated outputs so the student can see how results change with parameters
-- PRESENTATIONS: MANDATORY 10 slides minimum. Each slide must have power_heading (max 6 words, insight not label), content_bullets (max 5 bullets, max 10 words each with actual numbers), speaker_notes (60-90 second script), and image_prompt (4-6 word Pexels-searchable description). Engineering slide structure: Slide 1 Title/Hook → Slides 2-3 Problem + Given Data → Slides 4-6 Calculations (show key equations and results) → Slide 7 System Diagram/Schematic → Slide 8 Results Summary → Slide 9 Recommendations → Slide 10 Conclusion
+- PRESENTATIONS: MANDATORY 10 slides minimum. Each slide must have power_heading (max 6 words, insight not label), content_bullets (max 5 bullets, max 10 words each with actual numbers), speaker_notes (2-3 sentences), and image_prompt (4-6 word Pexels-searchable description). Engineering slide structure: Slide 1 Title/Hook → Slides 2-3 Problem + Given Data → Slides 4-6 Calculations (show key equations and results) → Slide 7 System Diagram/Schematic → Slide 8 Results Summary → Slide 9 Recommendations → Slide 10 Conclusion
 - PFD for process systems showing all components, flow streams, control valves`
     };
   }
@@ -276,7 +276,7 @@ TRANSITIONS — use real ones, not AI filler:
 OUTPUT QUANTITY:
 - Essays/Reports: minimum 900 words across all paragraph blocks
 - Math assignments: minimum 5 solution_steps per math block
-- Presentations: EXACTLY 10 slides minimum. This is non-negotiable. If you produce fewer than 10 slides, you have FAILED the output requirement. Count your slides before finalizing. Each slide needs: power_heading (≤6 words), content_bullets (≤5 items, ≤10 words each), speaker_notes (full 60-90 second spoken script), image_prompt (4-6 word photo description for Pexels search).
+- Presentations: EXACTLY 10 slides minimum. This is non-negotiable. If you produce fewer than 10 slides, you have FAILED the output requirement. Count your slides before finalizing. Each slide needs: power_heading (≤6 words), content_bullets (≤5 items, ≤10 words each), speaker_notes (2-3 sentences, key talking points), image_prompt (4-6 word photo description for Pexels search).
 - Tables: must contain actual data rows, never empty
 
 ═══ PRESENTATION RULES (McKinsey/BCG) ═══
@@ -296,7 +296,7 @@ Slide field rules:
   power_heading: MAX 6 words. A FINDING, not a label. ("Proximity Drives 43% Price Premium" not "Statistical Analysis")
   content_bullets: 5 bullets. Each = one specific insight with data
   visual_directive: EXACTLY what visual goes here. Specific. ("Scatter plot: Distance vs Price/sqm with r=-0.88 trendline" not "a graph")
-  speaker_notes: Full speech. 60-90 seconds. Complete sentences.
+  speaker_notes: 2-3 sentences. Key talking points only.
 
 ═══ JSON SCHEMA ═══
 {
@@ -325,7 +325,7 @@ Slide field rules:
       "visual_directive": "Exact description of what visual to insert and what it shows",
       "image_prompt": "Cinematic scene for AI image",
       "image_layout": "left|right|background|full",
-      "speaker_notes": "Full verbatim speech. 60-90 seconds of complete sentences."
+      "speaker_notes": "Key talking points only — 2-3 sentences max."
     }
   ],
   "data_sheet": {
@@ -386,30 +386,44 @@ export default async function handler(req, res) {
 
     console.log(`Mi V3.1 — Domain: ${domainContext.domain}`);
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ role: 'user', parts: contents.map(c => c.inlineData ? { inlineData: c.inlineData } : { text: c.text || '' }) }],
-          generationConfig: {
-            thinkingConfig: {
-              thinkingBudget: /ENGINEERING|MATH|MEDICAL|CS|SCIENCE|DATA/.test(
-                (domainContext.domain || '').toUpperCase()
-              ) ? 8000 : 0,
+    // ── AbortController: 55s timeout (safely under Vercel Hobby 60s hard limit) ──
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 55000);
+
+    let geminiRes;
+    try {
+      geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents: [{ role: 'user', parts: contents.map(c => c.inlineData ? { inlineData: c.inlineData } : { text: c.text || '' }) }],
+            generationConfig: {
+              // thinkingConfig MUST NOT be used — it overrides maxOutputTokens
+              temperature: 0.65,
+              responseMimeType: 'application/json',
+              // Token budget tuned to complete within 55s on Vercel Hobby plan:
+              // Heavy domains (CS/Engineering/Medical/Math/Law/Science): 8000 tokens
+              // Light domains (Business/Humanities/General): 6000 tokens
+              maxOutputTokens: /ENGINEERING|MATH|MEDICAL|CS|LAW|SCIENCE/.test(
+                (domainContext?.domain || '').toUpperCase()
+              ) ? 8000 : 6000,
             },
-            temperature: 0.65,
-            responseMimeType: 'application/json',
-            // Domain-aware token budget — engineering/math need more for calculations+SVG
-            maxOutputTokens: /ENGINEERING|MATH|MEDICAL|CS|LAW|SCIENCE/.test(
-              (domainContext?.domain || '').toUpperCase()
-            ) ? 16000 : 10000,
-          },
-        }),
+          }),
+        }
+      );
+    } catch (fetchErr) {
+      clearTimeout(timeoutId);
+      if (fetchErr.name === 'AbortError') {
+        console.warn('Mi: Gemini timed out after 55s');
+        return res.status(503).json({ error: 'Assignment is taking too long. Please try again — complex assignments occasionally need a second attempt.' });
       }
-    );
+      throw fetchErr;
+    }
+    clearTimeout(timeoutId);
 
     if (geminiRes.status === 503 || geminiRes.status === 429) {
       return res.status(503).json({ error: 'AI service busy. Please try again in a moment.' });
