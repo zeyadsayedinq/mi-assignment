@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/utils';
 import { SlideViewer } from './SlideViewer';
 import { ImageGenerator } from './ImageGenerator';
-import { downloadMissionPackage } from '../lib/exporter';
+// exporter loaded dynamically on download — keeps ResultsDashboard out of initial bundle
 import Markdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -204,7 +204,11 @@ export function ResultsDashboard({ data, onReset, missionMeta }: ResultsProps) {
   const handleDownload = async (e?: React.MouseEvent) => {
     if (e) explode(e.clientX, e.clientY, '#22D3EE');
     setIsPackaging(true);
-    try { await downloadMissionPackage(data, doc?.title || missionMeta?.name || 'Mission', isPro); }
+    try {
+      // Dynamic import — exporter libs (jsPDF/docx/pptx/xlsx/jszip) only load on demand
+      const { downloadMissionPackage } = await import('../lib/exporter');
+      await downloadMissionPackage(data, doc?.title || missionMeta?.name || 'Mission', isPro);
+    }
     catch (err: any) { alert(`Export error: ${err.message}`); }
     finally { setIsPackaging(false); }
   };
