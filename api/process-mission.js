@@ -534,84 +534,82 @@ export default async function handler(req, res) {
 
     console.log(`Mi V3.1 — Domain: ${domainContext.domain}`);
 
-    // ── AbortController: 55s timeout (safely under Vercel Hobby 60s hard limit) ──
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 55000);
+    // ── Unified retry loop — V4.1 ─────────────────────────────────────────────
+    // Same model (gemini-3-flash-preview — locked, never changed).
+    // Up to 4 attempts with increasing backoff. 503s from Gemini fail in <1s,
+    // so all attempts fit inside the 55s total budget (Vercel Hobby limit is 60s).
+    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`;
+    const geminiPayload = JSON.stringify({
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: 'user', parts: contents.map(c => c.inlineData ? { inlineData: c.inlineData } : { text: c.text || '' }) }],
+      generationConfig: {
+        // thinkingConfig MUST NOT be used — it overrides maxOutputTokens
+        temperature: 0.65,
+        responseMimeType: 'application/json',
+        maxOutputTokens: /ENGINEERING|MATH|MEDICAL|CS|LAW|SCIENCE/.test(
+          (domainContext?.domain || '').toUpperCase()
+        ) ? 8000 : 6000,
+      },
+    });
 
-    let geminiRes;
-    try {
-      geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`,
-        {
+    const TOTAL_BUDGET_MS = 55000;               // hard ceiling under Vercel's 60s
+    const BACKOFFS_MS = [0, 3000, 8000, 15000];  // wait before attempt 1, 2, 3, 4
+    const startTime = Date.now();
+    const remaining = () => TOTAL_BUDGET_MS - (Date.now() - startTime);
+
+    let geminiRes = null;
+    let lastStatus = 0;
+
+    for (let attempt = 0; attempt < BACKOFFS_MS.length; attempt++) {
+      // Wait the backoff (skip on first attempt), but never blow the budget
+      const wait = BACKOFFS_MS[attempt];
+      if (wait > 0) {
+        if (remaining() < wait + 5000) break;    // not enough time left for wait + a real attempt
+        await new Promise(r => setTimeout(r, wait));
+      }
+
+      const attemptTimeout = Math.max(remaining() - 1000, 1000); // leave 1s to respond
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), attemptTimeout);
+
+      let r;
+      try {
+        r = await fetch(GEMINI_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: systemPrompt }] },
-            contents: [{ role: 'user', parts: contents.map(c => c.inlineData ? { inlineData: c.inlineData } : { text: c.text || '' }) }],
-            generationConfig: {
-              // thinkingConfig MUST NOT be used — it overrides maxOutputTokens
-              temperature: 0.65,
-              responseMimeType: 'application/json',
-              // Token budget tuned to complete within 55s on Vercel Hobby plan:
-              // Heavy domains (CS/Engineering/Medical/Math/Law/Science): 8000 tokens
-              // Light domains (Business/Humanities/General): 6000 tokens
-              maxOutputTokens: /ENGINEERING|MATH|MEDICAL|CS|LAW|SCIENCE/.test(
-                (domainContext?.domain || '').toUpperCase()
-              ) ? 8000 : 6000,
-            },
-          }),
+          signal: ctrl.signal,
+          body: geminiPayload,
+        });
+      } catch (fetchErr) {
+        clearTimeout(timer);
+        if (fetchErr.name === 'AbortError') {
+          console.warn(`Mi: attempt ${attempt + 1} timed out after ${Math.round(attemptTimeout / 1000)}s`);
+          // Timeout means the model was generating but too slowly — no time left, stop
+          return res.status(503).json({ error: 'Assignment is taking too long. Please try again — complex assignments occasionally need a second attempt.' });
         }
-      );
-    } catch (fetchErr) {
-      clearTimeout(timeoutId);
-      if (fetchErr.name === 'AbortError') {
-        console.warn('Mi: Gemini timed out after 55s');
-        return res.status(503).json({ error: 'Assignment is taking too long. Please try again — complex assignments occasionally need a second attempt.' });
+        throw fetchErr; // network-level error — bubble to outer catch
       }
-      throw fetchErr;
+      clearTimeout(timer);
+
+      lastStatus = r.status;
+
+      if (r.status === 503 || r.status === 429) {
+        // Log Google's actual reason (overloaded vs quota) for diagnostics
+        const errBody = await r.text().catch(() => '');
+        console.warn(`Mi: Gemini ${r.status} on attempt ${attempt + 1}/${BACKOFFS_MS.length}: ${errBody.slice(0, 200)}`);
+        continue; // next attempt after backoff
+      }
+
+      geminiRes = r;
+      break;
     }
-    clearTimeout(timeoutId);
 
-    if (geminiRes.status === 503 || geminiRes.status === 429) {
-      // Gemini is overloaded — wait 3s and retry once before giving up
-      console.warn(`Mi: Gemini returned ${geminiRes.status}, retrying in 3s...`);
-      await new Promise(r => setTimeout(r, 3000));
-
-      const ctrl2 = new AbortController();
-      const timer2 = setTimeout(() => ctrl2.abort(), 50000);
-      let geminiRes2;
-      try {
-        geminiRes2 = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_KEY}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            signal: ctrl2.signal,
-            body: JSON.stringify({
-              system_instruction: { parts: [{ text: systemPrompt }] },
-              contents: [{ role: 'user', parts: contents.map(c => c.inlineData ? { inlineData: c.inlineData } : { text: c.text || '' }) }],
-              generationConfig: {
-                temperature: 0.65,
-                responseMimeType: 'application/json',
-                maxOutputTokens: /ENGINEERING|MATH|MEDICAL|CS|LAW|SCIENCE/.test(
-                  (domainContext?.domain || '').toUpperCase()
-                ) ? 8000 : 6000,
-              },
-            }),
-          }
-        );
-      } catch (retryErr) {
-        clearTimeout(timer2);
-        return res.status(503).json({ error: 'AI service is temporarily overloaded. Please try again in 30 seconds.' });
-      }
-      clearTimeout(timer2);
-
-      if (!geminiRes2.ok) {
-        return res.status(503).json({ error: 'AI service is temporarily overloaded. Please try again in 30 seconds.' });
-      }
-      // Replace geminiRes with the successful retry response
-      geminiRes = geminiRes2;
+    if (!geminiRes) {
+      return res.status(503).json({
+        error: lastStatus === 429
+          ? 'AI service quota is temporarily exhausted. Please try again in a few minutes.'
+          : 'AI service is temporarily overloaded. Please try again in 30 seconds.'
+      });
     }
     if (geminiRes.status === 403) {
       const e = await geminiRes.json().catch(() => ({}));
