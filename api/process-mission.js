@@ -8,6 +8,69 @@ function setCORS(res) {
   Object.entries(CORS).forEach(([k, v]) => res.setHeader(k, v));
 }
 
+// ─── LaTeX brace repair ──────────────────────────────────────────────
+// Gemini occasionally emits malformed LaTeX with merged \frac arguments
+// (e.g. "\frac{Mu{fcu} \cdot b}}") or stray closing braces ("qcu}").
+// Same failure family as the JSON truncation bug: broken brace nesting.
+// These leak into the DOCX/PDF as raw garbage text. Repair strategy:
+//   1. Fast path: if braces are balanced and no merged-\frac pattern,
+//      return the string untouched (zero risk of regressions).
+//   2. Fix merged \frac arguments: \frac{a{b}  →  \frac{a}{b}
+//   3. Left-to-right scan: drop unmatched closers, append missing closers.
+// Limitation: treats escaped \{ \} as structural — acceptable, this
+// pipeline never legitimately emits literal braces in math strings.
+
+const LATEX_CMD_RE = /\\(frac|sqrt|sum|int|text|cdot|times|boxed|begin|end|alpha|beta|sigma|mu|pi|gamma)/;
+
+function isBraceBalanced(s) {
+  let depth = 0;
+  for (const ch of s) {
+    if (ch === '{') depth++;
+    else if (ch === '}') { depth--; if (depth < 0) return false; }
+  }
+  return depth === 0;
+}
+
+export function repairLatexBraces(s) {
+  if (typeof s !== 'string' || !s) return s;
+  const mergedFrac = /\\frac\{[^{}]*\{/.test(s);
+  if (!mergedFrac && isBraceBalanced(s)) return s;
+  // Insert the missing '}' before a stray '{' inside a \frac first argument
+  let r = s.replace(/\\frac\{([^{}]*)\{/g, '\\frac{$1}{');
+  // Drop unmatched closing braces, then close any still-open groups
+  let depth = 0, out = '';
+  for (const ch of r) {
+    if (ch === '{') { depth++; out += ch; }
+    else if (ch === '}') { if (depth > 0) { depth--; out += ch; } }
+    else out += ch;
+  }
+  return out + '}'.repeat(depth);
+}
+
+export function sanitizeResultLatex(result) {
+  const blocks = result?.reconstructed_doc?.blocks;
+  if (Array.isArray(blocks)) {
+    for (const b of blocks) {
+      if (!b || typeof b !== 'object') continue;
+      if (b.type === 'math') {
+        b.content = repairLatexBraces(b.content);
+        if (Array.isArray(b.solution_steps)) {
+          b.solution_steps = b.solution_steps.map(repairLatexBraces);
+        }
+      } else if (b.type === 'paragraph' && typeof b.content === 'string'
+                 && LATEX_CMD_RE.test(b.content) && !isBraceBalanced(b.content)) {
+        // Only touch prose when it actually contains broken LaTeX
+        b.content = repairLatexBraces(b.content);
+      }
+    }
+  }
+  if (Array.isArray(result?.steps)) {
+    result.steps = result.steps.map(x => (typeof x === 'string' ? repairLatexBraces(x) : x));
+  }
+  return result;
+}
+// ─────────────────────────────────────────────────────────────────────
+
 async function parseBody(req) {
   if (req.body && typeof req.body === 'object') return req.body;
   return new Promise((resolve) => {
@@ -439,6 +502,12 @@ Slide fields:
   speaker_notes: 2-3 sentences. Key talking points.
   image_prompt: 4-6 word Pexels-searchable photo description
 
+═══ LaTeX VALIDITY (ALL DOMAINS — HARD RULE) ═══
+Every math expression (in math blocks, solution_steps, or inline $...$) must be brace-balanced, valid KaTeX:
+- \\frac ALWAYS takes exactly two complete groups: \\frac{numerator}{denominator}. NEVER merge them like \\frac{a{b}} or \\frac{a{b} \\cdot c}}.
+- Never emit stray closing braces attached to variables (e.g. "q_{cu}}" or "qcu}").
+- Count your braces: every { must have a matching }. If an expression cannot be written as valid LaTeX, write it in plain text instead of broken LaTeX.
+
 ═══ JSON SCHEMA ═══
 Return ONLY valid JSON matching this schema exactly. No markdown, no code fences, no explanation outside the JSON.
 
@@ -720,6 +789,8 @@ export default async function handler(req, res) {
     if (!result.defense_qa || result.defense_qa.length === 0) {
       result.defense_qa = result.logic_breakdown?.defense_qa || [];
     }
+
+    sanitizeResultLatex(result);
 
     return res.status(200).json(result);
 
