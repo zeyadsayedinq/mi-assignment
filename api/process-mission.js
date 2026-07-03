@@ -73,7 +73,7 @@ EXAMPLE math block:
   }
 
   // ── ENGINEERING (structural/civil/mechanical/electrical/process) ──────────────
-  if (/reinforced concrete|beam|slab|column|ecp|structural|foundation|steel design|load combination|dead load|live load|kn\/m|mpa|egyptian code|aci 318|eurocode|bs 8110|moment distribution|shear force|bending|solar|hvac|pump|heat exchanger|thermosyphon|collector|rebar|stirrup|footing|retaining|compressive strength|yield strength|factor of safety|circuit|voltage|current|resistance|capacitor|inductor|transistor|ohm|watt|ampere/.test(text)) {
+  if (/reinforced concrete|beam|slab|column|ecp|structural|foundation|steel design|load combination|dead load|live load|kn\/m|\bmpa\b|egyptian code|aci 318|eurocode|bs 8110|moment distribution|shear force|bending|solar|hvac|pump|heat exchanger|thermosyphon|collector|rebar|stirrup|footing|retaining|compressive strength|yield strength|factor of safety|circuit|voltage|current|resistance|capacitor|inductor|transistor|\bohm\b|\bwatt\b|ampere/.test(text)) {
     return { domain: 'ENGINEERING', rules: `
 ENGINEERING DOMAIN — V4.0
 
@@ -128,7 +128,7 @@ SVG requirements:
   }
 
   // ── BUSINESS / MANAGEMENT / ECONOMICS ────────────────────────────────────────
-  if (/pestel|swot|porter|business plan|marketing strategy|competitive analysis|market analysis|financial model|cash flow|npv|irr|break.even|stakeholder|supply chain|balanced scorecard|خطة أعمال|تحليل|استراتيجية|سوق|تسويق|ربحية|استثمار|bcg matrix|ansoff|value chain|kpi|roi/.test(text)) {
+  if (/pestel|swot|porter|business plan|marketing strategy|competitive analysis|market analysis|financial model|cash flow|npv|\birr\b|break.even|stakeholder|supply chain|balanced scorecard|خطة أعمال|تحليل|استراتيجية|سوق|تسويق|ربحية|استثمار|bcg matrix|ansoff|value chain|kpi|roi/.test(text)) {
     return { domain: 'BUSINESS', rules: `
 BUSINESS DOMAIN — V4.0
 
@@ -159,7 +159,7 @@ Never use: "leverage", "synergy", "paradigm", "robust", "holistic"` };
   }
 
   // ── LAW ───────────────────────────────────────────────────────────────────────
-  if (/contract|tort|liability|negligence|jurisdiction|statute|plaintiff|defendant|case law|legal|legislation|breach|damages|constitutional|intellectual property|عقد|مسئولية|قانون|محكمة|دعوى|قضائية|تشريع|عدول|ضمان|تعويض|بند|نزاع|حماية المستهلك|مدني|جنائي|براءة|ملكية فكرية|استئناف|حكم|شريعة/.test(text)) {
+  if (/contract|\btort\b|liability|negligence|jurisdiction|statute|plaintiff|defendant|case law|legal|legislation|breach|damages|constitutional|intellectual property|عقد|مسئولية|قانون|محكمة|دعوى|قضائية|تشريع|عدول|ضمان|تعويض|بند|نزاع|حماية المستهلك|مدني|جنائي|براءة|ملكية فكرية|استئناف|حكم|شريعة/.test(text)) {
     return { domain: 'LAW', rules: `
 LAW DOMAIN — V4.0
 
@@ -229,7 +229,7 @@ QUALITY RULES:
   }
 
   // ── COMPUTER SCIENCE / SOFTWARE ENGINEERING ───────────────────────────────────
-  if (/algorithm|data structure|database|sql|api|machine learning|neural network|operating system|programming|code|function|class|object|complexity|big o|sorting|searching|graph|tree|linked list|stack|queue|heap|hash|dynamic programming|recursion|oop|uml|use case|sequence diagram|entity|relationship|normalization|3nf|bcnf/.test(text)) {
+  if (/algorithm|data structure|database|sql|\bapi\b|machine learning|neural network|operating system|programming|code|function|class|object|complexity|big o|sorting|searching|\bgraph\b|\btree\b|linked list|stack|queue|\bheap\b|\bhash\b|dynamic programming|recursion|\boop\b|\buml\b|use case|sequence diagram|\bentity\b|relationship|normalization|3nf|bcnf/.test(text)) {
     return { domain: 'CS', rules: `
 COMPUTER SCIENCE DOMAIN — V4.0
 
@@ -272,7 +272,7 @@ README structure:
   }
 
   // ── CHEMISTRY / BIOLOGY / PHYSICS ────────────────────────────────────────────
-  if (/oxidation|reduction|redox|electron|valence|stoichiometr|mole|molarity|titration|equilibrium|enthalpy|entropy|gibbs|thermodynamic|organic chemistry|inorganic|periodic|element|compound|reaction|reagent|catalyst|acid|base|ph|buffer|electrolysis|galvanic|cell potential|electrode|anode|cathode|balance.*equation|oxidation number|half.reaction|photosynthesis|respiration|metabolism|enzyme|dna|rna|protein|cell|genetics|mitosis|meiosis|newton|kinematic|velocity|acceleration|momentum|force|torque|optics|wave|quantum|electromagnetic|حمض|قاعدة|تأكسد|اختزال|مول|تفاعل|كيمياء|أحياء|فيزياء/.test(text)) {
+  if (/oxidation|reduction|redox|electron|valence|stoichiometr|mole|molarity|titration|chemical equilibrium|enthalpy|entropy|gibbs|thermodynamic|organic chemistry|inorganic|periodic|element|compound|reaction|reagent|catalyst|acid|\bbase\b|\bph\b|buffer|electrolysis|galvanic|cell potential|electrode|anode|cathode|balance.*equation|oxidation number|half.reaction|photosynthesis|respiration|metabolism|enzyme|dna|rna|protein|\bcell\b|genetics|mitosis|meiosis|newton|kinematic|velocity|acceleration|momentum|force|torque|optics|wave|quantum|electromagnetic|حمض|قاعدة|تأكسد|اختزال|مول|تفاعل|كيمياء|أحياء|فيزياء/.test(text)) {
     return { domain: 'SCIENCE', rules: `
 SCIENCE DOMAIN — V4.0
 
@@ -584,8 +584,12 @@ export default async function handler(req, res) {
         clearTimeout(timer);
         if (fetchErr.name === 'AbortError') {
           console.warn(`Mi: attempt ${attempt + 1} timed out after ${Math.round(attemptTimeout / 1000)}s`);
-          // Timeout means the model was generating but too slowly — no time left, stop
-          return res.status(503).json({ error: 'Assignment is taking too long. Please try again — complex assignments occasionally need a second attempt.' });
+          lastStatus = 504; // treat as gateway timeout for the final message
+          // Only stop if there's no realistic time left for another attempt
+          if (remaining() < 8000) {
+            return res.status(503).json({ error: 'Assignment is taking too long. Please try again — complex assignments occasionally need a second attempt.' });
+          }
+          continue; // otherwise try again with whatever time remains
         }
         throw fetchErr; // network-level error — bubble to outer catch
       }
@@ -608,6 +612,8 @@ export default async function handler(req, res) {
       return res.status(503).json({
         error: lastStatus === 429
           ? 'AI service quota is temporarily exhausted. Please try again in a few minutes.'
+          : lastStatus === 504
+          ? 'This assignment is taking longer than usual to generate. Please try again — it usually completes on the next attempt.'
           : 'AI service is temporarily overloaded. Please try again in 30 seconds.'
       });
     }

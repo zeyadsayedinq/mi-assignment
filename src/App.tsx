@@ -26,6 +26,8 @@ const CheckoutPage = lazy(() => import('./pages/CheckoutPage').then(m => ({ defa
 const PaymentSuccessPage = lazy(() => import('./pages/PaymentSuccessPage').then(m => ({ default: m.PaymentSuccessPage })));
 const SOPs = lazy(() => import('./pages/SOPs').then(m => ({ default: m.SOPs })));
 const AssignmentTypeGuide = lazy(() => import('./pages/AssignmentTypeGuide').then(m => ({ default: m.AssignmentTypeGuide })));
+const UniversitiesIndex = lazy(() => import('./pages/UniversitiesIndex').then(m => ({ default: m.UniversitiesIndex })));
+const UniversityPage = lazy(() => import('./pages/UniversityPage').then(m => ({ default: m.UniversityPage })));
 
 // Scroll to top on route change
 function ScrollToTop() {
@@ -69,11 +71,16 @@ function AppContent() {
     sessionStorage.setItem('mi_intro_done', 'true');
   };
 
+  // Public marketing routes never show the app sidebar
+  const isPublicRoute =
+    ['/', '/pricing', '/terms', '/privacy', '/refund', '/contact', '/auth', '/checkout'].includes(location.pathname) ||
+    location.pathname.startsWith('/universities');
+
   return (
     <>
       <ScrollToTop />
       <SEO />
-      
+
       <AnimatePresence>
         {showIntro && isLanding && (
           <IntroSequence onComplete={handleIntroComplete} />
@@ -81,12 +88,12 @@ function AppContent() {
       </AnimatePresence>
 
       <div className="bg-[#020617] min-h-screen text-white font-sans flex flex-col lg:flex-row overflow-hidden relative">
-        {session && !['/', '/pricing', '/terms', '/privacy', '/refund', '/contact', '/auth', '/checkout'].includes(location.pathname) && (
+        {session && !isPublicRoute && (
           <Sidebar isMobileOpen={mobileMenuOpen} closeMobile={() => setMobileMenuOpen(false)} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(c => !c)} />
         )}
-        
-        {session && !['/', '/pricing', '/terms', '/privacy', '/refund', '/contact', '/auth', '/checkout'].includes(location.pathname) && (
-          <button 
+
+        {session && !isPublicRoute && (
+          <button
             onClick={() => setMobileMenuOpen(true)}
             className="lg:hidden fixed top-4 right-4 z-40 p-2 bg-[#22D3EE]/10 border border-[#22D3EE]/20 rounded-xl text-[#22D3EE]"
           >
@@ -107,7 +114,11 @@ function AppContent() {
               <Route path="/checkout" element={<Suspense fallback={<LoadingFallback />}><CheckoutPage /></Suspense>} />
               <Route path="/sops" element={<SOPs />} />
               <Route path="/intelligence-bureau" element={<AssignmentTypeGuide />} />
-              
+
+              {/* SEO university landing pages (public) */}
+              <Route path="/universities" element={<UniversitiesIndex />} />
+              <Route path="/universities/:slug" element={<UniversityPage />} />
+
               {/* Protected Routes */}
               <Route path="/app" element={session ? <TheHQ /> : <Navigate to="/auth" replace />} />
               <Route path="/terminal" element={session ? <TheTerminal /> : <Navigate to="/auth" replace />} />
@@ -115,7 +126,7 @@ function AppContent() {
               <Route path="/academy" element={session ? <TheAcademy /> : <Navigate to="/auth" replace />} />
               <Route path="/settings" element={session ? <SettingsPage /> : <Navigate to="/auth" replace />} />
               <Route path="/admin" element={session ? <AdminDashboard /> : <Navigate to="/auth" replace />} />
-              
+
               {/* Fallback */}
               <Route path="/ref/:refCode" element={<RefCodeHandler />} />
               <Route path="/payment-success" element={session ? <Suspense fallback={<LoadingFallback />}><PaymentSuccessPage /></Suspense> : <Navigate to="/auth" replace />} />

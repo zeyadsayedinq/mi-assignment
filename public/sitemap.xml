@@ -5,70 +5,86 @@
 
   <url>
     <loc>https://www.mi-assignment.com/</loc>
-    <lastmod>2026-05-17</lastmod>
+    <lastmod>2026-07-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.mi-assignment.com/"/>
     <xhtml:link rel="alternate" hreflang="ar" href="https://www.mi-assignment.com/"/>
-    <xhtml:link rel="alternate" hreflang="en-gb" href="https://www.mi-assignment.com/"/>
-    <xhtml:link rel="alternate" hreflang="en-us" href="https://www.mi-assignment.com/"/>
-    <xhtml:link rel="alternate" hreflang="ar-eg" href="https://www.mi-assignment.com/"/>
-    <xhtml:link rel="alternate" hreflang="ar-sa" href="https://www.mi-assignment.com/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.mi-assignment.com/"/>
-    <image:image>
-      <image:loc>https://www.mi-assignment.com/og-image.png</image:loc>
-      <image:title>Mi-Assignment — AI Homework Solver</image:title>
-    </image:image>
   </url>
 
   <url>
+    <loc>https://www.mi-assignment.com/universities</loc>
+    <lastmod>2026-07-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Egypt -->
+  <url><loc>https://www.mi-assignment.com/universities/guc-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.mi-assignment.com/universities/auc-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.mi-assignment.com/universities/cairo-university-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.mi-assignment.com/universities/ain-shams-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.mi-assignment.com/universities/alexandria-university-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.mi-assignment.com/universities/mansoura-university-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.mi-assignment.com/universities/bue-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.mi-assignment.com/universities/msa-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.mi-assignment.com/universities/miu-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.mi-assignment.com/universities/helwan-university-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+
+  <!-- Saudi Arabia -->
+  <url><loc>https://www.mi-assignment.com/universities/ksu-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.mi-assignment.com/universities/kfupm-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.mi-assignment.com/universities/kau-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.mi-assignment.com/universities/kaust-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+
+  <!-- UAE -->
+  <url><loc>https://www.mi-assignment.com/universities/uaeu-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.mi-assignment.com/universities/aus-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.mi-assignment.com/universities/aud-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.mi-assignment.com/universities/khalifa-university-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+
+  <!-- Lebanon -->
+  <url><loc>https://www.mi-assignment.com/universities/aub-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.mi-assignment.com/universities/lau-assignment-help</loc><lastmod>2026-07-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+
+  <url>
     <loc>https://www.mi-assignment.com/pricing</loc>
-    <lastmod>2026-05-17</lastmod>
+    <lastmod>2026-07-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.mi-assignment.com/pricing"/>
     <xhtml:link rel="alternate" hreflang="ar" href="https://www.mi-assignment.com/pricing"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.mi-assignment.com/pricing"/>
   </url>
 
   <url>
     <loc>https://www.mi-assignment.com/intelligence-bureau</loc>
-    <lastmod>2026-05-17</lastmod>
+    <lastmod>2026-07-03</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
+    <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://www.mi-assignment.com/intelligence-bureau"/>
     <xhtml:link rel="alternate" hreflang="ar" href="https://www.mi-assignment.com/intelligence-bureau"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.mi-assignment.com/intelligence-bureau"/>
   </url>
 
   <url>
     <loc>https://www.mi-assignment.com/sops</loc>
-    <lastmod>2026-05-17</lastmod>
+    <lastmod>2026-07-03</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.mi-assignment.com/sops"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://www.mi-assignment.com/sops"/>
+    <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://www.mi-assignment.com/terms</loc>
-    <lastmod>2026-05-17</lastmod>
+    <lastmod>2026-07-03</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <url>
     <loc>https://www.mi-assignment.com/privacy</loc>
-    <lastmod>2026-05-17</lastmod>
+    <lastmod>2026-07-03</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
-  </url>
-
-  <url>
-    <loc>https://www.mi-assignment.com/llms.txt</loc>
-    <lastmod>2026-05-17</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
   </url>
 
 </urlset>

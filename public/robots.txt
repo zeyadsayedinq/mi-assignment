@@ -1,15 +1,11 @@
-# Mi-Assignment robots.txt
-# https://www.mi-assignment.com
-
 User-agent: *
 Allow: /
+Allow: /universities
 Allow: /pricing
 Allow: /intelligence-bureau
 Allow: /sops
 Allow: /terms
 Allow: /privacy
-Allow: /llms.txt
-Allow: /sitemap.xml
 
 Disallow: /admin
 Disallow: /api/
@@ -19,45 +15,17 @@ Disallow: /settings
 Disallow: /terminal
 Disallow: /app
 
+# Crawl-delay for polite crawling
 Crawl-delay: 1
+
 Sitemap: https://www.mi-assignment.com/sitemap.xml
 
-# Google
+# Allow all major search engines
 User-agent: Googlebot
 Allow: /
-Crawl-delay: 0
 
-# Bing
 User-agent: Bingbot
 Allow: /
 
-# AI crawlers — allowed to index for AI search
-User-agent: GPTBot
-Allow: /
-Allow: /llms.txt
-
-User-agent: ChatGPT-User
-Allow: /
-Allow: /llms.txt
-
-User-agent: Claude-Web
-Allow: /
-Allow: /llms.txt
-
-User-agent: PerplexityBot
-Allow: /
-Allow: /llms.txt
-
-User-agent: anthropic-ai
-Allow: /
-Allow: /llms.txt
-
-User-agent: cohere-ai
-Allow: /
-Allow: /llms.txt
-
-User-agent: Omgilibot
-Allow: /
-
-User-agent: YouBot
+User-agent: Slurp
 Allow: /
