@@ -43,11 +43,15 @@ export function AdminDashboard() {
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState('');
 
-  // Activate-user form
+  // User management
   const [activateEmail, setActivateEmail] = useState('');
-  const [activatePlan,  setActivatePlan]  = useState<'pro_monthly' | 'pro_quarterly'>('pro_quarterly');
+  const [activatePlan,  setActivatePlan]  = useState<'pro_monthly' | 'pro_quarterly' | 'pro_yearly'>('pro_quarterly');
   const [activating,    setActivating]    = useState(false);
   const [activateMsg,   setActivateMsg]   = useState('');
+  // Looked-up user card
+  const [lookupResult,  setLookupResult]  = useState<any | null>(null);
+  const [lookingUp,     setLookingUp]     = useState(false);
+  const [bonusAmount,   setBonusAmount]   = useState(5);
 
   // ── Fetch all data ──────────────────────────────────────────────────────────
   const fetchAll = async () => {
@@ -110,21 +114,45 @@ export function AdminDashboard() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
-  // ── Activate user ───────────────────────────────────────────────────────────
-  const handleActivate = async () => {
+  // ── Admin user actions (all via the email-based admin-users endpoint) ────────
+  const adminHeaders = () => ({
+    'Content-Type': 'application/json',
+    'x-caller-email': user?.email || '',
+  });
+
+  // Look up a user by email → shows plan, missions, bonus
+  const handleLookup = async () => {
     if (!activateEmail.trim()) { setActivateMsg('Enter an email.'); return; }
-    setActivating(true);
-    setActivateMsg('');
+    setLookingUp(true); setActivateMsg(''); setLookupResult(null);
     try {
-      const res = await fetch('/api/admin-subscription', {
+      const res = await fetch(`/api/admin-users?email=${encodeURIComponent(activateEmail.trim())}`, {
+        headers: adminHeaders(),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'User not found');
+      setLookupResult(data);
+    } catch (e: any) {
+      setActivateMsg(`❌ ${e.message}`);
+    } finally {
+      setLookingUp(false);
+    }
+  };
+
+  const runAction = async (action: 'grant' | 'revoke' | 'bonus', extra: Record<string, any> = {}) => {
+    if (!activateEmail.trim()) { setActivateMsg('Enter an email.'); return; }
+    setActivating(true); setActivateMsg('');
+    try {
+      const res = await fetch('/api/admin-users', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: activateEmail.trim(), plan: activatePlan, action: 'grant' }),
+        headers: adminHeaders(),
+        body: JSON.stringify({ email: activateEmail.trim(), action, ...extra }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
-      setActivateMsg(`✅ ${activateEmail} activated on ${activatePlan}`);
-      setActivateEmail('');
+      if (action === 'grant')  setActivateMsg(`✅ ${activateEmail} activated on ${extra.plan}`);
+      if (action === 'revoke') setActivateMsg(`✅ ${activateEmail} reverted to Free`);
+      if (action === 'bonus')  setActivateMsg(`✅ Granted ${extra.days} bonus missions to ${activateEmail}`);
+      await handleLookup(); // refresh the user card
       fetchAll();
     } catch (e: any) {
       setActivateMsg(`❌ ${e.message}`);
@@ -132,6 +160,10 @@ export function AdminDashboard() {
       setActivating(false);
     }
   };
+
+  const handleActivate = () => runAction('grant', { plan: activatePlan, days: activatePlan === 'pro_monthly' ? 30 : activatePlan === 'pro_yearly' ? 365 : 90 });
+  const handleRevoke   = () => runAction('revoke');
+  const handleBonus    = () => runAction('bonus', { days: bonusAmount });
 
   // ── CSV download ────────────────────────────────────────────────────────────
   const downloadCSV = (rows: any[][], filename: string) => {
@@ -209,7 +241,7 @@ export function AdminDashboard() {
       <div className="flex gap-2 flex-wrap">
         {([
           { key: 'overview',  label: '📊 Overview' },
-          { key: 'activate',  label: '⚡ Activate User' },
+          { key: 'activate',  label: '⚡ Manage Users' },
           { key: 'users',     label: '👥 Subscriptions' },
           { key: 'missions',  label: '📋 Missions' },
         ] as const).map(t => (
@@ -343,36 +375,114 @@ export function AdminDashboard() {
 
       {/* ── ACTIVATE USER ─────────────────────────────────────────────────────── */}
       {tab === 'activate' && (
-        <div className="max-w-md space-y-4">
-          <h2 className="text-white font-bold text-lg">Activate Pro Subscription</h2>
-          <div className="space-y-3">
+        <div className="max-w-2xl space-y-5">
+          <div>
+            <h2 className="text-white font-bold text-lg">User Management</h2>
+            <p className="text-gray-500 text-xs mt-1">Look up any student by email, then activate, revoke, or grant bonus missions.</p>
+          </div>
+
+          {/* Search bar */}
+          <div className="flex gap-2">
             <input
               type="email"
-              placeholder="user@email.com"
+              placeholder="student@email.com"
               value={activateEmail}
-              onChange={e => setActivateEmail(e.target.value)}
-              className="w-full bg-[#0A0B0E] border border-gray-800 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-[#22D3EE]"
+              onChange={e => { setActivateEmail(e.target.value); setLookupResult(null); }}
+              onKeyDown={e => { if (e.key === 'Enter') handleLookup(); }}
+              className="flex-1 bg-[#0A0B0E] border border-gray-800 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-[#22D3EE]"
             />
-            <select
-              value={activatePlan}
-              onChange={e => setActivatePlan(e.target.value as any)}
-              className="w-full bg-[#0A0B0E] border border-gray-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#22D3EE]"
-            >
-              <option value="pro_monthly">Pro Monthly (350 EGP · 25 missions)</option>
-              <option value="pro_quarterly">Pro Quarterly (1,000 EGP · 60 missions)</option>
-            </select>
-            <button
-              onClick={handleActivate}
-              disabled={activating}
-              className="w-full py-3 bg-[#22D3EE] text-black font-black rounded-xl text-sm hover:bg-white transition-all disabled:opacity-50"
-            >
-              {activating ? 'Activating…' : '⚡ Activate'}
+            <button onClick={handleLookup} disabled={lookingUp}
+              className="px-5 py-3 bg-[#0A0B0E] border border-gray-700 text-gray-300 font-bold rounded-xl text-sm hover:border-[#22D3EE]/50 transition-all disabled:opacity-50">
+              {lookingUp ? 'Searching…' : '🔍 Look up'}
             </button>
-            {activateMsg && (
-              <p className={cn('text-sm font-semibold', activateMsg.startsWith('✅') ? 'text-emerald-400' : 'text-red-400')}>
-                {activateMsg}
-              </p>
-            )}
+          </div>
+
+          {activateMsg && (
+            <p className={cn('text-sm font-semibold', activateMsg.startsWith('✅') ? 'text-emerald-400' : 'text-red-400')}>
+              {activateMsg}
+            </p>
+          )}
+
+          {/* User card — appears after lookup */}
+          {lookupResult && (
+            <div className="bg-[#0A0B0E] border border-gray-800 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <p className="text-white font-bold text-sm">{lookupResult.email}</p>
+                  <p className="text-gray-600 text-xs font-mono mt-0.5">{lookupResult.userId?.slice(0, 12)}…</p>
+                </div>
+                <span className={cn('px-3 py-1 rounded-full text-[10px] font-black uppercase',
+                  lookupResult.subscription?.status === 'active'
+                    ? 'bg-emerald-500/10 text-emerald-400'
+                    : 'bg-gray-800 text-gray-500')}>
+                  {lookupResult.subscription?.plan || 'free'} · {lookupResult.subscription?.status || 'inactive'}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-[#050608] rounded-xl p-3">
+                  <p className="text-gray-500 text-[10px] uppercase tracking-wider">Missions</p>
+                  <p className="text-white font-black text-lg">{lookupResult.totalMissions ?? 0}</p>
+                </div>
+                <div className="bg-[#050608] rounded-xl p-3">
+                  <p className="text-gray-500 text-[10px] uppercase tracking-wider">Bonus</p>
+                  <p className="text-[#A855F7] font-black text-lg">+{lookupResult.bonus ?? 0}</p>
+                </div>
+                <div className="bg-[#050608] rounded-xl p-3">
+                  <p className="text-gray-500 text-[10px] uppercase tracking-wider">Expires</p>
+                  <p className="text-gray-300 font-bold text-xs mt-1">
+                    {lookupResult.subscription?.expires_at
+                      ? new Date(lookupResult.subscription.expires_at).toLocaleDateString('en-GB')
+                      : '—'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="bg-[#0A0B0E] border border-gray-800 rounded-2xl p-5 space-y-4">
+            {/* Grant plan */}
+            <div>
+              <label className="block text-gray-500 text-[11px] font-semibold uppercase tracking-wider mb-2">Activate / change plan</label>
+              <div className="flex gap-2">
+                <select
+                  value={activatePlan}
+                  onChange={e => setActivatePlan(e.target.value as any)}
+                  className="flex-1 bg-[#050608] border border-gray-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#22D3EE]"
+                >
+                  <option value="pro_monthly">Pro Monthly (350 EGP · 25 missions · 30d)</option>
+                  <option value="pro_quarterly">Pro Quarterly (1,000 EGP · 60 missions · 90d)</option>
+                  <option value="pro_yearly">Pro Yearly (unlimited · 365d)</option>
+                </select>
+                <button onClick={handleActivate} disabled={activating}
+                  className="px-5 py-3 bg-[#22D3EE] text-black font-black rounded-xl text-sm hover:bg-white transition-all disabled:opacity-50 whitespace-nowrap">
+                  ⚡ Activate
+                </button>
+              </div>
+            </div>
+
+            {/* Bonus + Revoke row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="block text-gray-500 text-[11px] font-semibold uppercase tracking-wider mb-2">Grant bonus missions</label>
+                <div className="flex gap-2">
+                  <input type="number" min={1} max={100} value={bonusAmount}
+                    onChange={e => setBonusAmount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                    className="w-20 bg-[#050608] border border-gray-800 rounded-xl px-3 py-3 text-white text-sm focus:outline-none focus:border-[#A855F7]" />
+                  <button onClick={handleBonus} disabled={activating}
+                    className="flex-1 py-3 bg-[#A855F7]/15 border border-[#A855F7]/30 text-[#A855F7] font-bold rounded-xl text-sm hover:bg-[#A855F7]/25 transition-all disabled:opacity-50">
+                    🎁 Grant +{bonusAmount}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-gray-500 text-[11px] font-semibold uppercase tracking-wider mb-2">Revoke access</label>
+                <button onClick={handleRevoke} disabled={activating}
+                  className="w-full py-3 bg-red-500/10 border border-red-500/30 text-red-400 font-bold rounded-xl text-sm hover:bg-red-500/20 transition-all disabled:opacity-50">
+                  ⛔ Revoke to Free
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

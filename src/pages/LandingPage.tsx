@@ -154,11 +154,14 @@ export function LandingPage() {
             <MILogo3D size={76} autoSpin={false} />
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#22D3EE]/10 border border-[#22D3EE]/20 text-[#22D3EE] text-[11px] font-mono uppercase tracking-widest mb-7">
+            <div className={cn('inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#22D3EE]/10 border border-[#22D3EE]/20 text-[#22D3EE] text-[11px] mb-7', isAr ? 'font-[Cairo]' : 'font-mono uppercase tracking-widest')}>
               <Shield className="w-3 h-3" />
               {isAr ? 'المساعد الأكاديمي للطلاب العرب' : 'Mi — Academic Engine for MENA Students'}
             </div>
-            <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9] mb-7">
+            <h1 className={cn(
+              'text-5xl sm:text-7xl lg:text-8xl font-black mb-7',
+              isAr ? 'leading-[1.35] py-2' : 'tracking-tighter leading-[0.9]'
+            )}>
               {isAr ? (
                 <><GlitchText text="ابعتلنا" className="block text-white" />
                   <GlitchText text="الواجب." className="block text-transparent bg-clip-text bg-gradient-to-r from-[#22D3EE] to-[#A855F7]" /></>
