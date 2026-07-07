@@ -65,7 +65,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') { setCORS(res); return res.status(405).end('Method Not Allowed'); }
 
   try {
-    const { userId, email, lang, fingerprint } = await parseBody(req);
+    const { userId, email, lang, fingerprint, peek } = await parseBody(req);
     if (!userId) { setCORS(res); return res.status(401).json({ error: 'Unauthorized' }); }
 
     const supabase = createClient(
@@ -121,6 +121,22 @@ export default async function handler(req, res) {
     const bonus = (bonusRows || []).reduce((s, r) => s + (r.bonus || 0), 0);
     const effectiveLimit = limit >= 999999 ? 999999 : Math.max(0, limit + bonus);
     const missionsUsed = count || 0;
+
+    // ── PEEK MODE: read-only snapshot for the UI indicator / account page. ──────
+    // Returns the numbers WITHOUT running abuse checks, without writing any row,
+    // and without ever returning a 402 block. Consolidates the old quota-status
+    // endpoint into this function (Vercel Hobby caps serverless functions at 12).
+    if (peek) {
+      setCORS(res);
+      return res.status(200).json({
+        plan,
+        limit: effectiveLimit,
+        missionsUsed,
+        remaining: effectiveLimit >= 999999 ? 999999 : Math.max(0, effectiveLimit - missionsUsed),
+        bonus,
+        unlimited: effectiveLimit >= 999999,
+      });
+    }
 
     // ── 3. Standard quota check ────────────────────────────────────────────────
     if (effectiveLimit < 999999 && missionsUsed >= effectiveLimit) {

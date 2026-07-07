@@ -32,10 +32,10 @@ export function QuotaProvider({ children }: { children: React.ReactNode }) {
     if (!user?.id) { setQuota(null); return; }
     setLoading(true);
     try {
-      const res = await fetch('/api/quota-status', {
+      const res = await fetch('/api/check-quota', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({ userId: user.id, peek: true }),
       });
       if (res.ok) {
         const data = await res.json();
