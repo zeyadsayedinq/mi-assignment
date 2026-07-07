@@ -3,6 +3,8 @@ import { Routes, Route, useParams, useLocation, Navigate } from 'react-router-do
 import { AnimatePresence } from 'motion/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ExplosionProvider } from './contexts/ExplosionContext';
+import { ToastProvider } from './contexts/ToastContext';
+import { QuotaProvider } from './contexts/QuotaContext';
 import { Sidebar } from './components/Sidebar';
 import { IntroSequence } from './components/IntroSequence';
 import { SEO } from './components/SEO';
@@ -28,6 +30,8 @@ const SOPs = lazy(() => import('./pages/SOPs').then(m => ({ default: m.SOPs })))
 const AssignmentTypeGuide = lazy(() => import('./pages/AssignmentTypeGuide').then(m => ({ default: m.AssignmentTypeGuide })));
 const UniversitiesIndex = lazy(() => import('./pages/UniversitiesIndex').then(m => ({ default: m.UniversitiesIndex })));
 const UniversityPage = lazy(() => import('./pages/UniversityPage').then(m => ({ default: m.UniversityPage })));
+const AccountPage = lazy(() => import('./pages/AccountPage').then(m => ({ default: m.AccountPage })));
+const HelpPage = lazy(() => import('./pages/HelpPage').then(m => ({ default: m.HelpPage })));
 
 // Scroll to top on route change
 function ScrollToTop() {
@@ -125,6 +129,8 @@ function AppContent() {
               <Route path="/vault" element={session ? <TheVault /> : <Navigate to="/auth" replace />} />
               <Route path="/academy" element={session ? <TheAcademy /> : <Navigate to="/auth" replace />} />
               <Route path="/settings" element={session ? <SettingsPage /> : <Navigate to="/auth" replace />} />
+              <Route path="/account" element={session ? <AccountPage /> : <Navigate to="/auth" replace />} />
+              <Route path="/help" element={<HelpPage />} />
               <Route path="/admin" element={session ? <AdminDashboard /> : <Navigate to="/auth" replace />} />
 
               {/* Fallback */}
@@ -142,9 +148,13 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <ExplosionProvider>
-        <AppContent />
-      </ExplosionProvider>
+      <ToastProvider>
+        <QuotaProvider>
+          <ExplosionProvider>
+            <AppContent />
+          </ExplosionProvider>
+        </QuotaProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }

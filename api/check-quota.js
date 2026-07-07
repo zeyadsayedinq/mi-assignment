@@ -80,7 +80,7 @@ export default async function handler(req, res) {
       const verifiedEmail = authUser?.email?.toLowerCase();
       if (verifiedEmail && OWNER_EMAILS.includes(verifiedEmail)) {
         setCORS(res);
-        return res.status(200).json({ allowed: true, plan: 'owner', limit: 999999 });
+        return res.status(200).json({ allowed: true, plan: 'owner', limit: 999999, missionsUsed: 0, remaining: 999999 });
       }
     } catch { /* non-fatal — continue to normal quota check */ }
 
@@ -204,7 +204,13 @@ export default async function handler(req, res) {
 
     // ── 5. All checks passed ──────────────────────────────────────────────────
     setCORS(res);
-    return res.status(200).json({ allowed: true });
+    return res.status(200).json({
+      allowed: true,
+      plan,
+      missionsUsed,
+      limit: effectiveLimit,
+      remaining: effectiveLimit >= 999999 ? 999999 : Math.max(0, effectiveLimit - missionsUsed),
+    });
 
   } catch (e) {
     console.error('check-quota FATAL:', e.message);

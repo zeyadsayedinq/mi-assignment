@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { Shield, Terminal, Database, GraduationCap, BookOpen, Settings, LogOut, X, Sparkles, CreditCard, Lock, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Shield, Terminal, Database, GraduationCap, BookOpen, Settings, LogOut, X, Sparkles, CreditCard, Lock, PanelLeftClose, PanelLeftOpen, User } from 'lucide-react';
+import { QuotaBadge } from './QuotaBadge';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -31,7 +32,8 @@ export function Sidebar({ isMobileOpen, closeMobile, collapsed = false, onToggle
   const { session, user, signOut } = useAuth();
   const ADMIN_EMAILS = ['zeyadsayedinq@gmail.com', 'ranafaraj30@gmail.com'];
   const isAdmin   = ADMIN_EMAILS.includes(user?.email || '');
-  const { t }     = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isAr = i18n.language === 'ar';
   const { explode } = useExplosion();
 
   const handleSignOut = async () => { await signOut(); navigate('/auth'); closeMobile?.(); };
@@ -150,11 +152,19 @@ export function Sidebar({ isMobileOpen, closeMobile, collapsed = false, onToggle
             </Link>
           )}
 
+          {/* Quota badge — visible on every app page */}
+          {!collapsed && (
+            <div className="px-1 py-2">
+              <QuotaBadge />
+            </div>
+          )}
+
           {/* Secondary nav */}
           <div className="pt-2 mt-1 border-t border-gray-900 space-y-0.5">
             {[
               { to: '/terminal', state: { openImageLab: true }, label: t('nav.imageLab'), icon: Sparkles,    hoverClass: 'hover:text-[#A855F7] hover:bg-[#A855F7]/5', color: '#A855F7' },
               { to: '/pricing',  state: undefined,               label: 'Pricing',         icon: CreditCard,  hoverClass: 'hover:text-[#A855F7] hover:bg-[#A855F7]/5', color: '#A855F7' },
+              { to: '/account',  state: undefined,               label: isAr ? 'حسابي' : 'Account', icon: User,   hoverClass: 'hover:text-[#22D3EE] hover:bg-[#22D3EE]/5', color: '#22D3EE' },
               { to: '/settings', state: undefined,               label: t('nav.settings'), icon: Settings,    hoverClass: 'hover:text-white hover:bg-white/5',          color: '#22D3EE' },
             ].map(item => (
               <Link

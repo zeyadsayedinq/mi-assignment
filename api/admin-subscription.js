@@ -51,7 +51,7 @@ export default async function handler(req, res) {
   const pathParts = req.url.split("?")[0].split('/');
   const userId = pathParts[pathParts.indexOf('users') + 1];
 
-  if (!userId) setCORS(res); return res.status(400).json({ error: 'Missing userId' });
+  if (!userId) { setCORS(res); return res.status(400).json({ error: 'Missing userId' }); }
 
   try {
     if (req.method === 'GET') {

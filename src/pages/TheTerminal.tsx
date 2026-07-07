@@ -7,24 +7,26 @@ import { ResultsDashboard } from '../components/ResultsDashboard';
 import { UploadHandler } from '../components/UploadHandler';
 import { ImageGenerator } from '../components/ImageGenerator';
 import { processMission } from '../lib/mi';
-import { supabase } from '../lib/supabase';
 import { FloatingOrbs } from '../components/Scene3D';
 import { useExplosion } from '../contexts/ExplosionContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useQuota } from '../contexts/QuotaContext';
+import { QuotaBadge } from '../components/QuotaBadge';
+import { OnboardingOverlay, shouldShowOnboarding } from '../components/OnboardingOverlay';
 import { cn } from '../lib/utils';
 import { Analytics } from '../lib/analytics';
 
 const PROCESSING_EN = [
-  'Parsing assignment payload...', 'Running neural analysis...',
-  'Cross-referencing academic database...', 'Synthesizing expert solution...',
-  'Applying citation protocols...', 'Building output packages...',
-  'Quality assurance scan...', 'Packaging intelligence brief...',
+  'Reading your assignment...', 'Identifying subject and requirements...',
+  'Applying your university\'s formatting standards...', 'Working through the solution...',
+  'Formatting citations and references...', 'Compiling PDF, Word and slides...',
+  'Running final checks...', 'Preparing your download...',
 ];
 const PROCESSING_AR = [
-  'بقرأ الواجب...', 'بشغّل التحليل العصبي...',
-  'بدور في قاعدة البيانات الأكاديمية...', 'بولّد الحل الاحترافي...',
-  'بطبّق بروتوكولات التوثيق...', 'ببني الملفات النهائية...',
-  'مسح جودة الحل...', 'تعبئة التقرير الاستخباراتي...',
+  'بقرأ الواجب...', 'بحدد المادة والمطلوب...',
+  'بطبّق معايير جامعتك...', 'بشتغل على الحل خطوة بخطوة...',
+  'بظبط المراجع والتوثيق...', 'بجهّز ملفات PDF و Word والبريزنتيشن...',
+  'مراجعة أخيرة للحل...', 'بجهّز التحميل...',
 ];
 
 interface LimitReachedError {
@@ -47,6 +49,8 @@ export function TheTerminal() {
   const [processingMsg, setProcessingMsg] = useState('');
   const [showImageLab, setShowImageLab] = useState(false);
   const [missionMeta, setMissionMeta] = useState<{ name: string; university: string; course: string } | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(() => shouldShowOnboarding());
+  const { refresh: refreshQuota } = useQuota();
 
   const PROCESSING = isAr ? PROCESSING_AR : PROCESSING_EN;
 
@@ -65,7 +69,7 @@ export function TheTerminal() {
     files: File[], prompt: string,
     university?: string, course?: string,
     system?: string, reference?: string, missionType?: string,
-    country?: string, major?: string
+    country?: string, major?: string, lang?: string
   ) => {
     setMissionState('analyzing');
     setErrorMessage('');
@@ -81,9 +85,10 @@ export function TheTerminal() {
       // Build enriched context with country + major for curriculum-aware solving
       const enrichedUniversity = [country, university].filter(Boolean).join(' – ');
       const enrichedCourse = [major, course].filter(Boolean).join(' / ');
-      const result = await processMission(files, prompt, enrichedUniversity || university, enrichedCourse || course, system, reference, missionType);
+      const result = await processMission(files, prompt, enrichedUniversity || university, enrichedCourse || course, system, reference, missionType, lang);
       setSolutionData(result);
       setMissionState('accomplished');
+      refreshQuota();
       Analytics.missionCompleted(result.assignment_type || 'unknown', 0);
 
       // Save to vault
@@ -99,12 +104,14 @@ export function TheTerminal() {
           summary: result.solution_text?.substring(0, 500) || '',
           solution_data: result,
           user_id: user?.id || null,
-          lang: isAr ? 'ar' : 'en',
+          lang: lang || (isAr ? 'ar' : 'en'),
         };
         const vaultKey = `mi_vault_${user?.id || 'anon'}`;
         const existing = JSON.parse(localStorage.getItem(vaultKey) || '[]');
         localStorage.setItem(vaultKey, JSON.stringify([saved, ...existing].slice(0, 200)));
-        try { await supabase.from('missions').insert(saved); } catch {}
+        // NOTE: the missions-table row is written server-side by /api/record-mission
+        // (called inside processMission). Do NOT insert here too — a second row would
+        // make each mission count as 2 against the user's quota.
       } catch {}
 
     } catch (err: any) {
@@ -112,6 +119,7 @@ export function TheTerminal() {
       if (err.code === 'LIMIT_REACHED') {
         setLimitInfo({ plan: err.plan, limit: err.limit, missionsUsed: err.missionsUsed });
         setMissionState('limit_reached');
+        refreshQuota();
         return;
       }
       setErrorMessage(err.message || (isAr ? 'فشلت المهمة. حاول تاني.' : 'Mission failed. Please retry.'));
@@ -136,6 +144,8 @@ export function TheTerminal() {
         <FloatingOrbs count={3} colors={['#22D3EE', '#A855F7']} />
       </div>
 
+      {showOnboarding && <OnboardingOverlay onDone={() => setShowOnboarding(false)} />}
+
       <div className="flex-1 flex flex-col w-full overflow-hidden relative z-10">
         {/* Status bar */}
         <div className="shrink-0 border-b border-[#22D3EE]/10 bg-[#020617]/60 backdrop-blur px-6 py-3 flex items-center justify-between">
@@ -155,6 +165,7 @@ export function TheTerminal() {
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <QuotaBadge />
             <button onClick={() => setShowImageLab(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#A855F7]/30 text-[#A855F7] text-xs font-mono hover:bg-[#A855F7]/10 transition-all">
               <Sparkles className="w-3.5 h-3.5" />
@@ -178,10 +189,15 @@ export function TheTerminal() {
               {missionState === 'idle' && (
                 <motion.div key="idle" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }} className="pt-6">
                   <div className="text-center mb-10">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#22D3EE]/10 border border-[#22D3EE]/20 text-[#22D3EE] font-mono text-[10px] uppercase tracking-widest mb-4">
-                      <Shield className="w-3 h-3" /> {isAr ? 'الشبكة العصبية جاهزة' : 'Neural Network Online'}
+                    <div className={cn('inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#22D3EE]/10 border border-[#22D3EE]/20 text-[#22D3EE] text-[10px] mb-4', isAr ? 'font-[Cairo] leading-relaxed' : 'font-mono uppercase tracking-widest')}>
+                      <Shield className="w-3 h-3" /> {isAr ? 'الخدمة متاحة' : 'All systems ready'}
                     </div>
-                    <h2 className="text-3xl font-black text-white uppercase tracking-wider drop-shadow-[0_0_20px_rgba(34,211,238,0.25)] mb-3">
+                    <h2 className={cn(
+                      'text-3xl font-black text-white drop-shadow-[0_0_20px_rgba(34,211,238,0.25)] mb-3',
+                      isAr
+                        ? 'leading-[1.6] py-1'               /* Arabic: room for dots + diacritics, no letter-spacing */
+                        : 'uppercase tracking-wider'          /* English: keep the styled look */
+                    )}>
                       {isAr ? 'ابعتلي الواجب' : 'MI-ASSIGNMENT STANDING BY'}
                     </h2>
                     <p className="text-gray-500 text-sm max-w-lg mx-auto leading-relaxed">
@@ -212,7 +228,7 @@ export function TheTerminal() {
                   </div>
                   <div className="text-center">
                     <motion.p key={processingMsg} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                      className="text-[#22D3EE] font-mono text-sm tracking-widest uppercase mb-2">{processingMsg}</motion.p>
+                      className={cn('text-[#22D3EE] text-sm mb-2', isAr ? 'font-[Cairo] leading-loose' : 'font-mono tracking-widest uppercase')}>{processingMsg}</motion.p>
                     <p className="text-gray-600 text-xs">
                       {isAr ? 'Mi بيحل واجبك. الوقت المتوسط: ١٥–٤٠ ثانية.' : 'Mi is solving your assignment. Average: 15–40 seconds.'}
                     </p>
@@ -224,6 +240,10 @@ export function TheTerminal() {
                       </div>
                     )}
                   </div>
+                  <button onClick={handleReset}
+                    className="mt-2 px-5 py-2 text-gray-600 hover:text-gray-300 text-xs font-mono border border-gray-800 hover:border-gray-600 rounded-lg transition-all">
+                    {isAr ? 'إلغاء والبدء من جديد' : 'Cancel and start over'}
+                  </button>
                 </motion.div>
               )}
 
@@ -241,13 +261,13 @@ export function TheTerminal() {
                     </h3>
                     <p className="text-gray-400 text-sm leading-relaxed mb-2">
                       {isAr
-                        ? `استخدمت ${limitInfo?.missionsUsed || 0} من أصل ${limitInfo?.limit || 3} مهام مجانية هذا الشهر.`
-                        : `You've used ${limitInfo?.missionsUsed || 0} of ${limitInfo?.limit || 3} free missions this period.`}
+                        ? `استخدمت ${limitInfo?.missionsUsed || 0} من أصل ${limitInfo?.limit || 3} مهام مجانية.`
+                        : `You've used ${limitInfo?.missionsUsed || 0} of ${limitInfo?.limit || 3} free missions.`}
                     </p>
                     <p className="text-gray-600 text-xs">
                       {isAr
-                        ? 'اشترك في Pro علشان تكمل بدون حدود طول الترم.'
-                        : 'Upgrade to Pro for unlimited missions all semester.'}
+                        ? 'اشترك في Pro وخُد ٦٠ مهمة تكفي الترم كله.'
+                        : 'Upgrade to Pro — 60 missions, enough for the whole semester.'}
                     </p>
                   </div>
 
@@ -268,7 +288,7 @@ export function TheTerminal() {
                     <div className="bg-[#0A0B0E] border border-gray-800 rounded-xl p-4 text-center">
                       <p className="text-gray-500 text-xs mb-1">{isAr ? 'مجاني' : 'Free'}</p>
                       <p className="text-white font-black text-lg">3</p>
-                      <p className="text-gray-600 text-[10px]">{isAr ? 'مهام / شهر' : 'missions/month'}</p>
+                      <p className="text-gray-600 text-[10px]">{isAr ? 'مهام تجريبية' : 'trial missions'}</p>
                     </div>
                     <div className="bg-gradient-to-b from-[#22D3EE]/10 to-[#A855F7]/5 border border-[#22D3EE]/40 rounded-xl p-4 text-center relative overflow-hidden">
                       <div className="absolute top-1.5 right-1.5 bg-[#22D3EE] text-black text-[8px] font-black px-1.5 py-0.5 rounded-full">PRO</div>
@@ -308,10 +328,19 @@ export function TheTerminal() {
                     <h3 className="text-xl font-bold text-white mb-2">{isAr ? 'المهمة فشلت' : 'Mission Failed'}</h3>
                     <p className="text-red-400 text-sm max-w-lg font-mono bg-red-500/5 border border-red-500/20 rounded-xl px-4 py-3">{errorMessage}</p>
                   </div>
-                  <button onClick={handleReset}
-                    className="flex items-center gap-2 px-6 py-3 bg-[#22D3EE] text-black font-bold rounded-xl hover:bg-white transition-all">
-                    <RotateCcw className="w-4 h-4" /> {isAr ? 'حاول تاني' : 'Try Again'}
-                  </button>
+                  <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <button onClick={handleReset}
+                      className="flex items-center gap-2 px-6 py-3 bg-[#22D3EE] text-black font-bold rounded-xl hover:bg-white transition-all">
+                      <RotateCcw className="w-4 h-4" /> {isAr ? 'حاول تاني' : 'Try Again'}
+                    </button>
+                    <a href="https://wa.me/201107743984" target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-6 py-3 border border-gray-700 text-gray-400 font-bold rounded-xl hover:border-emerald-500/50 hover:text-emerald-400 transition-all text-sm">
+                      {isAr ? 'كلمنا على واتساب' : 'Message support on WhatsApp'}
+                    </a>
+                  </div>
+                  <p className="text-gray-700 text-xs">
+                    {isAr ? 'المشكلة اتكررت؟ ابعتلنا سكرين شوت وهنحلها فوراً.' : 'Keeps happening? Send us a screenshot and we\'ll sort it out fast.'}
+                  </p>
                 </motion.div>
               )}
 

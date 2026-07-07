@@ -1,3 +1,5 @@
+import { createClient } from '@supabase/supabase-js';
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -576,6 +578,83 @@ Return ONLY valid JSON matching this schema exactly. No markdown, no code fences
 }
 
 // ─── MAIN HANDLER ───────────────────────────────────────────────────────────
+
+// ─── SERVER-SIDE QUOTA GUARD (V4.2) ─────────────────────────────────────────
+// Closes the bypass where /api/process-mission could be called directly, skipping
+// the client-side check-quota call. READ-ONLY: never writes a mission row, so it
+// cannot affect quota counting. Mirrors check-quota's plan + period logic exactly.
+const QG_PLAN_LIMITS = { free: 3, pro_monthly: 25, pro_quarterly: 60, pro_yearly: 999999 };
+const QG_OWNER_EMAILS = ['zeyadsayedinq@gmail.com', 'ranafaraj30@gmail.com'];
+
+async function verifyQuotaServerSide(userId) {
+  // Returns { ok: true } to proceed, or { ok: false, status, error } to block.
+  if (!userId) {
+    return { ok: false, status: 401, error: 'Please sign in first.' };
+  }
+
+  const url = process.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // If the backend can't reach Supabase, fail OPEN — never block a paying user
+  // because of an infra hiccup. The client-side check-quota already ran.
+  if (!url || !key) return { ok: true };
+
+  try {
+    const supabase = createClient(url, key, { auth: { persistSession: false } });
+
+    // Owner bypass — verify email server-side, never trust the client
+    try {
+      const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
+      const email = authUser?.email?.toLowerCase();
+      if (email && QG_OWNER_EMAILS.includes(email)) return { ok: true };
+    } catch { /* non-fatal */ }
+
+    // Plan
+    let plan = 'free';
+    let limit = QG_PLAN_LIMITS.free;
+    const { data: sub } = await supabase
+      .from('subscriptions')
+      .select('plan,status,expires_at')
+      .eq('user_id', userId)
+      .single();
+    if (sub?.status === 'active' && (!sub.expires_at || new Date(sub.expires_at) > new Date())) {
+      plan = sub.plan || 'free';
+      limit = QG_PLAN_LIMITS[plan] ?? QG_PLAN_LIMITS.free;
+    }
+    if (limit >= 999999) return { ok: true };
+
+    // Period window (identical to check-quota)
+    const periodStart = new Date();
+    if (plan === 'pro_monthly') periodStart.setDate(periodStart.getDate() - 30);
+    else if (plan === 'pro_quarterly') periodStart.setDate(periodStart.getDate() - 90);
+    else if (plan === 'pro_yearly') periodStart.setFullYear(periodStart.getFullYear() - 1);
+    else { periodStart.setDate(1); periodStart.setHours(0, 0, 0, 0); }
+
+    const { count } = await supabase
+      .from('missions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .gte('created_at', periodStart.toISOString());
+
+    const { data: bonusRows } = await supabase
+      .from('bonus_missions')
+      .select('bonus')
+      .eq('user_id', userId);
+    const bonus = (bonusRows || []).reduce((s, r) => s + (r.bonus || 0), 0);
+
+    const effectiveLimit = Math.max(0, limit + bonus);
+    const used = count || 0;
+
+    if (used >= effectiveLimit) {
+      return { ok: false, status: 402, error: 'LIMIT_REACHED', plan, limit: effectiveLimit, missionsUsed: used };
+    }
+    return { ok: true };
+  } catch (e) {
+    // Any unexpected error → fail OPEN (don't punish the user for our bug)
+    console.warn('[QUOTA_GUARD] check failed, failing open:', e?.message);
+    return { ok: true };
+  }
+}
+
 export default async function handler(req, res) {
   setCORS(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -592,10 +671,27 @@ export default async function handler(req, res) {
     }
 
     const body = await parseBody(req);
-    const { contents, lang } = body;
+    const { contents, lang, userId } = body;
 
     if (!contents || !Array.isArray(contents) || contents.length === 0) {
       return res.status(400).json({ error: 'Missing contents array' });
+    }
+
+    // ── Server-side quota guard — closes the direct-call bypass. Read-only. ──
+    const gate = await verifyQuotaServerSide(userId);
+    if (!gate.ok) {
+      if (gate.status === 402) {
+        return res.status(402).json({
+          error: 'LIMIT_REACHED',
+          plan: gate.plan,
+          limit: gate.limit,
+          missionsUsed: gate.missionsUsed,
+          message: lang === 'ar'
+            ? 'وصلت للحد. اشترك في Pro علشان تكمل.'
+            : 'Limit reached. Upgrade to Pro to continue.',
+        });
+      }
+      return res.status(gate.status || 401).json({ error: gate.error || 'Unauthorized' });
     }
 
     const domainContext = buildSubjectContext(contents);

@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Database, Download, Search, Clock, ChevronRight, Archive, X, Trash2, Star, FileText, Presentation, Code, Calculator, BookOpen, Image } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
-import { downloadMissionPackage } from '../lib/exporter';
+// exporter loaded dynamically on download — keeps heavy export libs out of the Vault chunk
 import { ResultsDashboard } from '../components/ResultsDashboard';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -30,6 +31,7 @@ const TYPE_COLORS: Record<string, string> = {
 const ITEMS_PER_PAGE = 12;
 
 export function TheVault() {
+  const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const isAr = i18n.language === 'ar';
   const { user } = useAuth();
@@ -151,7 +153,11 @@ export function TheVault() {
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <Archive className="w-14 h-14 text-gray-800 mb-4" />
             <h3 className="text-lg font-bold text-gray-600 mb-2">{isAr ? 'الخزينة فاضية' : 'Vault is empty'}</h3>
-            <p className="text-gray-700 text-sm">{isAr ? 'أكمل مهمتك الأولى في المحطة علشان تبدأ.' : 'Complete your first mission in the Terminal to start.'}</p>
+            <p className="text-gray-700 text-sm mb-6">{isAr ? 'أكمل مهمتك الأولى في المحطة علشان تبدأ.' : 'Complete your first mission in the Terminal to start.'}</p>
+            <button onClick={() => navigate('/terminal')}
+              className="px-6 py-3 bg-[#22D3EE] text-black font-bold rounded-xl hover:bg-white transition-all text-sm">
+              {isAr ? 'ابدأ أول مهمة' : 'Start your first mission'}
+            </button>
           </div>
         ) : (
           <>
@@ -193,7 +199,7 @@ export function TheVault() {
                           {isAr ? 'عرض' : 'View'} <ChevronRight className={cn('w-3 h-3', isAr && 'rotate-180')} />
                         </button>
                         {mission.solution_data && (
-                          <button onClick={async () => { setDownloading(mission.id); await downloadMissionPackage(mission.solution_data, mission.payload_name).catch(() => {}); setDownloading(null); }}
+                          <button onClick={async () => { setDownloading(mission.id); try { const { downloadMissionPackage } = await import('../lib/exporter'); await downloadMissionPackage(mission.solution_data, mission.payload_name); } catch {} setDownloading(null); }}
                             className="px-3 py-2 text-gray-500 hover:text-white transition-colors border-l border-gray-900">
                             {downloading === mission.id ? <div className="w-3.5 h-3.5 border border-gray-500 border-t-white rounded-full animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                           </button>
