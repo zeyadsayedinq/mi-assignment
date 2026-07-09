@@ -51,27 +51,40 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const email = new URLSearchParams(req.url.split("?")[1] || "").get('email');
-      if (!email) setCORS(res); return res.status(400).json({ error: 'Missing email' });
+      const email = (req.query && req.query.email)
+        || new URLSearchParams((req.url || '').split("?")[1] || "").get('email');
+      if (!email) { setCORS(res); return res.status(400).json({ error: 'Missing email' }); }
 
       const { data: { users }, error } = await supabase.auth.admin.listUsers();
       if (error) throw error;
       const user = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
-      if (!user) setCORS(res); return res.status(404).json({ error: 'User not found' });
+      if (!user) { setCORS(res); return res.status(404).json({ error: 'User not found' }); }
 
       const { data: sub } = await supabase.from('subscriptions').select('*').eq('user_id', user.id).single();
 
-      setCORS(res); return res.status(200).send(JSON.stringify({ userId: user.id, email: user.email, subscription: sub }),);
+      // Mission count + bonus for admin visibility
+      const { count: missionCount } = await supabase
+        .from('missions').select('id', { count: 'exact', head: true }).eq('user_id', user.id);
+      const { data: bonusRows } = await supabase
+        .from('bonus_missions').select('bonus').eq('user_id', user.id);
+      const bonus = (bonusRows || []).reduce((s, r) => s + (r.bonus || 0), 0);
+
+      setCORS(res);
+      return res.status(200).json({
+        userId: user.id, email: user.email, subscription: sub,
+        totalMissions: missionCount || 0, bonus,
+        createdAt: user.created_at || null,
+      });
     }
 
     if (req.method === 'POST') {
       const { email, action, plan, days } = await parseBody(req);
-      if (!email || !action) setCORS(res); return res.status(400).json({ error: 'Missing email or action' });
+      if (!email || !action) { setCORS(res); return res.status(400).json({ error: 'Missing email or action' }); }
 
       const { data: { users }, error: listErr } = await supabase.auth.admin.listUsers();
       if (listErr) throw listErr;
       const user = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
-      if (!user) setCORS(res); return res.status(404).json({ error: 'User not found' });
+      if (!user) { setCORS(res); return res.status(404).json({ error: 'User not found' }); }
 
       if (action === 'grant') {
         const expiresAt = new Date();
@@ -90,6 +103,15 @@ export default async function handler(req, res) {
           { onConflict: 'user_id' }
         );
         setCORS(res); return res.status(200).json({ success: true, action: 'revoked', userId: user.id });
+      }
+
+      if (action === 'bonus') {
+        const amount = parseInt(days, 10) || 5; // reuse 'days' field as the bonus amount
+        const { error: bonusErr } = await supabase.from('bonus_missions').insert(
+          { user_id: user.id, bonus: amount, reason: 'admin_grant', created_at: new Date().toISOString() }
+        );
+        if (bonusErr) throw bonusErr;
+        setCORS(res); return res.status(200).json({ success: true, action: 'bonus', amount, userId: user.id });
       }
 
       setCORS(res); return res.status(400).json({ error: 'Unknown action' });
